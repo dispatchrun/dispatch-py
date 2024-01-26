@@ -1,8 +1,13 @@
 # Dispatch Python SDK
 
-## Installation
+## Setup
 
 ```
-export PIP_EXTRA_INDEX_URL=https://buf.build/gen/python
-pip install -e .
+make install
+```
+
+## Tests
+
+```
+make test
 ```
