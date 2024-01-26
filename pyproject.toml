@@ -10,3 +10,8 @@ dependencies = [
 	     "stealthrocket_ring_grpc_python==1.60.0.1.20240126005632+6a2bbfaf59e6",
 	     "stealthrocket_ring_protocolbuffers_python==25.2.0.1.20240126005632+6a2bbfaf59e6",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "black==24.1.0"
+]
