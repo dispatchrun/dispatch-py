@@ -6,16 +6,15 @@ import dispatch.http.v1.http_pb2
 import grpc
 import google.protobuf.any_pb2
 
+
 class TestRing(unittest.TestCase):
     def test_ring(self):
         channel = grpc.insecure_channel("localhost:4001")
         stub = ring.task.v1.service_pb2_grpc.ServiceStub(channel)
 
-
         request = dispatch.http.v1.http_pb2.Request(
-                url="https://www.google.com",
-                method="GET"
-            )
+            url="https://www.google.com", method="GET"
+        )
 
         input = google.protobuf.any_pb2.Any()
         input.Pack(request)
