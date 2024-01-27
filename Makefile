@@ -35,6 +35,7 @@ generate: .proto/ring .proto/dispatch
 	buf generate --template buf.gen.yaml
 	cd src && find . -type d | while IFS= read -r dir; do touch $$dir/__init__.py; done
 	rm src/__init__.py
+	$(MAKE) fmt
 
 clean:
 	rm -rf .proto

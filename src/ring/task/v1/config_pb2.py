@@ -7,6 +7,7 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -15,16 +16,20 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x19ring/task/v1/config.proto\x12\x0cring.task.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\x01\n\x06\x43onfig\x12\x37\n\texpire_at\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x08\x65xpireAt\x12!\n\x0c\x61uto_discard\x18\x02 \x01(\x08R\x0b\x61utoDiscard\x12)\n\x05scope\x18\x03 \x03(\x0b\x32\x13.ring.task.v1.ScopeR\x05scope\"/\n\x05Scope\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05valueBq\n\x10\x63om.ring.task.v1B\x0b\x43onfigProtoP\x01\xa2\x02\x03RTX\xaa\x02\x0cRing.Task.V1\xca\x02\x0cRing\\Task\\V1\xe2\x02\x18Ring\\Task\\V1\\GPBMetadata\xea\x02\x0eRing::Task::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x19ring/task/v1/config.proto\x12\x0cring.task.v1\x1a\x1fgoogle/protobuf/timestamp.proto"\x8f\x01\n\x06\x43onfig\x12\x37\n\texpire_at\x18\x01 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x08\x65xpireAt\x12!\n\x0c\x61uto_discard\x18\x02 \x01(\x08R\x0b\x61utoDiscard\x12)\n\x05scope\x18\x03 \x03(\x0b\x32\x13.ring.task.v1.ScopeR\x05scope"/\n\x05Scope\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05valueBq\n\x10\x63om.ring.task.v1B\x0b\x43onfigProtoP\x01\xa2\x02\x03RTX\xaa\x02\x0cRing.Task.V1\xca\x02\x0cRing\\Task\\V1\xe2\x02\x18Ring\\Task\\V1\\GPBMetadata\xea\x02\x0eRing::Task::V1b\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ring.task.v1.config_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "ring.task.v1.config_pb2", _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  _globals['DESCRIPTOR']._options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\020com.ring.task.v1B\013ConfigProtoP\001\242\002\003RTX\252\002\014Ring.Task.V1\312\002\014Ring\\Task\\V1\342\002\030Ring\\Task\\V1\\GPBMetadata\352\002\016Ring::Task::V1'
-  _globals['_CONFIG']._serialized_start=77
-  _globals['_CONFIG']._serialized_end=220
-  _globals['_SCOPE']._serialized_start=222
-  _globals['_SCOPE']._serialized_end=269
+    _globals["DESCRIPTOR"]._options = None
+    _globals["DESCRIPTOR"]._serialized_options = (
+        b"\n\020com.ring.task.v1B\013ConfigProtoP\001\242\002\003RTX\252\002\014Ring.Task.V1\312\002\014Ring\\Task\\V1\342\002\030Ring\\Task\\V1\\GPBMetadata\352\002\016Ring::Task::V1"
+    )
+    _globals["_CONFIG"]._serialized_start = 77
+    _globals["_CONFIG"]._serialized_end = 220
+    _globals["_SCOPE"]._serialized_start = 222
+    _globals["_SCOPE"]._serialized_end = 269
 # @@protoc_insertion_point(module_scope)

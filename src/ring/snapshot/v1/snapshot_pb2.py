@@ -7,6 +7,7 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -18,16 +19,22 @@ from ring.task.v1 import config_pb2 as ring_dot_task_dot_v1_dot_config__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1fring/snapshot/v1/snapshot.proto\x12\x10ring.snapshot.v1\x1a\x1bring/record/v1/record.proto\x1a\x1bring/status/v1/status.proto\x1a\x19ring/task/v1/config.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\\\n\x08Snapshot\x12,\n\x05tasks\x18\x01 \x03(\x0b\x32\x16.ring.snapshot.v1.TaskR\x05tasks\x12\"\n\rnext_block_id\x18\x02 \x01(\x04R\x0bnextBlockId\"\x9c\x04\n\x04Task\x12\x37\n\rsubmission_id\x18\x01 \x01(\x0b\x32\x12.ring.record.v1.IDR\x0csubmissionId\x12\x37\n\rsuspension_id\x18\x02 \x01(\x0b\x32\x12.ring.record.v1.IDR\x0csuspensionId\x12\x37\n\rcompletion_id\x18\x03 \x01(\x0b\x32\x12.ring.record.v1.IDR\x0c\x63ompletionId\x12,\n\x06\x63onfig\x18\x04 \x01(\x0b\x32\x14.ring.task.v1.ConfigR\x06\x63onfig\x12\x14\n\x05\x66lags\x18\x05 \x01(\rR\x05\x66lags\x12#\n\rcoroutine_uri\x18\x06 \x01(\tR\x0c\x63oroutineUri\x12+\n\x07task_id\x18\x07 \x01(\x0b\x32\x12.ring.record.v1.IDR\x06taskId\x12.\n\x06status\x18\x08 \x01(\x0e\x32\x16.ring.status.v1.StatusR\x06status\x12\x38\n\x0eparent_task_id\x18\t \x01(\x0b\x32\x12.ring.record.v1.IDR\x0cparentTaskId\x12?\n\rpoll_deadline\x18\n \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0cpollDeadline\x12(\n\x10poll_max_results\x18\x0b \x01(\x05R\x0epollMaxResultsB\x87\x01\n\x14\x63om.ring.snapshot.v1B\rSnapshotProtoP\x01\xa2\x02\x03RSX\xaa\x02\x10Ring.Snapshot.V1\xca\x02\x10Ring\\Snapshot\\V1\xe2\x02\x1cRing\\Snapshot\\V1\\GPBMetadata\xea\x02\x12Ring::Snapshot::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1fring/snapshot/v1/snapshot.proto\x12\x10ring.snapshot.v1\x1a\x1bring/record/v1/record.proto\x1a\x1bring/status/v1/status.proto\x1a\x19ring/task/v1/config.proto\x1a\x1fgoogle/protobuf/timestamp.proto"\\\n\x08Snapshot\x12,\n\x05tasks\x18\x01 \x03(\x0b\x32\x16.ring.snapshot.v1.TaskR\x05tasks\x12"\n\rnext_block_id\x18\x02 \x01(\x04R\x0bnextBlockId"\x9c\x04\n\x04Task\x12\x37\n\rsubmission_id\x18\x01 \x01(\x0b\x32\x12.ring.record.v1.IDR\x0csubmissionId\x12\x37\n\rsuspension_id\x18\x02 \x01(\x0b\x32\x12.ring.record.v1.IDR\x0csuspensionId\x12\x37\n\rcompletion_id\x18\x03 \x01(\x0b\x32\x12.ring.record.v1.IDR\x0c\x63ompletionId\x12,\n\x06\x63onfig\x18\x04 \x01(\x0b\x32\x14.ring.task.v1.ConfigR\x06\x63onfig\x12\x14\n\x05\x66lags\x18\x05 \x01(\rR\x05\x66lags\x12#\n\rcoroutine_uri\x18\x06 \x01(\tR\x0c\x63oroutineUri\x12+\n\x07task_id\x18\x07 \x01(\x0b\x32\x12.ring.record.v1.IDR\x06taskId\x12.\n\x06status\x18\x08 \x01(\x0e\x32\x16.ring.status.v1.StatusR\x06status\x12\x38\n\x0eparent_task_id\x18\t \x01(\x0b\x32\x12.ring.record.v1.IDR\x0cparentTaskId\x12?\n\rpoll_deadline\x18\n \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0cpollDeadline\x12(\n\x10poll_max_results\x18\x0b \x01(\x05R\x0epollMaxResultsB\x87\x01\n\x14\x63om.ring.snapshot.v1B\rSnapshotProtoP\x01\xa2\x02\x03RSX\xaa\x02\x10Ring.Snapshot.V1\xca\x02\x10Ring\\Snapshot\\V1\xe2\x02\x1cRing\\Snapshot\\V1\\GPBMetadata\xea\x02\x12Ring::Snapshot::V1b\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ring.snapshot.v1.snapshot_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "ring.snapshot.v1.snapshot_pb2", _globals
+)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  _globals['DESCRIPTOR']._options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\024com.ring.snapshot.v1B\rSnapshotProtoP\001\242\002\003RSX\252\002\020Ring.Snapshot.V1\312\002\020Ring\\Snapshot\\V1\342\002\034Ring\\Snapshot\\V1\\GPBMetadata\352\002\022Ring::Snapshot::V1'
-  _globals['_SNAPSHOT']._serialized_start=171
-  _globals['_SNAPSHOT']._serialized_end=263
-  _globals['_TASK']._serialized_start=266
-  _globals['_TASK']._serialized_end=806
+    _globals["DESCRIPTOR"]._options = None
+    _globals["DESCRIPTOR"]._serialized_options = (
+        b"\n\024com.ring.snapshot.v1B\rSnapshotProtoP\001\242\002\003RSX\252\002\020Ring.Snapshot.V1\312\002\020Ring\\Snapshot\\V1\342\002\034Ring\\Snapshot\\V1\\GPBMetadata\352\002\022Ring::Snapshot::V1"
+    )
+    _globals["_SNAPSHOT"]._serialized_start = 171
+    _globals["_SNAPSHOT"]._serialized_end = 263
+    _globals["_TASK"]._serialized_start = 266
+    _globals["_TASK"]._serialized_end = 806
 # @@protoc_insertion_point(module_scope)

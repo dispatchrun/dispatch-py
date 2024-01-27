@@ -7,6 +7,7 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -16,56 +17,68 @@ from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1bring/record/v1/record.proto\x12\x0ering.record.v1\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"9\n\x05\x42lock\x12\x30\n\x07records\x18\x01 \x03(\x0b\x32\x16.ring.record.v1.RecordR\x07records\"u\n\x06Record\x12.\n\x07message\x18\x01 \x01(\x0b\x32\x14.google.protobuf.AnyR\x07message\x12%\n\x0e\x63rc32_checksum\x18\x02 \x01(\x07R\rcrc32Checksum\x12\x14\n\x05\x66lags\x18\x03 \x01(\rR\x05\x66lags\"\x90\x01\n\x02ID\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\x12#\n\rrecord_offset\x18\x03 \x01(\x05R\x0crecordOffset\x12\x1f\n\x0brecord_size\x18\x04 \x01(\x05R\nrecordSize\"N\n\x06Prefix\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\"\xae\x01\n\x05Range\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\x12!\n\x0crange_offset\x18\x03 \x01(\x05R\x0brangeOffset\x12\x1d\n\nrange_size\x18\x04 \x01(\x05R\trangeSize\x12\x1d\n\nfull_block\x18\x05 \x01(\x08R\tfullBlock\"!\n\x05\x45rror\x12\x18\n\x07message\x18\x01 \x01(\tR\x07message\"\x8a\x01\n\x12\x42lockTriggerRecord\x12.\n\x07message\x18\x01 \x01(\x0b\x32\x14.google.protobuf.AnyR\x07message\x12#\n\rrecord_offset\x18\x02 \x01(\x05R\x0crecordOffset\x12\x1f\n\x0brecord_size\x18\x03 \x01(\x05R\nrecordSize\"\x83\x01\n\x13\x42lockTriggerRequest\x12.\n\x06prefix\x18\x01 \x01(\x0b\x32\x16.ring.record.v1.PrefixR\x06prefix\x12<\n\x07records\x18\x02 \x03(\x0b\x32\".ring.record.v1.BlockTriggerRecordR\x07records\"\x16\n\x14\x42lockTriggerResponse\"\xa0\x01\n\nBlockRange\x12.\n\x06prefix\x18\x01 \x01(\x0b\x32\x16.ring.record.v1.PrefixR\x06prefix\x12\x35\n\x07records\x18\x02 \x03(\x0b\x32\x1b.ring.record.v1.BlockRecordR\x07records\x12+\n\x05\x65rror\x18\x03 \x01(\x0b\x32\x15.ring.record.v1.ErrorR\x05\x65rror\"\x83\x01\n\x0b\x42lockRecord\x12#\n\rrecord_offset\x18\x01 \x01(\x05R\x0crecordOffset\x12\x1f\n\x0brecord_size\x18\x02 \x01(\x05R\nrecordSize\x12.\n\x06record\x18\x03 \x01(\x0b\x32\x16.ring.record.v1.RecordR\x06record\"\xd9\x01\n\nBlockEntry\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\x12\x1d\n\nblock_size\x18\x03 \x01(\x05R\tblockSize\x12\x39\n\ncreated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12+\n\x05\x65rror\x18\x05 \x01(\x0b\x32\x15.ring.record.v1.ErrorR\x05\x65rror\"F\n\x15GetBlockRangesRequest\x12-\n\x06ranges\x18\x01 \x03(\x0b\x32\x15.ring.record.v1.RangeR\x06ranges\"L\n\x16GetBlockRangesResponse\x12\x32\n\x06ranges\x18\x01 \x03(\x0b\x32\x1a.ring.record.v1.BlockRangeR\x06ranges\"M\n\x17GetBlockMetadataRequest\x12\x32\n\x08prefixes\x18\x01 \x03(\x0b\x32\x16.ring.record.v1.PrefixR\x08prefixes\"P\n\x18GetBlockMetadataResponse\x12\x34\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x1a.ring.record.v1.BlockEntryR\x07\x65ntries\"z\n\x11ScanBlocksRequest\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12$\n\x0estart_block_id\x18\x02 \x01(\x05R\x0cstartBlockId\x12\x14\n\x05limit\x18\x03 \x01(\x05R\x05limit\"\x89\x01\n\x12ScanBlocksResponse\x12\x19\n\x08\x62lock_id\x18\x01 \x01(\x05R\x07\x62lockId\x12\x1d\n\nblock_size\x18\x02 \x01(\x05R\tblockSize\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt2\xc1\x02\n\x11\x42lockStoreService\x12\x64\n\x0eGetBlockRanges\x12%.ring.record.v1.GetBlockRangesRequest\x1a&.ring.record.v1.GetBlockRangesResponse\"\x03\x90\x02\x02\x12j\n\x10GetBlockMetadata\x12\'.ring.record.v1.GetBlockMetadataRequest\x1a(.ring.record.v1.GetBlockMetadataResponse\"\x03\x90\x02\x02\x12Z\n\nScanBlocks\x12!.ring.record.v1.ScanBlocksRequest\x1a\".ring.record.v1.ScanBlocksResponse\"\x03\x90\x02\x01\x30\x01\x42{\n\x12\x63om.ring.record.v1B\x0bRecordProtoP\x01\xa2\x02\x03RRX\xaa\x02\x0eRing.Record.V1\xca\x02\x0eRing\\Record\\V1\xe2\x02\x1aRing\\Record\\V1\\GPBMetadata\xea\x02\x10Ring::Record::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1bring/record/v1/record.proto\x12\x0ering.record.v1\x1a\x19google/protobuf/any.proto\x1a\x1fgoogle/protobuf/timestamp.proto"9\n\x05\x42lock\x12\x30\n\x07records\x18\x01 \x03(\x0b\x32\x16.ring.record.v1.RecordR\x07records"u\n\x06Record\x12.\n\x07message\x18\x01 \x01(\x0b\x32\x14.google.protobuf.AnyR\x07message\x12%\n\x0e\x63rc32_checksum\x18\x02 \x01(\x07R\rcrc32Checksum\x12\x14\n\x05\x66lags\x18\x03 \x01(\rR\x05\x66lags"\x90\x01\n\x02ID\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\x12#\n\rrecord_offset\x18\x03 \x01(\x05R\x0crecordOffset\x12\x1f\n\x0brecord_size\x18\x04 \x01(\x05R\nrecordSize"N\n\x06Prefix\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId"\xae\x01\n\x05Range\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\x12!\n\x0crange_offset\x18\x03 \x01(\x05R\x0brangeOffset\x12\x1d\n\nrange_size\x18\x04 \x01(\x05R\trangeSize\x12\x1d\n\nfull_block\x18\x05 \x01(\x08R\tfullBlock"!\n\x05\x45rror\x12\x18\n\x07message\x18\x01 \x01(\tR\x07message"\x8a\x01\n\x12\x42lockTriggerRecord\x12.\n\x07message\x18\x01 \x01(\x0b\x32\x14.google.protobuf.AnyR\x07message\x12#\n\rrecord_offset\x18\x02 \x01(\x05R\x0crecordOffset\x12\x1f\n\x0brecord_size\x18\x03 \x01(\x05R\nrecordSize"\x83\x01\n\x13\x42lockTriggerRequest\x12.\n\x06prefix\x18\x01 \x01(\x0b\x32\x16.ring.record.v1.PrefixR\x06prefix\x12<\n\x07records\x18\x02 \x03(\x0b\x32".ring.record.v1.BlockTriggerRecordR\x07records"\x16\n\x14\x42lockTriggerResponse"\xa0\x01\n\nBlockRange\x12.\n\x06prefix\x18\x01 \x01(\x0b\x32\x16.ring.record.v1.PrefixR\x06prefix\x12\x35\n\x07records\x18\x02 \x03(\x0b\x32\x1b.ring.record.v1.BlockRecordR\x07records\x12+\n\x05\x65rror\x18\x03 \x01(\x0b\x32\x15.ring.record.v1.ErrorR\x05\x65rror"\x83\x01\n\x0b\x42lockRecord\x12#\n\rrecord_offset\x18\x01 \x01(\x05R\x0crecordOffset\x12\x1f\n\x0brecord_size\x18\x02 \x01(\x05R\nrecordSize\x12.\n\x06record\x18\x03 \x01(\x0b\x32\x16.ring.record.v1.RecordR\x06record"\xd9\x01\n\nBlockEntry\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12\x19\n\x08\x62lock_id\x18\x02 \x01(\x05R\x07\x62lockId\x12\x1d\n\nblock_size\x18\x03 \x01(\x05R\tblockSize\x12\x39\n\ncreated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12+\n\x05\x65rror\x18\x05 \x01(\x0b\x32\x15.ring.record.v1.ErrorR\x05\x65rror"F\n\x15GetBlockRangesRequest\x12-\n\x06ranges\x18\x01 \x03(\x0b\x32\x15.ring.record.v1.RangeR\x06ranges"L\n\x16GetBlockRangesResponse\x12\x32\n\x06ranges\x18\x01 \x03(\x0b\x32\x1a.ring.record.v1.BlockRangeR\x06ranges"M\n\x17GetBlockMetadataRequest\x12\x32\n\x08prefixes\x18\x01 \x03(\x0b\x32\x16.ring.record.v1.PrefixR\x08prefixes"P\n\x18GetBlockMetadataResponse\x12\x34\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x1a.ring.record.v1.BlockEntryR\x07\x65ntries"z\n\x11ScanBlocksRequest\x12)\n\x10partition_number\x18\x01 \x01(\x05R\x0fpartitionNumber\x12$\n\x0estart_block_id\x18\x02 \x01(\x05R\x0cstartBlockId\x12\x14\n\x05limit\x18\x03 \x01(\x05R\x05limit"\x89\x01\n\x12ScanBlocksResponse\x12\x19\n\x08\x62lock_id\x18\x01 \x01(\x05R\x07\x62lockId\x12\x1d\n\nblock_size\x18\x02 \x01(\x05R\tblockSize\x12\x39\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt2\xc1\x02\n\x11\x42lockStoreService\x12\x64\n\x0eGetBlockRanges\x12%.ring.record.v1.GetBlockRangesRequest\x1a&.ring.record.v1.GetBlockRangesResponse"\x03\x90\x02\x02\x12j\n\x10GetBlockMetadata\x12\'.ring.record.v1.GetBlockMetadataRequest\x1a(.ring.record.v1.GetBlockMetadataResponse"\x03\x90\x02\x02\x12Z\n\nScanBlocks\x12!.ring.record.v1.ScanBlocksRequest\x1a".ring.record.v1.ScanBlocksResponse"\x03\x90\x02\x01\x30\x01\x42{\n\x12\x63om.ring.record.v1B\x0bRecordProtoP\x01\xa2\x02\x03RRX\xaa\x02\x0eRing.Record.V1\xca\x02\x0eRing\\Record\\V1\xe2\x02\x1aRing\\Record\\V1\\GPBMetadata\xea\x02\x10Ring::Record::V1b\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ring.record.v1.record_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "ring.record.v1.record_pb2", _globals
+)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  _globals['DESCRIPTOR']._options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\022com.ring.record.v1B\013RecordProtoP\001\242\002\003RRX\252\002\016Ring.Record.V1\312\002\016Ring\\Record\\V1\342\002\032Ring\\Record\\V1\\GPBMetadata\352\002\020Ring::Record::V1'
-  _globals['_BLOCKSTORESERVICE'].methods_by_name['GetBlockRanges']._options = None
-  _globals['_BLOCKSTORESERVICE'].methods_by_name['GetBlockRanges']._serialized_options = b'\220\002\002'
-  _globals['_BLOCKSTORESERVICE'].methods_by_name['GetBlockMetadata']._options = None
-  _globals['_BLOCKSTORESERVICE'].methods_by_name['GetBlockMetadata']._serialized_options = b'\220\002\002'
-  _globals['_BLOCKSTORESERVICE'].methods_by_name['ScanBlocks']._options = None
-  _globals['_BLOCKSTORESERVICE'].methods_by_name['ScanBlocks']._serialized_options = b'\220\002\001'
-  _globals['_BLOCK']._serialized_start=107
-  _globals['_BLOCK']._serialized_end=164
-  _globals['_RECORD']._serialized_start=166
-  _globals['_RECORD']._serialized_end=283
-  _globals['_ID']._serialized_start=286
-  _globals['_ID']._serialized_end=430
-  _globals['_PREFIX']._serialized_start=432
-  _globals['_PREFIX']._serialized_end=510
-  _globals['_RANGE']._serialized_start=513
-  _globals['_RANGE']._serialized_end=687
-  _globals['_ERROR']._serialized_start=689
-  _globals['_ERROR']._serialized_end=722
-  _globals['_BLOCKTRIGGERRECORD']._serialized_start=725
-  _globals['_BLOCKTRIGGERRECORD']._serialized_end=863
-  _globals['_BLOCKTRIGGERREQUEST']._serialized_start=866
-  _globals['_BLOCKTRIGGERREQUEST']._serialized_end=997
-  _globals['_BLOCKTRIGGERRESPONSE']._serialized_start=999
-  _globals['_BLOCKTRIGGERRESPONSE']._serialized_end=1021
-  _globals['_BLOCKRANGE']._serialized_start=1024
-  _globals['_BLOCKRANGE']._serialized_end=1184
-  _globals['_BLOCKRECORD']._serialized_start=1187
-  _globals['_BLOCKRECORD']._serialized_end=1318
-  _globals['_BLOCKENTRY']._serialized_start=1321
-  _globals['_BLOCKENTRY']._serialized_end=1538
-  _globals['_GETBLOCKRANGESREQUEST']._serialized_start=1540
-  _globals['_GETBLOCKRANGESREQUEST']._serialized_end=1610
-  _globals['_GETBLOCKRANGESRESPONSE']._serialized_start=1612
-  _globals['_GETBLOCKRANGESRESPONSE']._serialized_end=1688
-  _globals['_GETBLOCKMETADATAREQUEST']._serialized_start=1690
-  _globals['_GETBLOCKMETADATAREQUEST']._serialized_end=1767
-  _globals['_GETBLOCKMETADATARESPONSE']._serialized_start=1769
-  _globals['_GETBLOCKMETADATARESPONSE']._serialized_end=1849
-  _globals['_SCANBLOCKSREQUEST']._serialized_start=1851
-  _globals['_SCANBLOCKSREQUEST']._serialized_end=1973
-  _globals['_SCANBLOCKSRESPONSE']._serialized_start=1976
-  _globals['_SCANBLOCKSRESPONSE']._serialized_end=2113
-  _globals['_BLOCKSTORESERVICE']._serialized_start=2116
-  _globals['_BLOCKSTORESERVICE']._serialized_end=2437
+    _globals["DESCRIPTOR"]._options = None
+    _globals["DESCRIPTOR"]._serialized_options = (
+        b"\n\022com.ring.record.v1B\013RecordProtoP\001\242\002\003RRX\252\002\016Ring.Record.V1\312\002\016Ring\\Record\\V1\342\002\032Ring\\Record\\V1\\GPBMetadata\352\002\020Ring::Record::V1"
+    )
+    _globals["_BLOCKSTORESERVICE"].methods_by_name["GetBlockRanges"]._options = None
+    _globals["_BLOCKSTORESERVICE"].methods_by_name[
+        "GetBlockRanges"
+    ]._serialized_options = b"\220\002\002"
+    _globals["_BLOCKSTORESERVICE"].methods_by_name["GetBlockMetadata"]._options = None
+    _globals["_BLOCKSTORESERVICE"].methods_by_name[
+        "GetBlockMetadata"
+    ]._serialized_options = b"\220\002\002"
+    _globals["_BLOCKSTORESERVICE"].methods_by_name["ScanBlocks"]._options = None
+    _globals["_BLOCKSTORESERVICE"].methods_by_name[
+        "ScanBlocks"
+    ]._serialized_options = b"\220\002\001"
+    _globals["_BLOCK"]._serialized_start = 107
+    _globals["_BLOCK"]._serialized_end = 164
+    _globals["_RECORD"]._serialized_start = 166
+    _globals["_RECORD"]._serialized_end = 283
+    _globals["_ID"]._serialized_start = 286
+    _globals["_ID"]._serialized_end = 430
+    _globals["_PREFIX"]._serialized_start = 432
+    _globals["_PREFIX"]._serialized_end = 510
+    _globals["_RANGE"]._serialized_start = 513
+    _globals["_RANGE"]._serialized_end = 687
+    _globals["_ERROR"]._serialized_start = 689
+    _globals["_ERROR"]._serialized_end = 722
+    _globals["_BLOCKTRIGGERRECORD"]._serialized_start = 725
+    _globals["_BLOCKTRIGGERRECORD"]._serialized_end = 863
+    _globals["_BLOCKTRIGGERREQUEST"]._serialized_start = 866
+    _globals["_BLOCKTRIGGERREQUEST"]._serialized_end = 997
+    _globals["_BLOCKTRIGGERRESPONSE"]._serialized_start = 999
+    _globals["_BLOCKTRIGGERRESPONSE"]._serialized_end = 1021
+    _globals["_BLOCKRANGE"]._serialized_start = 1024
+    _globals["_BLOCKRANGE"]._serialized_end = 1184
+    _globals["_BLOCKRECORD"]._serialized_start = 1187
+    _globals["_BLOCKRECORD"]._serialized_end = 1318
+    _globals["_BLOCKENTRY"]._serialized_start = 1321
+    _globals["_BLOCKENTRY"]._serialized_end = 1538
+    _globals["_GETBLOCKRANGESREQUEST"]._serialized_start = 1540
+    _globals["_GETBLOCKRANGESREQUEST"]._serialized_end = 1610
+    _globals["_GETBLOCKRANGESRESPONSE"]._serialized_start = 1612
+    _globals["_GETBLOCKRANGESRESPONSE"]._serialized_end = 1688
+    _globals["_GETBLOCKMETADATAREQUEST"]._serialized_start = 1690
+    _globals["_GETBLOCKMETADATAREQUEST"]._serialized_end = 1767
+    _globals["_GETBLOCKMETADATARESPONSE"]._serialized_start = 1769
+    _globals["_GETBLOCKMETADATARESPONSE"]._serialized_end = 1849
+    _globals["_SCANBLOCKSREQUEST"]._serialized_start = 1851
+    _globals["_SCANBLOCKSREQUEST"]._serialized_end = 1973
+    _globals["_SCANBLOCKSRESPONSE"]._serialized_start = 1976
+    _globals["_SCANBLOCKSRESPONSE"]._serialized_end = 2113
+    _globals["_BLOCKSTORESERVICE"]._serialized_start = 2116
+    _globals["_BLOCKSTORESERVICE"]._serialized_end = 2437
 # @@protoc_insertion_point(module_scope)

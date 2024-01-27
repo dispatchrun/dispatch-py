@@ -7,21 +7,26 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1bring/status/v1/status.proto\x12\x0ering.status.v1*\xea\x01\n\x06Status\x12\x16\n\x12STATUS_UNSPECIFIED\x10\x00\x12\r\n\tSTATUS_OK\x10\x01\x12\x12\n\x0eSTATUS_TIMEOUT\x10\x02\x12\x14\n\x10STATUS_THROTTLED\x10\x03\x12\x1b\n\x17STATUS_INVALID_ARGUMENT\x10\x04\x12\x1b\n\x17STATUS_INVALID_RESPONSE\x10\x05\x12\x1a\n\x16STATUS_TEMPORARY_ERROR\x10\x06\x12\x1a\n\x16STATUS_PERMANENT_ERROR\x10\x07\x12\x1d\n\x19STATUS_INCOMPATIBLE_STATE\x10\x08\x42{\n\x12\x63om.ring.status.v1B\x0bStatusProtoP\x01\xa2\x02\x03RSX\xaa\x02\x0eRing.Status.V1\xca\x02\x0eRing\\Status\\V1\xe2\x02\x1aRing\\Status\\V1\\GPBMetadata\xea\x02\x10Ring::Status::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b"\n\x1bring/status/v1/status.proto\x12\x0ering.status.v1*\xea\x01\n\x06Status\x12\x16\n\x12STATUS_UNSPECIFIED\x10\x00\x12\r\n\tSTATUS_OK\x10\x01\x12\x12\n\x0eSTATUS_TIMEOUT\x10\x02\x12\x14\n\x10STATUS_THROTTLED\x10\x03\x12\x1b\n\x17STATUS_INVALID_ARGUMENT\x10\x04\x12\x1b\n\x17STATUS_INVALID_RESPONSE\x10\x05\x12\x1a\n\x16STATUS_TEMPORARY_ERROR\x10\x06\x12\x1a\n\x16STATUS_PERMANENT_ERROR\x10\x07\x12\x1d\n\x19STATUS_INCOMPATIBLE_STATE\x10\x08\x42{\n\x12\x63om.ring.status.v1B\x0bStatusProtoP\x01\xa2\x02\x03RSX\xaa\x02\x0eRing.Status.V1\xca\x02\x0eRing\\Status\\V1\xe2\x02\x1aRing\\Status\\V1\\GPBMetadata\xea\x02\x10Ring::Status::V1b\x06proto3"
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ring.status.v1.status_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "ring.status.v1.status_pb2", _globals
+)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  _globals['DESCRIPTOR']._options = None
-  _globals['DESCRIPTOR']._serialized_options = b'\n\022com.ring.status.v1B\013StatusProtoP\001\242\002\003RSX\252\002\016Ring.Status.V1\312\002\016Ring\\Status\\V1\342\002\032Ring\\Status\\V1\\GPBMetadata\352\002\020Ring::Status::V1'
-  _globals['_STATUS']._serialized_start=48
-  _globals['_STATUS']._serialized_end=282
+    _globals["DESCRIPTOR"]._options = None
+    _globals["DESCRIPTOR"]._serialized_options = (
+        b"\n\022com.ring.status.v1B\013StatusProtoP\001\242\002\003RSX\252\002\016Ring.Status.V1\312\002\016Ring\\Status\\V1\342\002\032Ring\\Status\\V1\\GPBMetadata\352\002\020Ring::Status::V1"
+    )
+    _globals["_STATUS"]._serialized_start = 48
+    _globals["_STATUS"]._serialized_end = 282
 # @@protoc_insertion_point(module_scope)
