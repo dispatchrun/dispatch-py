@@ -5,3 +5,5 @@ managed:
 plugins:
   - plugin: buf.build/protocolbuffers/python:v25.2
     out: src/
+  - plugin: buf.build/grpc/python:v1.60.0
+    out: src/
