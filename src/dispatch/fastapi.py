@@ -13,17 +13,21 @@ import google.protobuf.wrappers_pb2
 def configure(
     app: fastapi.FastAPI,
     api_key: None | str = None,
-    api_url: str = "https://api.stealthrocket.cloud",
     mount_path: str = "/dispatch",
 ):
     """Configure the FastAPI app to use Dispatch programmable endpoints.
+
+    It mounts a sub-app at the given mount path that implements the Dispatch
+    interface.
 
     Args:
         app: The FastAPI app to configure.
         api_key: Dispatch API key to use for authentication. Uses the value of
           the DISPATCH_API_KEY environment variable by default.
-        api_url: URL of the Dispatch service.
         mount_path: The path to mount Dispatch programmable endpoints at.
+
+    Raises:
+        ValueError: If any of the required arguments are missing.
     """
     api_key = api_key or os.environ.get("DISPATCH_API_KEY")
 
@@ -31,8 +35,6 @@ def configure(
         raise ValueError("app is required")
     if not api_key:
         raise ValueError("api_key is required")
-    if not api_url:
-        raise ValueError("api_url is required")
     if not mount_path:
         raise ValueError("mount_path is required")
 
@@ -41,8 +43,12 @@ def configure(
     app.mount(mount_path, dispatch_app)
 
 
-class GRPCResponse(fastapi.Response):
+class _GRPCResponse(fastapi.Response):
     media_type = "application/grpc+proto"
+
+
+def _coroutine_uri_to_function_name(coroutine_uri: str) -> str:
+    return coroutine_uri.split(":")[-1]
 
 
 def _new_app():
@@ -52,7 +58,7 @@ def _new_app():
     def read_root():
         return "ok"
 
-    @app.post("/ring.coroutine.v1.ExecutorService/Execute", response_class=GRPCResponse)
+    @app.post("/ring.coroutine.v1.ExecutorService/Execute", response_class=_GRPCResponse)
     async def execute(request: fastapi.Request):
         data: bytes = await request.body()
 
