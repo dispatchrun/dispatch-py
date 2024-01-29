@@ -1,12 +1,15 @@
 import unittest
 import dispatch
+import dispatch.fastapi
 import fastapi
 from fastapi.testclient import TestClient
 
 
-class TestFastapi(unittest.TestCase):
+class TestFastAPI(unittest.TestCase):
     def test_fastapi(self):
         app = fastapi.FastAPI()
+
+        dispatch.fastapi.configure(app)
 
         @app.get("/")
         def read_root():
