@@ -128,30 +128,3 @@ def client(
 ) -> ring.coroutine.v1.coroutine_pb2_grpc.ExecutorServiceStub:
     channel = HttpxGrpcChannel(http_client)
     return ring.coroutine.v1.coroutine_pb2_grpc.ExecutorServiceStub(channel)
-
-
-# class GrpcHttpxClient:
-#     """Client for the ring.coroutine.v1.ExecutorService gRPC service over an
-#     httpx client.
-#     """
-
-#     def __init__(self, http_client: httpx.Client):
-#         self.http_client = http_client
-
-#     def execute(self, request: ring.coroutine.v1.coroutine_pb2.ExecuteRequest) -> ring.coroutine.v1.coroutine_pb2.ExecuteResponse:
-#         """Execute a coroutine.
-
-#         Args:
-#             request: The request to execute.
-
-#         Returns:
-#             The response from the coroutine.
-#         """
-
-#         response = self.http_client.post(
-#             "/ring.coroutine.v1.ExecutorService/Execute",
-#             content=request.SerializeToString(),
-#             headers={"Content-Type": "application/grpc+proto"},
-#         )
-#         response.raise_for_status()
-#         return ring.coroutine.v1.coroutine_pb2.ExecuteResponse.FromString(response.content)
