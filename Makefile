@@ -1,4 +1,4 @@
-.PHONY: install test dev fmt generate clean update-proto
+.PHONY: install test typecheck unittest dev fmt generate clean update-proto
 
 PYTHON := python
 
@@ -13,8 +13,13 @@ dev:
 fmt:
 	$(PYTHON) -m black .
 
-test:
+typecheck:
+	$(PYTHON) -m mypy src tests
+
+unittest: typecheck
 	$(PYTHON) -m unittest discover
+
+test: typecheck unittest
 
 .proto:
 	mkdir -p $@

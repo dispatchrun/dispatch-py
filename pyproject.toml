@@ -6,12 +6,16 @@ build-backend = "setuptools.build_meta"
 name = "dispatch-sdk"
 dynamic = ["version"]
 requires-python = ">= 3.11"
+# TODO: relax dependency versions
 dependencies = [
     "grpcio==1.60.0",
-    "protobuf==4.25.2"
+    "protobuf==4.24.0",
+    "types-protobuf==4.24.0.20240129",
+    "grpc-stubs"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "black==24.1.0"
+    "black==24.1.0",
+    "mypy==1.8.0"
 ]

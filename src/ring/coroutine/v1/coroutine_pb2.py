@@ -19,7 +19,7 @@ from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n!ring/coroutine/v1/coroutine.proto\x12\x11ring.coroutine.v1\x1a\x1bring/status/v1/status.proto\x1a\x19google/protobuf/any.proto\x1a\x1egoogle/protobuf/duration.proto"\xe5\x01\n\x0e\x45xecuteRequest\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12,\n\x05input\x18\x03 \x01(\x0b\x32\x14.google.protobuf.AnyH\x00R\x05input\x12\x46\n\rpoll_response\x18\x04 \x01(\x0b\x32\x1f.ring.coroutine.v1.PollResponseH\x00R\x0cpollResponseB\x0b\n\tcoroutine"\xfe\x01\n\x0f\x45xecuteResponse\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12.\n\x06status\x18\x03 \x01(\x0e\x32\x16.ring.status.v1.StatusR\x06status\x12-\n\x04\x65xit\x18\x04 \x01(\x0b\x32\x17.ring.coroutine.v1.ExitH\x00R\x04\x65xit\x12-\n\x04poll\x18\x05 \x01(\x0b\x32\x17.ring.coroutine.v1.PollH\x00R\x04pollB\x0b\n\tdirective"o\n\x04\x45xit\x12\x31\n\x06result\x18\x01 \x01(\x0b\x32\x19.ring.coroutine.v1.ResultR\x06result\x12\x34\n\ttail_call\x18\x02 \x01(\x0b\x32\x17.ring.coroutine.v1.CallR\x08tailCall"f\n\x06Result\x12,\n\x06output\x18\x03 \x01(\x0b\x32\x14.google.protobuf.AnyR\x06output\x12.\n\x05\x65rror\x18\x05 \x01(\x0b\x32\x18.ring.coroutine.v1.ErrorR\x05\x65rror"5\n\x05\x45rror\x12\x12\n\x04type\x18\x01 \x01(\tR\x04type\x12\x18\n\x07message\x18\x02 \x01(\tR\x07message"\xa2\x01\n\x04Poll\x12\x14\n\x05state\x18\x01 \x01(\x0cR\x05state\x12-\n\x05\x63\x61lls\x18\x02 \x03(\x0b\x32\x17.ring.coroutine.v1.CallR\x05\x63\x61lls\x12\x34\n\x08max_wait\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationR\x07maxWait\x12\x1f\n\x0bmax_results\x18\x04 \x01(\x05R\nmaxResults"]\n\x0cPollResponse\x12\x14\n\x05state\x18\x01 \x01(\x0cR\x05state\x12\x37\n\x07results\x18\x02 \x03(\x0b\x32\x1d.ring.coroutine.v1.CallResultR\x07results"\xab\x01\n\x04\x43\x61ll\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12%\n\x0e\x63orrelation_id\x18\x03 \x01(\x04R\rcorrelationId\x12*\n\x05input\x18\x04 \x01(\x0b\x32\x14.google.protobuf.AnyR\x05input"\xb8\x01\n\nCallResult\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12%\n\x0e\x63orrelation_id\x18\x03 \x01(\x04R\rcorrelationId\x12\x31\n\x06result\x18\x04 \x01(\x0b\x32\x19.ring.coroutine.v1.ResultR\x06result2c\n\x0f\x45xecutorService\x12P\n\x07\x45xecute\x12!.ring.coroutine.v1.ExecuteRequest\x1a".ring.coroutine.v1.ExecuteResponseB\x8d\x01\n\x15\x63om.ring.coroutine.v1B\x0e\x43oroutineProtoP\x01\xa2\x02\x03RCX\xaa\x02\x11Ring.Coroutine.V1\xca\x02\x11Ring\\Coroutine\\V1\xe2\x02\x1dRing\\Coroutine\\V1\\GPBMetadata\xea\x02\x13Ring::Coroutine::V1b\x06proto3'
+    b'\n!ring/coroutine/v1/coroutine.proto\x12\x11ring.coroutine.v1\x1a\x1bring/status/v1/status.proto\x1a\x19google/protobuf/any.proto\x1a\x1egoogle/protobuf/duration.proto"\xa6\x02\n\x0e\x45xecuteRequest\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12,\n\x05input\x18\x03 \x01(\x0b\x32\x14.google.protobuf.AnyH\x00R\x05input\x12\x46\n\rpoll_response\x18\x04 \x01(\x0b\x32\x1f.ring.coroutine.v1.PollResponseH\x00R\x0cpollResponse\x12+\n\x0fsigning_key_urn\x18\x05 \x01(\tH\x01R\rsigningKeyUrn\x88\x01\x01\x42\x0b\n\tcoroutineB\x12\n\x10_signing_key_urn"\xfe\x01\n\x0f\x45xecuteResponse\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12.\n\x06status\x18\x03 \x01(\x0e\x32\x16.ring.status.v1.StatusR\x06status\x12-\n\x04\x65xit\x18\x04 \x01(\x0b\x32\x17.ring.coroutine.v1.ExitH\x00R\x04\x65xit\x12-\n\x04poll\x18\x05 \x01(\x0b\x32\x17.ring.coroutine.v1.PollH\x00R\x04pollB\x0b\n\tdirective"o\n\x04\x45xit\x12\x31\n\x06result\x18\x01 \x01(\x0b\x32\x19.ring.coroutine.v1.ResultR\x06result\x12\x34\n\ttail_call\x18\x02 \x01(\x0b\x32\x17.ring.coroutine.v1.CallR\x08tailCall"f\n\x06Result\x12,\n\x06output\x18\x03 \x01(\x0b\x32\x14.google.protobuf.AnyR\x06output\x12.\n\x05\x65rror\x18\x05 \x01(\x0b\x32\x18.ring.coroutine.v1.ErrorR\x05\x65rror"5\n\x05\x45rror\x12\x12\n\x04type\x18\x01 \x01(\tR\x04type\x12\x18\n\x07message\x18\x02 \x01(\tR\x07message"\xa2\x01\n\x04Poll\x12\x14\n\x05state\x18\x01 \x01(\x0cR\x05state\x12-\n\x05\x63\x61lls\x18\x02 \x03(\x0b\x32\x17.ring.coroutine.v1.CallR\x05\x63\x61lls\x12\x34\n\x08max_wait\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationR\x07maxWait\x12\x1f\n\x0bmax_results\x18\x04 \x01(\x05R\nmaxResults"]\n\x0cPollResponse\x12\x14\n\x05state\x18\x01 \x01(\x0cR\x05state\x12\x37\n\x07results\x18\x02 \x03(\x0b\x32\x1d.ring.coroutine.v1.CallResultR\x07results"\xab\x01\n\x04\x43\x61ll\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12%\n\x0e\x63orrelation_id\x18\x03 \x01(\x04R\rcorrelationId\x12*\n\x05input\x18\x04 \x01(\x0b\x32\x14.google.protobuf.AnyR\x05input"\xb8\x01\n\nCallResult\x12#\n\rcoroutine_uri\x18\x01 \x01(\tR\x0c\x63oroutineUri\x12+\n\x11\x63oroutine_version\x18\x02 \x01(\tR\x10\x63oroutineVersion\x12%\n\x0e\x63orrelation_id\x18\x03 \x01(\x04R\rcorrelationId\x12\x31\n\x06result\x18\x04 \x01(\x0b\x32\x19.ring.coroutine.v1.ResultR\x06result2c\n\x0f\x45xecutorService\x12P\n\x07\x45xecute\x12!.ring.coroutine.v1.ExecuteRequest\x1a".ring.coroutine.v1.ExecuteResponseB\x8d\x01\n\x15\x63om.ring.coroutine.v1B\x0e\x43oroutineProtoP\x01\xa2\x02\x03RCX\xaa\x02\x11Ring.Coroutine.V1\xca\x02\x11Ring\\Coroutine\\V1\xe2\x02\x1dRing\\Coroutine\\V1\\GPBMetadata\xea\x02\x13Ring::Coroutine::V1b\x06proto3'
 )
 
 _globals = globals()
@@ -33,23 +33,23 @@ if _descriptor._USE_C_DESCRIPTORS == False:
         b"\n\025com.ring.coroutine.v1B\016CoroutineProtoP\001\242\002\003RCX\252\002\021Ring.Coroutine.V1\312\002\021Ring\\Coroutine\\V1\342\002\035Ring\\Coroutine\\V1\\GPBMetadata\352\002\023Ring::Coroutine::V1"
     )
     _globals["_EXECUTEREQUEST"]._serialized_start = 145
-    _globals["_EXECUTEREQUEST"]._serialized_end = 374
-    _globals["_EXECUTERESPONSE"]._serialized_start = 377
-    _globals["_EXECUTERESPONSE"]._serialized_end = 631
-    _globals["_EXIT"]._serialized_start = 633
-    _globals["_EXIT"]._serialized_end = 744
-    _globals["_RESULT"]._serialized_start = 746
-    _globals["_RESULT"]._serialized_end = 848
-    _globals["_ERROR"]._serialized_start = 850
-    _globals["_ERROR"]._serialized_end = 903
-    _globals["_POLL"]._serialized_start = 906
-    _globals["_POLL"]._serialized_end = 1068
-    _globals["_POLLRESPONSE"]._serialized_start = 1070
-    _globals["_POLLRESPONSE"]._serialized_end = 1163
-    _globals["_CALL"]._serialized_start = 1166
-    _globals["_CALL"]._serialized_end = 1337
-    _globals["_CALLRESULT"]._serialized_start = 1340
-    _globals["_CALLRESULT"]._serialized_end = 1524
-    _globals["_EXECUTORSERVICE"]._serialized_start = 1526
-    _globals["_EXECUTORSERVICE"]._serialized_end = 1625
+    _globals["_EXECUTEREQUEST"]._serialized_end = 439
+    _globals["_EXECUTERESPONSE"]._serialized_start = 442
+    _globals["_EXECUTERESPONSE"]._serialized_end = 696
+    _globals["_EXIT"]._serialized_start = 698
+    _globals["_EXIT"]._serialized_end = 809
+    _globals["_RESULT"]._serialized_start = 811
+    _globals["_RESULT"]._serialized_end = 913
+    _globals["_ERROR"]._serialized_start = 915
+    _globals["_ERROR"]._serialized_end = 968
+    _globals["_POLL"]._serialized_start = 971
+    _globals["_POLL"]._serialized_end = 1133
+    _globals["_POLLRESPONSE"]._serialized_start = 1135
+    _globals["_POLLRESPONSE"]._serialized_end = 1228
+    _globals["_CALL"]._serialized_start = 1231
+    _globals["_CALL"]._serialized_end = 1402
+    _globals["_CALLRESULT"]._serialized_start = 1405
+    _globals["_CALLRESULT"]._serialized_end = 1589
+    _globals["_EXECUTORSERVICE"]._serialized_start = 1591
+    _globals["_EXECUTORSERVICE"]._serialized_end = 1690
 # @@protoc_insertion_point(module_scope)
