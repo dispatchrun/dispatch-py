@@ -35,7 +35,6 @@ class TestRing(unittest.TestCase):
         self.thread_pool.shutdown(wait=True, cancel_futures=True)
 
     def test_ring(self):
-
         request = dispatch.http.v1.http_pb2.Request(
             url="https://www.google.com", method="GET"
         )
