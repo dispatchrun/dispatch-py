@@ -16,7 +16,7 @@ fmt:
 typecheck:
 	$(PYTHON) -m mypy src tests
 
-unittest: typecheck
+unittest:
 	$(PYTHON) -m unittest discover
 
 test: typecheck unittest
