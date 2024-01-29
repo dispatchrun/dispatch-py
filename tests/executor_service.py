@@ -3,6 +3,13 @@ import grpc
 import ring.coroutine.v1.coroutine_pb2
 import ring.coroutine.v1.coroutine_pb2_grpc
 
+# This file provides a grpc client that can talk to the ExecutorService
+# interface. This is achieved by implementing the bare minimum of the
+# grpc.Channel using httpx to make the requests, which allows us to use the
+# same httpx client as the FastAPI testing framework.
+#
+# See test_fastapi.py for an example of how to use this client.
+
 
 class UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     def __init__(self, client, method, request_serializer, response_deserializer):
