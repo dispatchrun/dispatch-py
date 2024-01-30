@@ -11,15 +11,51 @@ type Input, and return an Output value.
 """
 
 from __future__ import annotations
+import enum
 from typing import Any
 from dataclasses import dataclass
 import google.protobuf.message
 import pickle
 from ring.coroutine.v1 import coroutine_pb2
+from ring.status.v1 import status_pb2
 
 
 # Most types in this package are thin wrappers around the various protobuf
 # messages of ring.coroutine.v1. They provide some safeguards and ergonomics.
+
+
+@enum.unique
+class Status(enum.Enum):
+    """Enumeration of the possible values that can be used in the return status
+    of couroutines.
+
+    """
+    UNSPECIFIED = status_pb2.STATUS_UNSPECIFIED
+    OK = status_pb2.STATUS_OK
+    TIMEOUT = status_pb2.STATUS_TIMEOUT
+    THROTTLED = status_pb2.STATUS_THROTTLED
+    INVALID_ARGUMENT = status_pb2.STATUS_INVALID_ARGUMENT
+    INVALID_RESPONSE = status_pb2.STATUS_INVALID_RESPONSE
+    TEMPORARY_ERROR = status_pb2.STATUS_TEMPORARY_ERROR
+    PERMANENT_ERROR = status_pb2.STATUS_PERMANENT_ERROR
+    INCOMPATIBLE_STATE = status_pb2.STATUS_INCOMPATIBLE_STATE
+
+
+Status.UNSPECIFIED.__doc__ = "Status not specified (default)"
+Status.OK.__doc__ = "Coroutine returned as expected"
+Status.TIMEOUT.__doc__ = "Coroutine encountered a timeout and may be retried"
+Status.THROTTLED.__doc__ = "Coroutine was throttled and may be retried later"
+Status.INVALID_ARGUMENT.__doc__ = "Coroutine was provided an invalid type of input"
+Status.INVALID_RESPONSE.__doc__ = "Coroutine was provided an unexpected reponse"
+Status.TEMPORARY_ERROR.__doc__ = (
+    "Coroutine encountered a temporary error, may be retried"
+)
+Status.PERMANENT_ERROR.__doc__ = (
+    "Coroutine encountered a permanent error, should not be retried"
+)
+Status.INCOMPATIBLE_STATE.__doc__ = (
+    "Coroutine was provided an incompatible state. May be restarted from scratch"
+)
 
 
 class Coroutine:
