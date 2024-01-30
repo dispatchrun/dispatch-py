@@ -13,7 +13,9 @@ type Input, and return an Output value.
 from __future__ import annotations
 from typing import Any
 from dataclasses import dataclass
+import google.protobuf.message
 import pickle
+from ring.coroutine.v1 import coroutine_pb2
 
 
 class Input:
@@ -32,12 +34,22 @@ class Input:
     # TODO: first implementation with a single Input type, but we should
     # consider using some dynamic filling positional and keyword arguments.
 
-    def __init__(self, input: None | bytes, poll_response: None | Any):
-        # _has_input is used to tracked whether some bytes were provided, to
-        # differentiate with a pickled None.
-        self._has_input = input is not None
-        if input is not None:
-            self._input = pickle.loads(input) if len(input) > 0 else None
+    def __init__(self, req: coroutine_pb2.ExecuteRequest):
+        self._has_input = req.HasField("input")
+        if self._has_input:
+            input_pb = google.protobuf.wrappers_pb2.BytesValue()
+            req.input.Unpack(input_pb)
+            input_bytes = input_pb.value
+            if len(input_bytes) > 0:
+                self._input = pickle.loads(input_bytes)
+            else:
+                self._input = None
+        else:
+            state_bytes = req.poll_response.state
+            if len(state_bytes) > 0:
+                self._state = pickle.loads(state_bytes)
+            else:
+                self._state = None
 
     @property
     def is_first_call(self) -> bool:
@@ -49,9 +61,15 @@ class Input:
 
     @property
     def input(self) -> Any:
-        if not self._has_input:
+        if self.is_resume:
             raise ValueError("This input is for a resumed coroutine")
         return self._input
+
+    @property
+    def state(self) -> Any:
+        if self.is_first_call:
+            raise ValueError("This input is for a first coroutine call")
+        return self._state
 
 
 class Output:
@@ -61,9 +79,33 @@ class Output:
     to indicate the follow up action they need to take.
     """
 
-    def __init__(self, value: None | Any = None):
-        self._value = pickle.dumps(value)
+    def __init__(self, proto: coroutine_pb2.ExecuteResponse):
+        self._message = proto
 
     @classmethod
     def value(cls, value: Any) -> Output:
-        return Output(value=value)
+        """Terminally exit the coroutine with the provided return value."""
+        output_any = _pb_any_pickle(value)
+        return Output(
+            coroutine_pb2.ExecuteResponse(
+                exit=coroutine_pb2.Exit(result=coroutine_pb2.Result(output=output_any))
+            )
+        )
+
+    @classmethod
+    def callback(cls, state: Any) -> Output:
+        """Exit the coroutine instructing the orchestrator to call back this
+        coroutine with the provided state. The state will be made available in
+        Input.state."""
+        state_bytes = pickle.dumps(state)
+        return Output(
+            coroutine_pb2.ExecuteResponse(poll=coroutine_pb2.Poll(state=state_bytes))
+        )
+
+
+def _pb_any_pickle(x: Any) -> google.protobuf.any_pb2.Any:
+    value_bytes = pickle.dumps(x)
+    pb_bytes = google.protobuf.wrappers_pb2.BytesValue(value=value_bytes)
+    pb_any = google.protobuf.any_pb2.Any()
+    pb_any.Pack(pb_bytes)
+    return pb_any

@@ -124,12 +124,7 @@ def _new_app():
         # and the coroutine version is not taken into account.
         coroutine = app._coroutines[_coroutine_uri_to_qualname(req.coroutine_uri)]
 
-        input_bytes = google.protobuf.wrappers_pb2.BytesValue()
-        req.input.Unpack(input_bytes)
-
-        coro_input = dispatch.coroutine.Input(
-            input=input_bytes.value, poll_response=None
-        )
+        coro_input = dispatch.coroutine.Input(req)
         output = coroutine(coro_input)
 
         if not isinstance(output, dispatch.coroutine.Output):
@@ -137,17 +132,9 @@ def _new_app():
                 f"coroutine output should be an instance of {dispatch.coroutine.Output}, not {type(output)}"
             )
 
-        output_pb = google.protobuf.wrappers_pb2.BytesValue(value=output._value)
-        output_any = google.protobuf.any_pb2.Any()
-        output_any.Pack(output_pb)
-
-        resp = ring.coroutine.v1.coroutine_pb2.ExecuteResponse(
-            coroutine_uri=req.coroutine_uri,
-            coroutine_version=req.coroutine_version,
-            exit=ring.coroutine.v1.coroutine_pb2.Exit(
-                result=ring.coroutine.v1.coroutine_pb2.Result(output=output_any)
-            ),
-        )
+        resp = output._message
+        resp.coroutine_uri = req.coroutine_uri
+        resp.coroutine_version = req.coroutine_version
 
         return fastapi.Response(content=resp.SerializeToString())
 

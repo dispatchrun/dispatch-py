@@ -97,7 +97,7 @@ class TestCoroutine(unittest.TestCase):
         self.client = executor_service.client(http_client)
 
     def execute(
-        self, coroutine, input=None
+        self, coroutine, input=None, state=None
     ) -> ring.coroutine.v1.coroutine_pb2.ExecuteResponse:
         """Test helper to invoke coroutines on the local server."""
         req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest(
@@ -110,6 +110,9 @@ class TestCoroutine(unittest.TestCase):
             input_any = google.protobuf.any_pb2.Any()
             input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=input_bytes))
             req.input.CopyFrom(input_any)
+        if state is not None:
+            print("SENDING BACK STATE: ", state)
+            req.poll_response.state = state
 
         resp = self.client.Execute(req)
         self.assertIsInstance(resp, ring.coroutine.v1.coroutine_pb2.ExecuteResponse)
@@ -150,3 +153,37 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(len_coroutine, input=data)
         out = response_output(resp)
         self.assertEqual(out, "Length: 10")
+
+    def test_coroutine_with_state(self):
+        @self.app.dispatch_coroutine()
+        def coroutine3(input: Input) -> Output:
+            if input.is_first_call:
+                counter = input.input
+            else:
+                counter = input.state
+            counter -= 1
+            if counter <= 0:
+                return Output.value("done")
+            return Output.callback(state=counter)
+
+        # first call
+        resp = self.execute(coroutine3, input=4)
+        state = resp.poll.state
+        self.assertTrue(len(state) > 0)
+
+        # resume, state = 3
+        resp = self.execute(coroutine3, state=state)
+        state = resp.poll.state
+        self.assertTrue(len(state) > 0)
+
+        # resume, state = 2
+        resp = self.execute(coroutine3, state=state)
+        state = resp.poll.state
+        self.assertTrue(len(state) > 0)
+
+        # resume, state = 1
+        resp = self.execute(coroutine3, state=state)
+        state = resp.poll.state
+        self.assertTrue(len(state) == 0)
+        out = response_output(resp)
+        self.assertEqual(out, "done")
