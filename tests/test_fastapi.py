@@ -2,7 +2,7 @@ import pickle
 import unittest
 from typing import Any
 import dispatch.coroutine
-from dispatch.coroutine import Input, Output
+from dispatch.coroutine import Input, Output, Error
 import dispatch.fastapi
 import fastapi
 from fastapi.testclient import TestClient
@@ -246,3 +246,12 @@ class TestCoroutine(unittest.TestCase):
         self.assertTrue(len(resp.poll.state) == 0)
         out = response_output(resp)
         self.assertEqual("length=10 text='cool stuff'", out)
+
+    def test_coroutine_error(self):
+        @self.app.dispatch_coroutine()
+        def mycoro(input: Input) -> Output:
+            return Output.error(Error("sometype", "dead"))
+
+        resp = self.execute(mycoro)
+        self.assertEqual("sometype", resp.exit.result.error.type)
+        self.assertEqual("dead", resp.exit.result.error.message)

@@ -147,6 +147,17 @@ class Output:
         )
 
     @classmethod
+    def error(cls, error: Error) -> Output:
+        """Terminally exit the coroutine with the provided error."""
+        return Output(
+            coroutine_pb2.ExecuteResponse(
+                exit=coroutine_pb2.Exit(
+                    result=coroutine_pb2.Result(error=error._as_proto())
+                )
+            )
+        )
+
+    @classmethod
     def callback(cls, state: Any, calls: None | list[Call] = None) -> Output:
         """Exit the coroutine instructing the orchestrator to call back this
         coroutine with the provided state. The state will be made available in
@@ -206,20 +217,42 @@ class CallResult:
         if proto.result.HasField("output"):
             self.result = _any_unpickle(proto.result.output)
         else:
-            self.error = Error(proto.result.error)
+            self.error = Error._from_proto(proto.result.error)
 
 
 class Error:
     """Error in the invocation of a coroutine.
 
-    This is not a Python exception, but potentially part of a CallResult.
-
-    This class is not meant to be instantiated directly.
+    This is not a Python exception, but potentially part of a CallResult or
+    Output.
     """
 
-    def __init__(self, proto: coroutine_pb2.Error):
-        self.type = proto.type
-        self.message = proto.message
+    def __init__(self, type: str | None, message: str | None):
+        """Create a new Error.
+
+        Args:
+            type: arbitrary string, used for humans. Optional.
+            message: arbitrary message. Optional.
+
+        Raises:
+            ValueError: Neither type or message was provided.
+        """
+        if type is None and message is None:
+            raise ValueError("At least one of type or message is required")
+        self.type = type
+        self.message = message
+
+    def from_exception(self, ex: Exception) -> Error:
+        """Create an Error from a Python exception, using its class qualified
+        named as type."""
+        return Error(ex.__class__.__qualname__, str(ex))
+
+    @classmethod
+    def _from_proto(cls, proto: coroutine_pb2.Error) -> Error:
+        return cls(proto.type, proto.message)
+
+    def _as_proto(self) -> coroutine_pb2.Error:
+        return coroutine_pb2.Error(type=self.type, message=self.message)
 
 
 def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
@@ -236,4 +269,5 @@ def _pb_any_pickle(x: Any) -> google.protobuf.any_pb2.Any:
 
 
 def _coroutine_uri_to_qualname(coroutine_uri: str) -> str:
+    # TODO: fix this when we decide on the format of coroutine URIs.
     return coroutine_uri.split("/")[-1]
