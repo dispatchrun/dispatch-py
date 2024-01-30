@@ -24,6 +24,7 @@ import os
 import fastapi
 import fastapi.responses
 import google.protobuf.wrappers_pb2
+import dispatch.coroutine
 
 
 def configure(
@@ -105,20 +106,31 @@ def _new_app():
         return "ok"
 
     @app.post(
-        "/ring.coroutine.v1.ExecutorService/Execute", response_class=_GRPCResponse
+        # The endpoint for execution is hardcoded at the moment. If the service
+        # gains more endpoints, this should be turned into a dynamic dispatch
+        # like the official gRPC server does.
+        "/ring.coroutine.v1.ExecutorService/Execute",
+        response_class=_GRPCResponse,
     )
     async def execute(request: fastapi.Request):
+        # Raw request body bytes are only available through the underlying
+        # starlette Request object's body method, which returns an awaitable,
+        # forcing execute() to be async.
         data: bytes = await request.body()
 
         req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest.FromString(data)
 
+        # TODO: be more graceful. This will crash if the coroutine is not found,
+        # and the coroutine version is not taken into account.
         coroutine = app._coroutines[_coroutine_uri_to_qualname(req.coroutine_uri)]
 
-        # TODO: unpack any
-        input = google.protobuf.wrappers_pb2.StringValue()
-        req.input.Unpack(input)
+        input_bytes = google.protobuf.wrappers_pb2.BytesValue()
+        req.input.Unpack(input_bytes)
 
-        output = coroutine(input.value)
+        coro_input = dispatch.coroutine.Input(
+            input=input_bytes.value, poll_response=None
+        )
+        output = coroutine(coro_input)
 
         # TODO pack any
         output_pb = google.protobuf.wrappers_pb2.StringValue(value=output)
