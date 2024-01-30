@@ -203,9 +203,10 @@ class Output:
         """Terminally exit the coroutine with the provided error."""
         return Output(
             coroutine_pb2.ExecuteResponse(
+                status=error.status._proto,
                 exit=coroutine_pb2.Exit(
                     result=coroutine_pb2.Result(error=error._as_proto())
-                )
+                ),
             )
         )
 
@@ -298,6 +299,7 @@ class Error:
 
         self.type = type
         self.message = message
+        self.status = status
 
     @classmethod
     def from_exception(cls, ex: Exception, status: Status | None = None) -> Error:

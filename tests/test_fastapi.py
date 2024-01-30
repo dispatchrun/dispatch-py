@@ -269,6 +269,7 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(mycoro)
         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
         self.assertEqual("division by zero", resp.exit.result.error.message)
+        self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
 
     def test_coroutine_unexpected_exception(self):
         @self.app.dispatch_coroutine()
@@ -279,3 +280,14 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(mycoro)
         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
         self.assertEqual("division by zero", resp.exit.result.error.message)
+        self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
+
+    def test_specific_status(self):
+        @self.app.dispatch_coroutine()
+        def mycoro(input: Input) -> Output:
+            return Output.error(Error(Status.THROTTLED, "foo", "bar"))
+
+        resp = self.execute(mycoro)
+        self.assertEqual("foo", resp.exit.result.error.type)
+        self.assertEqual("bar", resp.exit.result.error.message)
+        self.assertEqual(Status.THROTTLED, resp.status)
