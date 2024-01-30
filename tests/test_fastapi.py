@@ -291,3 +291,18 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual("foo", resp.exit.result.error.type)
         self.assertEqual("bar", resp.exit.result.error.message)
         self.assertEqual(Status.THROTTLED, resp.status)
+
+    def test_tailcall(self):
+        @self.app.dispatch_coroutine()
+        def other_coroutine(input: Input) -> Output:
+            return Output.value(f"Hello {input.input}")
+
+        @self.app.dispatch_coroutine()
+        def mycoro(input: Input) -> Output:
+            return Output.tailcall(other_coroutine.call_with(42))
+
+        resp = self.execute(mycoro)
+        self.assertEqual(other_coroutine.uri, resp.exit.tail_call.coroutine_uri)
+        self.assertEqual(
+            42, dispatch.coroutine._any_unpickle(resp.exit.tail_call.input)
+        )

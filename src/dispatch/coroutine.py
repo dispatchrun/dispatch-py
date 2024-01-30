@@ -231,6 +231,21 @@ class Output:
 
         return Output(coroutine_pb2.ExecuteResponse(poll=poll))
 
+    @classmethod
+    def tailcall(cls, call: Call) -> Output:
+        """Exit the coroutine instructing the orchestrator to call the provided
+        coroutine."""
+        input_bytes = _pb_any_pickle(call.input)
+        x = coroutine_pb2.Call(
+            coroutine_uri=call.coroutine_uri,
+            coroutine_version=call.coroutine_version,
+            correlation_id=call.correlation_id,
+            input=input_bytes,
+        )
+        return Output(
+            coroutine_pb2.ExecuteResponse(exit=coroutine_pb2.Exit(tail_call=x))
+        )
+
 
 # Note: contrary to other classes here Call is not just a wrapper around its
 # associated protobuf class, because it is reasonable for a human to write the
