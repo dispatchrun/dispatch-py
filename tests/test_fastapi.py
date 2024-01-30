@@ -1,6 +1,7 @@
 import pickle
 import unittest
 import dispatch.coroutine
+from dispatch.coroutine import Input, Output
 import dispatch.fastapi
 import fastapi
 from fastapi.testclient import TestClient
@@ -48,8 +49,10 @@ class TestFastAPI(unittest.TestCase):
         app = dispatch.fastapi._new_app()
 
         @app.dispatch_coroutine()
-        def my_cool_coroutine(input: dispatch.coroutine.Input):
-            return f"You told me: '{input.input}' ({len(input.input)} characters)"
+        def my_cool_coroutine(input: Input) -> Output:
+            return Output.value(
+                f"You told me: '{input.input}' ({len(input.input)} characters)"
+            )
 
         http_client = TestClient(app)
 
@@ -72,9 +75,11 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(resp.coroutine_version, req.coroutine_version)
 
         resp.exit.result.output.Unpack(
-            output := google.protobuf.wrappers_pb2.StringValue()
+            output_bytes := google.protobuf.wrappers_pb2.BytesValue()
         )
-        self.assertEqual(output.value, "You told me: 'Hello World!' (12 characters)")
+        output = pickle.loads(output_bytes.value)
+
+        self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
 
 
 class TestCoroutine(unittest.TestCase):
@@ -93,14 +98,15 @@ class TestCoroutine(unittest.TestCase):
 
     def test_no_input(self):
         @self.app.dispatch_coroutine()
-        def my_cool_coroutine(input: dispatch.coroutine.Input):
-            return "Hello World!"
+        def my_cool_coroutine(input: Input) -> Output:
+            return Output.value("Hello World!")
 
         resp = self.execute(my_cool_coroutine)
 
         self.assertIsInstance(resp, ring.coroutine.v1.coroutine_pb2.ExecuteResponse)
 
         resp.exit.result.output.Unpack(
-            output := google.protobuf.wrappers_pb2.StringValue()
+            output_bytes := google.protobuf.wrappers_pb2.BytesValue()
         )
-        self.assertEqual(output.value, "Hello World!")
+        output = pickle.loads(output_bytes.value)
+        self.assertEqual(output, "Hello World!")

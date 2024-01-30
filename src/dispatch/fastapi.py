@@ -132,8 +132,12 @@ def _new_app():
         )
         output = coroutine(coro_input)
 
-        # TODO pack any
-        output_pb = google.protobuf.wrappers_pb2.StringValue(value=output)
+        if not isinstance(output, dispatch.coroutine.Output):
+            raise ValueError(
+                f"coroutine output should be an instance of {dispatch.coroutine.Output}, not {type(output)}"
+            )
+
+        output_pb = google.protobuf.wrappers_pb2.BytesValue(value=output._value)
         output_any = google.protobuf.any_pb2.Any()
         output_any.Pack(output_pb)
 
@@ -145,6 +149,6 @@ def _new_app():
             ),
         )
 
-        return resp.SerializeToString()
+        return fastapi.Response(content=resp.SerializeToString())
 
     return app

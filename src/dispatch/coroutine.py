@@ -1,6 +1,16 @@
 """Dispatch coroutine interface.
+
+Coroutines are currently created using the @app.dispatch_coroutine() decorator
+in a FastAPI app. See dispatch.fastapi for more details and examples. This
+module describes how to write functions that get turned into coroutines.
+
+Coroutines are functions that can yield at any point in their execution to save
+progress and coordinate with other coroutines. They take exactly one argument of
+type Input, and return an Output value.
+
 """
 
+from __future__ import annotations
 from typing import Any
 from dataclasses import dataclass
 import pickle
@@ -42,3 +52,18 @@ class Input:
         if not self._has_input:
             raise ValueError("This input is for a resumed coroutine")
         return self._input
+
+
+class Output:
+    """The output of a coroutine.
+
+    This class is meant to be instantiated and returned by authors of coroutines
+    to indicate the follow up action they need to take.
+    """
+
+    def __init__(self, value: None | Any = None):
+        self._value = pickle.dumps(value)
+
+    @classmethod
+    def value(cls, value: Any) -> Output:
+        return Output(value=value)
