@@ -78,23 +78,18 @@ class _DispatchAPI(fastapi.FastAPI):
             ValueError: If the coroutine is already registered.
         """
 
-        def wrap(coroutine: Callable[..., Any]):
-            if coroutine.__qualname__ in self._coroutines:
-                raise ValueError(
-                    f"Coroutine {coroutine.__qualname__} already registered"
-                )
-            self._coroutines[coroutine.__qualname__] = coroutine
-            return coroutine
+        def wrap(func: Callable[[dispatch.coroutine.Input], dispatch.coroutine.Output]):
+            coro = dispatch.coroutine.Coroutine(func)
+            if coro.uri in self._coroutines:
+                raise ValueError(f"Coroutine {coro.uri} already registered")
+            self._coroutines[coro.uri] = coro
+            return coro
 
         return wrap
 
 
 class _GRPCResponse(fastapi.Response):
     media_type = "application/grpc+proto"
-
-
-def _coroutine_uri_to_qualname(coroutine_uri: str) -> str:
-    return coroutine_uri.split("/")[-1]
 
 
 def _new_app():
@@ -122,7 +117,9 @@ def _new_app():
 
         # TODO: be more graceful. This will crash if the coroutine is not found,
         # and the coroutine version is not taken into account.
-        coroutine = app._coroutines[_coroutine_uri_to_qualname(req.coroutine_uri)]
+        coroutine = app._coroutines[
+            dispatch.coroutine._coroutine_uri_to_qualname(req.coroutine_uri)
+        ]
 
         coro_input = dispatch.coroutine.Input(req)
         output = coroutine(coro_input)

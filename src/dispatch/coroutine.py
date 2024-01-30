@@ -18,6 +18,45 @@ import pickle
 from ring.coroutine.v1 import coroutine_pb2
 
 
+# Most types in this package are thin wrappers around the various protobuf
+# messages of ring.coroutine.v1. They provide some safeguards and ergonomics.
+
+
+class Coroutine:
+    """Callable wrapper around a function meant to be used throughout the
+    Dispatch Python SDK."""
+
+    def __init__(self, func):
+        self._func = func
+
+    def __call__(self, *args, **kwargs):
+        return self._func(*args, **kwargs)
+
+    @property
+    def uri(self) -> str:
+        return self._func.__qualname__
+
+    def call_with(self, input: Any, correlation_id: int | None = None) -> Call:
+        """Create a Call of this coroutine with the provided input. Useful to
+        generate calls during callbacks.
+
+        Args:
+            input: any pickle-able python value that will be passed as input to
+              this coroutine.
+            correlation_id: optional arbitrary integer the caller can use to
+              match this call to a call result.
+
+        Returns:
+          A Call object. It can likely be passed to Output.callback().
+        """
+        return Call(
+            coroutine_uri=self.uri,
+            coroutine_version="v1",
+            correlation_id=correlation_id,
+            input=input,
+        )
+
+
 class Input:
     """The input to a coroutine.
 
@@ -50,6 +89,7 @@ class Input:
                 self._state = pickle.loads(state_bytes)
             else:
                 self._state = None
+            self._calls = [CallResult(r) for r in req.poll_response.results]
 
     @property
     def is_first_call(self) -> bool:
@@ -61,15 +101,26 @@ class Input:
 
     @property
     def input(self) -> Any:
-        if self.is_resume:
-            raise ValueError("This input is for a resumed coroutine")
+        self._assert_first_call()
         return self._input
 
     @property
     def state(self) -> Any:
+        self._assert_resume()
+        return self._state
+
+    @property
+    def calls(self) -> Any:
+        self._assert_resume()
+        return self._calls
+
+    def _assert_first_call(self):
+        if self.is_resume:
+            raise ValueError("This input is for a resumed coroutine")
+
+    def _assert_resume(self):
         if self.is_first_call:
             raise ValueError("This input is for a first coroutine call")
-        return self._state
 
 
 class Output:
@@ -93,14 +144,59 @@ class Output:
         )
 
     @classmethod
-    def callback(cls, state: Any) -> Output:
+    def callback(cls, state: Any, calls: None | list[Call] = None) -> Output:
         """Exit the coroutine instructing the orchestrator to call back this
         coroutine with the provided state. The state will be made available in
         Input.state."""
         state_bytes = pickle.dumps(state)
-        return Output(
-            coroutine_pb2.ExecuteResponse(poll=coroutine_pb2.Poll(state=state_bytes))
-        )
+        poll = coroutine_pb2.Poll(state=state_bytes)
+
+        if calls is not None:
+            for c in calls:
+                input_bytes = _pb_any_pickle(c.input)
+                x = coroutine_pb2.Call(
+                    coroutine_uri=c.coroutine_uri,
+                    coroutine_version=c.coroutine_version,
+                    correlation_id=c.correlation_id,
+                    input=input_bytes,
+                )
+                poll.calls.append(x)
+
+        return Output(coroutine_pb2.ExecuteResponse(poll=poll))
+
+
+# Note: contrary to other classes here Call is not just a wrapper around its
+# associated protobuf class, because it is reasonable for a human to write the
+# Call manually -- for example to call a coroutine that cannot be referenced in
+# the current Python process.
+
+
+@dataclass
+class Call:
+    """Instruction to invoke a coroutine.
+
+    Though this class can be built manually, it is recommended to use the
+    with_call method of a Coroutine instead.
+
+    """
+
+    coroutine_uri: str
+    coroutine_version: str
+    correlation_id: int | None
+    input: Any
+
+
+class CallResult:
+    def __init__(self, proto: coroutine_pb2.CallResult):
+        self.coroutine_uri = proto.coroutine_uri
+        self.coroutine_version = proto.coroutine_version
+        self.correlation_id = proto.correlation_id
+        self.result = _any_unpickle(proto.result.output)
+
+
+def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
+    any.Unpack(value_bytes := google.protobuf.wrappers_pb2.BytesValue())
+    return pickle.loads(value_bytes.value)
 
 
 def _pb_any_pickle(x: Any) -> google.protobuf.any_pb2.Any:
@@ -109,3 +205,7 @@ def _pb_any_pickle(x: Any) -> google.protobuf.any_pb2.Any:
     pb_any = google.protobuf.any_pb2.Any()
     pb_any.Pack(pb_bytes)
     return pb_any
+
+
+def _coroutine_uri_to_qualname(coroutine_uri: str) -> str:
+    return coroutine_uri.split("/")[-1]

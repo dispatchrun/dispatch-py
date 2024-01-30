@@ -7,7 +7,7 @@ import dispatch.fastapi
 import fastapi
 from fastapi.testclient import TestClient
 import google.protobuf.wrappers_pb2
-import ring.coroutine.v1.coroutine_pb2
+from ring.coroutine.v1 import coroutine_pb2
 from . import executor_service
 
 
@@ -63,15 +63,15 @@ class TestFastAPI(unittest.TestCase):
         input_any = google.protobuf.any_pb2.Any()
         input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
 
-        req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest(
-            coroutine_uri=my_cool_coroutine.__qualname__,
+        req = coroutine_pb2.ExecuteRequest(
+            coroutine_uri=my_cool_coroutine.uri,
             coroutine_version="1",
             input=input_any,
         )
 
         resp = client.Execute(req)
 
-        self.assertIsInstance(resp, ring.coroutine.v1.coroutine_pb2.ExecuteResponse)
+        self.assertIsInstance(resp, coroutine_pb2.ExecuteResponse)
         self.assertEqual(resp.coroutine_uri, req.coroutine_uri)
         self.assertEqual(resp.coroutine_version, req.coroutine_version)
 
@@ -83,11 +83,8 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
 
 
-def response_output(resp: ring.coroutine.v1.coroutine_pb2.ExecuteResponse) -> Any:
-    resp.exit.result.output.Unpack(
-        output_bytes := google.protobuf.wrappers_pb2.BytesValue()
-    )
-    return pickle.loads(output_bytes.value)
+def response_output(resp: coroutine_pb2.ExecuteResponse) -> Any:
+    return dispatch.coroutine._any_unpickle(resp.exit.result.output)
 
 
 class TestCoroutine(unittest.TestCase):
@@ -97,11 +94,11 @@ class TestCoroutine(unittest.TestCase):
         self.client = executor_service.client(http_client)
 
     def execute(
-        self, coroutine, input=None, state=None
-    ) -> ring.coroutine.v1.coroutine_pb2.ExecuteResponse:
+        self, coroutine, input=None, state=None, calls=None
+    ) -> coroutine_pb2.ExecuteResponse:
         """Test helper to invoke coroutines on the local server."""
-        req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest(
-            coroutine_uri=coroutine.__qualname__,
+        req = coroutine_pb2.ExecuteRequest(
+            coroutine_uri=coroutine.uri,
             coroutine_version="1",
         )
 
@@ -112,10 +109,33 @@ class TestCoroutine(unittest.TestCase):
             req.input.CopyFrom(input_any)
         if state is not None:
             req.poll_response.state = state
+        if calls is not None:
+            for c in calls:
+                req.poll_response.results.append(c)
 
         resp = self.client.Execute(req)
-        self.assertIsInstance(resp, ring.coroutine.v1.coroutine_pb2.ExecuteResponse)
+        self.assertIsInstance(resp, coroutine_pb2.ExecuteResponse)
         return resp
+
+    def call(self, call: coroutine_pb2.Call) -> coroutine_pb2.CallResult:
+        req = coroutine_pb2.ExecuteRequest(
+            coroutine_uri=call.coroutine_uri,
+            coroutine_version=call.coroutine_version,
+            input=call.input,
+        )
+        resp = self.client.Execute(req)
+        self.assertIsInstance(resp, coroutine_pb2.ExecuteResponse)
+
+        # Assert the response is terminal. Good enough until the test client can
+        # orchestrate coroutines.
+        self.assertTrue(len(resp.poll.state) == 0)
+
+        return coroutine_pb2.CallResult(
+            coroutine_uri=resp.coroutine_uri,
+            coroutine_version=resp.coroutine_version,
+            correlation_id=call.correlation_id,
+            result=resp.exit.result,
+        )
 
     def test_no_input(self):
         @self.app.dispatch_coroutine()
@@ -186,3 +206,43 @@ class TestCoroutine(unittest.TestCase):
         self.assertTrue(len(state) == 0)
         out = response_output(resp)
         self.assertEqual(out, "done")
+
+    def test_coroutine_poll(self):
+        @self.app.dispatch_coroutine()
+        def coro_compute_len(input: Input) -> Output:
+            return Output.value(len(input.input))
+
+        @self.app.dispatch_coroutine()
+        def coroutine_main(input: Input) -> Output:
+            if input.is_first_call:
+                text: str = input.input
+                return Output.callback(
+                    state=text, calls=[coro_compute_len.call_with(text)]
+                )
+            text = input.state
+            length = input.calls[0].result
+            return Output.value(f"length={length} text='{text}'")
+
+        resp = self.execute(coroutine_main, input="cool stuff")
+
+        # main saved some state
+        state = resp.poll.state
+        self.assertTrue(len(state) > 0)
+        # main asks for 1 call to compute_len
+        self.assertEqual(len(resp.poll.calls), 1)
+        call = resp.poll.calls[0]
+        self.assertEqual(call.coroutine_uri, coro_compute_len.uri)
+        self.assertEqual(dispatch.coroutine._any_unpickle(call.input), "cool stuff")
+
+        # make the requested compute_len
+        resp2 = self.call(call)
+        # check the result is the terminal expected response
+        len_resp = dispatch.coroutine._any_unpickle(resp2.result.output)
+        self.assertEqual(10, len_resp)
+
+        # resume main with the result
+        resp = self.execute(coroutine_main, state=state, calls=[resp2])
+        # validate the final result
+        self.assertTrue(len(resp.poll.state) == 0)
+        out = response_output(resp)
+        self.assertEqual("length=10 text='cool stuff'", out)
