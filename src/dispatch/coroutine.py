@@ -127,7 +127,10 @@ class Output:
     """The output of a coroutine.
 
     This class is meant to be instantiated and returned by authors of coroutines
-    to indicate the follow up action they need to take.
+    to indicate the follow up action they need to take. Use the various class
+    methods create an instance of this class. For example Output.value() or
+    Value.callback().
+
     """
 
     def __init__(self, proto: coroutine_pb2.ExecuteResponse):
@@ -187,11 +190,36 @@ class Call:
 
 
 class CallResult:
+    """Result of a Call.
+
+    Provided to a coroutine through its Input.calls value.
+
+    This class is not meant to be instantiated directly.
+    """
+
     def __init__(self, proto: coroutine_pb2.CallResult):
         self.coroutine_uri = proto.coroutine_uri
         self.coroutine_version = proto.coroutine_version
         self.correlation_id = proto.correlation_id
-        self.result = _any_unpickle(proto.result.output)
+        self.result = None
+        self.error = None
+        if proto.result.HasField("output"):
+            self.result = _any_unpickle(proto.result.output)
+        else:
+            self.error = Error(proto.result.error)
+
+
+class Error:
+    """Error in the invocation of a coroutine.
+
+    This is not a Python exception, but potentially part of a CallResult.
+
+    This class is not meant to be instantiated directly.
+    """
+
+    def __init__(self, proto: coroutine_pb2.Error):
+        self.type = proto.type
+        self.message = proto.message
 
 
 def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
