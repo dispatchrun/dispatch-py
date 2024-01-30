@@ -122,3 +122,12 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(my_cool_coroutine)
         out = response_output(resp)
         self.assertEqual(out, "Hello World!")
+
+    def test_string_input(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            return Output.value(f"You sent '{input.input}'")
+
+        resp = self.execute(my_cool_coroutine, input="cool stuff")
+        out = response_output(resp)
+        self.assertEqual(out, "You sent 'cool stuff'")
