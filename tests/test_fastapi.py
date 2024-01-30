@@ -1,5 +1,6 @@
 import pickle
 import unittest
+from typing import Any
 import dispatch.coroutine
 from dispatch.coroutine import Input, Output
 import dispatch.fastapi
@@ -82,18 +83,35 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
 
 
+def response_output(resp: ring.coroutine.v1.coroutine_pb2.ExecuteResponse) -> Any:
+    resp.exit.result.output.Unpack(
+        output_bytes := google.protobuf.wrappers_pb2.BytesValue()
+    )
+    return pickle.loads(output_bytes.value)
+
+
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
         self.app = dispatch.fastapi._new_app()
         http_client = TestClient(self.app)
         self.client = executor_service.client(http_client)
 
-    def execute(self, coroutine):
+    def execute(
+        self, coroutine, input=None
+    ) -> ring.coroutine.v1.coroutine_pb2.ExecuteResponse:
         req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest(
             coroutine_uri=coroutine.__qualname__,
             coroutine_version="1",
         )
+
+        if input is not None:
+            input_bytes = pickle.dumps(input)
+            input_any = google.protobuf.any_pb2.Any()
+            input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=input_bytes))
+            req.input.CopyFrom(input_any)
+
         resp = self.client.Execute(req)
+        self.assertIsInstance(resp, ring.coroutine.v1.coroutine_pb2.ExecuteResponse)
         return resp
 
     def test_no_input(self):
@@ -102,11 +120,5 @@ class TestCoroutine(unittest.TestCase):
             return Output.value("Hello World!")
 
         resp = self.execute(my_cool_coroutine)
-
-        self.assertIsInstance(resp, ring.coroutine.v1.coroutine_pb2.ExecuteResponse)
-
-        resp.exit.result.output.Unpack(
-            output_bytes := google.protobuf.wrappers_pb2.BytesValue()
-        )
-        output = pickle.loads(output_bytes.value)
-        self.assertEqual(output, "Hello World!")
+        out = response_output(resp)
+        self.assertEqual(out, "Hello World!")
