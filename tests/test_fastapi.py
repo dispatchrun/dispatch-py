@@ -111,7 +111,6 @@ class TestCoroutine(unittest.TestCase):
             input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=input_bytes))
             req.input.CopyFrom(input_any)
         if state is not None:
-            print("SENDING BACK STATE: ", state)
             req.poll_response.state = state
 
         resp = self.client.Execute(req)
