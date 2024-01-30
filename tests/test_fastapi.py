@@ -99,6 +99,7 @@ class TestCoroutine(unittest.TestCase):
     def execute(
         self, coroutine, input=None
     ) -> ring.coroutine.v1.coroutine_pb2.ExecuteResponse:
+        """Test helper to invoke coroutines on the local server."""
         req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest(
             coroutine_uri=coroutine.__qualname__,
             coroutine_version="1",
@@ -131,3 +132,21 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(my_cool_coroutine, input="cool stuff")
         out = response_output(resp)
         self.assertEqual(out, "You sent 'cool stuff'")
+
+    def test_two_simple_coroutines(self):
+        @self.app.dispatch_coroutine()
+        def echoroutine(input: Input) -> Output:
+            return Output.value(f"Echo: '{input.input}'")
+
+        @self.app.dispatch_coroutine()
+        def len_coroutine(input: Input) -> Output:
+            return Output.value(f"Length: {len(input.input)}")
+
+        data = "cool stuff"
+        resp = self.execute(echoroutine, input=data)
+        out = response_output(resp)
+        self.assertEqual(out, "Echo: 'cool stuff'")
+
+        resp = self.execute(len_coroutine, input=data)
+        out = response_output(resp)
+        self.assertEqual(out, "Length: 10")
