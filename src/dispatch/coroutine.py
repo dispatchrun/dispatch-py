@@ -242,7 +242,8 @@ class Error:
         self.type = type
         self.message = message
 
-    def from_exception(self, ex: Exception) -> Error:
+    @classmethod
+    def from_exception(cls, ex: Exception) -> Error:
         """Create an Error from a Python exception, using its class qualified
         named as type."""
         return Error(ex.__class__.__qualname__, str(ex))

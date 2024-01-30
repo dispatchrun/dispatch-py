@@ -122,7 +122,14 @@ def _new_app():
         ]
 
         coro_input = dispatch.coroutine.Input(req)
-        output = coroutine(coro_input)
+
+        try:
+            output = coroutine(coro_input)
+        except Exception as ex:
+            # TODO: distinguish unaught exceptions from exceptions returned by
+            # coroutine?
+            err = dispatch.coroutine.Error.from_exception(ex)
+            output = dispatch.coroutine.Output.error(err)
 
         if not isinstance(output, dispatch.coroutine.Output):
             raise ValueError(

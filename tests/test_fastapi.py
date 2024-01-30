@@ -255,3 +255,26 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(mycoro)
         self.assertEqual("sometype", resp.exit.result.error.type)
         self.assertEqual("dead", resp.exit.result.error.message)
+
+    def test_coroutine_expected_exception(self):
+        @self.app.dispatch_coroutine()
+        def mycoro(input: Input) -> Output:
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                return Output.error(Error.from_exception(e))
+            self.fail("should not reach here")
+
+        resp = self.execute(mycoro)
+        self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
+        self.assertEqual("division by zero", resp.exit.result.error.message)
+
+    def test_coroutine_unexpected_exception(self):
+        @self.app.dispatch_coroutine()
+        def mycoro(input: Input) -> Output:
+            uhoh = 1 / 0
+            self.fail("should not reach here")
+
+        resp = self.execute(mycoro)
+        self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
+        self.assertEqual("division by zero", resp.exit.result.error.message)
