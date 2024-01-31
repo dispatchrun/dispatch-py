@@ -62,7 +62,8 @@ class TaskID:
 
 @dataclass(frozen=True)
 class TaskInput:
-    """
+    """Definition of a task to be created on Dispatch.
+
     Attributes:
         coroutine_uri: The URI of the coroutine to execute.
         input: The input to pass to the coroutine. If the input is a protobuf
