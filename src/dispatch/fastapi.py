@@ -30,19 +30,16 @@ import dispatch.coroutine
 def configure(
     app: fastapi.FastAPI,
     api_key: None | str = None,
-    mount_path: str = "/dispatch",
 ):
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
-    It mounts a sub-app at the given mount path that implements the Dispatch
-    interface. It also adds a a decorator named @app.dispatch_coroutine() to
-    register coroutines.
+    It mounts a sub-app that implements the Dispatch gRPC interface. It also
+    adds a a decorator named @app.dispatch_coroutine() to register coroutines.
 
     Args:
         app: The FastAPI app to configure.
         api_key: Dispatch API key to use for authentication. Uses the value of
           the DISPATCH_API_KEY environment variable by default.
-        mount_path: The path to mount Dispatch programmable endpoints at.
 
     Raises:
         ValueError: If any of the required arguments are missing.
@@ -53,13 +50,11 @@ def configure(
         raise ValueError("app is required")
     if not api_key:
         raise ValueError("api_key is required")
-    if not mount_path:
-        raise ValueError("mount_path is required")
 
     dispatch_app = _new_app()
 
     app.__setattr__("dispatch_coroutine", dispatch_app.dispatch_coroutine)
-    app.mount(mount_path, dispatch_app)
+    app.mount("/ring.coroutine.v1.ExecutorService", dispatch_app)
 
 
 class _DispatchAPI(fastapi.FastAPI):
@@ -96,15 +91,11 @@ def _new_app():
     app = _DispatchAPI()
     app._coroutines = {}
 
-    @app.get("/", response_class=fastapi.responses.PlainTextResponse)
-    def read_root():
-        return "ok"
-
     @app.post(
         # The endpoint for execution is hardcoded at the moment. If the service
         # gains more endpoints, this should be turned into a dynamic dispatch
         # like the official gRPC server does.
-        "/ring.coroutine.v1.ExecutorService/Execute",
+        "/Execute",
         response_class=_GRPCResponse,
     )
     async def execute(request: fastapi.Request):
@@ -114,6 +105,11 @@ def _new_app():
         data: bytes = await request.body()
 
         req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest.FromString(data)
+
+        if not req.coroutine_uri:
+            raise fastapi.HTTPException(
+                status_code=400, detail="coroutine_uri is required"
+            )
 
         # TODO: be more graceful. This will crash if the coroutine is not found,
         # and the coroutine version is not taken into account.
