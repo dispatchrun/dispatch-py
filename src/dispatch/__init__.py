@@ -64,7 +64,7 @@ class TaskInput:
         match self.input:
             case google.protobuf.any_pb2.Any():
                 input_any = self.input
-            case google.protobuf.message.Message:
+            case google.protobuf.message.Message():
                 input_any = google.protobuf.any_pb2.Any()
                 input_any.Pack(self.input)
             case _:

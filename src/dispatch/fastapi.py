@@ -23,7 +23,6 @@ from typing import Any
 import os
 import fastapi
 import fastapi.responses
-import google.protobuf.wrappers_pb2
 import dispatch.coroutine
 
 
