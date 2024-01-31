@@ -21,7 +21,7 @@ import ring.task.v1.service_pb2_grpc as service_grpc
 __all__ = ["Client", "TaskID", "TaskInput"]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class TaskID:
     """Unique task identifier in Dispatch.
 
@@ -58,6 +58,9 @@ class TaskID:
             self.record_size,
         ]
         return "".join("{:08x}".format(a) for a in parts)
+
+    def __repr__(self) -> str:
+        return f"TaskID({self})"
 
 
 @dataclass(frozen=True)
