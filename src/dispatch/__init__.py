@@ -23,6 +23,11 @@ __all__ = ["Client", "TaskID", "TaskInput"]
 
 @dataclass(frozen=True)
 class TaskID:
+    """Unique task identifier in Dispatch.
+
+    It should be treated as an opaque value.
+    """
+
     partition_number: int
     block_id: int
     record_offset: int
@@ -55,8 +60,17 @@ class TaskID:
         return "".join("{:08x}".format(a) for a in parts)
 
 
-@dataclass
+@dataclass(frozen=True)
 class TaskInput:
+    """
+    Attributes:
+        coroutine_uri: The URI of the coroutine to execute.
+        input: The input to pass to the coroutine. If the input is a protobuf
+            message, it will be wrapped in a google.protobuf.Any message. If the
+            input is not a protobuf message, it will be pickled and wrapped in a
+            google.protobuf.Any message.
+    """
+
     coroutine_uri: str
     input: Any
 
@@ -77,9 +91,7 @@ class TaskInput:
 
 
 class Client:
-    """
-    Client for the Dispatch API.
-    """
+    """Client for the Dispatch API."""
 
     def __init__(
         self, api_key: None | str = None, api_url="https://api.stealthrocket.cloud"
