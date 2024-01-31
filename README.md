@@ -1,13 +1,7 @@
 # Dispatch Python SDK
 
-## Setup
+## Install
 
 ```
 make install
-```
-
-## Tests
-
-```
-make test
 ```
