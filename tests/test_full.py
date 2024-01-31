@@ -45,3 +45,13 @@ class TestFullFastapi(unittest.TestCase):
         # Validate results.
         resp = self.servicer.responses[task_id]
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
+
+    def test_simple_call_with(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            return Output.value(f"Hello world: {input.input}")
+
+        [task_id] = self.client.create_tasks([my_cool_coroutine.call_with(52)])
+        self.execute_tasks()
+        resp = self.servicer.responses[task_id]
+        self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")

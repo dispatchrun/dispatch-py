@@ -7,7 +7,7 @@ import os
 from urllib.parse import urlparse
 from functools import cached_property
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, TypeAlias
 from dataclasses import dataclass
 
 import grpc
@@ -16,9 +16,10 @@ import google.protobuf
 import ring.record.v1.record_pb2 as record_pb
 import ring.task.v1.service_pb2 as service
 import ring.task.v1.service_pb2_grpc as service_grpc
+import dispatch.coroutine
 
 
-__all__ = ["Client", "TaskID", "TaskInput"]
+__all__ = ["Client", "TaskID", "TaskInput", "TaskDef"]
 
 
 @dataclass(frozen=True, repr=False)
@@ -78,20 +79,30 @@ class TaskInput:
     coroutine_uri: str
     input: Any
 
-    def _to_proto(self) -> service.CreateTaskInput:
-        match self.input:
-            case google.protobuf.any_pb2.Any():
-                input_any = self.input
-            case google.protobuf.message.Message():
-                input_any = google.protobuf.any_pb2.Any()
-                input_any.Pack(self.input)
-            case _:
-                pickled = pickle.dumps(self.input)
-                input_any = google.protobuf.any_pb2.Any()
-                input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
-        return service.CreateTaskInput(
-            coroutine_uri=self.coroutine_uri, input=input_any
-        )
+
+TaskDef: TypeAlias = TaskInput | dispatch.coroutine.Call
+"""Definition of a task to be created on Dispatch.
+
+Can be either a TaskInput or a Call. TaskInput can be created manually, likely
+to call a coroutine outside the current code base. Call is created by the
+`dispatch.coroutine` module and is used to call a coroutine defined in the
+current code base.
+"""
+
+
+def _taskdef_to_proto(taskdef: TaskDef) -> service.CreateTaskInput:
+    input = taskdef.input
+    match input:
+        case google.protobuf.any_pb2.Any():
+            input_any = input
+        case google.protobuf.message.Message():
+            input_any = google.protobuf.any_pb2.Any()
+            input_any.Pack(input)
+        case _:
+            pickled = pickle.dumps(input)
+            input_any = google.protobuf.any_pb2.Any()
+            input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
+    return service.CreateTaskInput(coroutine_uri=taskdef.coroutine_uri, input=input_any)
 
 
 class Client:
@@ -130,7 +141,7 @@ class Client:
                 raise ValueError(f"Invalid API scheme: '{result.scheme}'")
         self._stub = service_grpc.ServiceStub(channel)
 
-    def create_tasks(self, tasks: Iterable[TaskInput]) -> Iterable[TaskID]:
+    def create_tasks(self, tasks: Iterable[TaskDef]) -> Iterable[TaskID]:
         """Create tasks on Dispatch using the provided inputs.
 
         Returns:
@@ -138,6 +149,6 @@ class Client:
         """
         req = service.CreateTasksRequest()
         for task in tasks:
-            req.tasks.append(task._to_proto())
+            req.tasks.append(_taskdef_to_proto(task))
         resp = self._stub.CreateTasks(req)
         return [TaskID._from_proto(x.id) for x in resp.tasks]
