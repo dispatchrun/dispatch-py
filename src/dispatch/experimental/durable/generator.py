@@ -1,7 +1,7 @@
 from types import GeneratorType, TracebackType, CodeType, FrameType
 from typing import Generator, TypeVar
 from .registry import lookup_function
-from . import _frame as ext
+from . import frame as ext
 
 
 _YieldT = TypeVar("_YieldT", covariant=True)

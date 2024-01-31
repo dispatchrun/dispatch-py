@@ -313,8 +313,8 @@ static PyMethodDef methods[] = {
         {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef module = {PyModuleDef_HEAD_INIT, "_frame", NULL, -1, methods};
+static struct PyModuleDef module = {PyModuleDef_HEAD_INIT, "frame", NULL, -1, methods};
 
-PyMODINIT_FUNC PyInit__frame(void) {
+PyMODINIT_FUNC PyInit_frame(void) {
     return PyModule_Create(&module);
 }

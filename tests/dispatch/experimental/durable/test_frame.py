@@ -1,5 +1,5 @@
 import unittest
-from dispatch.experimental.durable import _frame as ext
+from dispatch.experimental.durable import frame as ext
 
 
 def generator(a):
