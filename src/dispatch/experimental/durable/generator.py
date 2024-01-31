@@ -58,7 +58,7 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
 
     def __getstate__(self):
         # Capture the details necessary to recreate the generator.
-        frame = self.generator.gi_frame
+        g = self.generator
         state = {
             "function": {
                 "key": self.key,
@@ -66,14 +66,13 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
                 "kwargs": self.kwargs,
             },
             "generator": {
-                "frame_state": ext.get_generator_frame_state(self.generator),
+                "frame_state": ext.get_generator_frame_state(g),
             },
             "frame": {
-                "ip": ext.get_frame_ip(frame),  # aka. frame.f_lasti
-                "sp": ext.get_frame_sp(frame),
+                "ip": ext.get_frame_ip(g),
+                "sp": ext.get_frame_sp(g),
                 "stack": [
-                    ext.get_frame_stack_at(frame, i)
-                    for i in range(ext.get_frame_sp(frame))
+                    ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))
                 ],
             },
         }
