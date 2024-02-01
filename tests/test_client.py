@@ -1,5 +1,8 @@
+import os
 import unittest
+from unittest import mock
 
+import grpc
 from google.protobuf import wrappers_pb2, any_pb2
 
 from dispatch import Client, TaskInput, TaskID
@@ -16,6 +19,16 @@ class TestClient(unittest.TestCase):
 
     def tearDown(self):
         self.server.stop()
+
+    @mock.patch.dict(os.environ, {"DISPATCH_API_KEY": "WHATEVER"})
+    def test_api_key_from_env(self):
+        client = Client(api_url=f"http://127.0.0.1:{self.server.port}")
+
+        with self.assertRaises(grpc._channel._InactiveRpcError) as mc:
+            client.create_tasks(
+                [TaskInput(coroutine_uri="my-cool-coroutine", input=42)]
+            )
+        self.assertTrue("got 'Bearer WHATEVER'" in str(mc.exception))
 
     def test_create_one_task_pickle(self):
         results = self.client.create_tasks(
