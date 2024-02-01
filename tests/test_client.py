@@ -30,6 +30,11 @@ class TestClient(unittest.TestCase):
             )
         self.assertTrue("got 'Bearer WHATEVER'" in str(mc.exception))
 
+    def test_api_key_missing(self):
+        with self.assertRaises(ValueError) as mc:
+            client = Client()
+        self.assertEqual(str(mc.exception), "api_key is required")
+
     def test_create_one_task_pickle(self):
         results = self.client.create_tasks(
             [TaskInput(coroutine_uri="my-cool-coroutine", input=42)]
