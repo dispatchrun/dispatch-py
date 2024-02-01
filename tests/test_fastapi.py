@@ -181,6 +181,17 @@ class TestCoroutine(unittest.TestCase):
         out = response_output(resp)
         self.assertEqual(out, "You sent 'cool stuff'")
 
+    def test_duplicate_coro(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            return Output.value("Do one thing")
+
+        with self.assertRaises(ValueError):
+
+            @self.app.dispatch_coroutine()
+            def my_cool_coroutine(input: Input) -> Output:
+                return Output.value("Do something else")
+
     def test_two_simple_coroutines(self):
         @self.app.dispatch_coroutine()
         def echoroutine(input: Input) -> Output:
