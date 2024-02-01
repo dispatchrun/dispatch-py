@@ -224,6 +224,33 @@ class TestCompile(unittest.TestCase):
             returns=30,
         )
 
+    def test_generator_evaluation(self):
+        self.skipTest(
+            "highlight how eager evaluation of generators can change the program"
+        )
+
+        def generator(n):
+            for i in range(n):
+                sleep(i)
+                yield i
+
+        def zipper(g, n):
+            return list(zip(g(n), g(n)))
+
+        # The generators are evaluated at their call site, which means
+        # [0, 1, 2, 0, 1, 2] is observed rather than [0, 0, 1, 1, 2, 2].
+        yields = [
+            CustomYield(type=YieldTypes.SLEEP, args=[0]),
+            CustomYield(type=YieldTypes.SLEEP, args=[1]),
+            CustomYield(type=YieldTypes.SLEEP, args=[2]),
+            CustomYield(type=YieldTypes.SLEEP, args=[0]),
+            CustomYield(type=YieldTypes.SLEEP, args=[1]),
+            CustomYield(type=YieldTypes.SLEEP, args=[2]),
+        ]
+        self.assert_yields(
+            zipper, args=[generator, 3], yields=yields, returns=[(0, 0), (1, 1), (2, 2)]
+        )
+
     def assert_yields(
         self,
         fn: FunctionType,
