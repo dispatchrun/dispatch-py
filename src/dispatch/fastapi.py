@@ -141,7 +141,7 @@ def _new_app(public_url: str):
         try:
             output = coroutine(coro_input)
         except Exception as ex:
-            # TODO: distinguish unaught exceptions from exceptions returned by
+            # TODO: distinguish uncaught exceptions from exceptions returned by
             # coroutine?
             err = dispatch.coroutine.Error.from_exception(ex)
             output = dispatch.coroutine.Output.error(err)

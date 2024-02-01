@@ -133,10 +133,7 @@ class Input:
             input_pb = google.protobuf.wrappers_pb2.BytesValue()
             req.input.Unpack(input_pb)
             input_bytes = input_pb.value
-            if len(input_bytes) > 0:
-                self._input = pickle.loads(input_bytes)
-            else:
-                self._input = None
+            self._input = pickle.loads(input_bytes)
         else:
             state_bytes = req.poll_response.state
             if len(state_bytes) > 0:
