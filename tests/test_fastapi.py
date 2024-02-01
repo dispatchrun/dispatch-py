@@ -186,6 +186,34 @@ class TestCoroutine(unittest.TestCase):
         out = response_output(resp)
         self.assertEqual(out, "You sent 'cool stuff'")
 
+    def test_error_on_access_state_in_first_call(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            print(input.state)
+            return Output.value("not reached")
+
+        resp = self.execute(my_cool_coroutine, input="cool stuff")
+        self.assertEqual("ValueError", resp.exit.result.error.type)
+        self.assertEqual(
+            "This input is for a first coroutine call", resp.exit.result.error.message
+        )
+
+    def test_error_on_access_input_in_second_call(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            if input.is_first_call:
+                return Output.callback(state=42)
+            print(input.input)
+            return Output.value("not reached")
+
+        resp = self.execute(my_cool_coroutine, input="cool stuff")
+        resp = self.execute(my_cool_coroutine, state=resp.poll.state)
+
+        self.assertEqual("ValueError", resp.exit.result.error.type)
+        self.assertEqual(
+            "This input is for a resumed coroutine", resp.exit.result.error.message
+        )
+
     def test_duplicate_coro(self):
         @self.app.dispatch_coroutine()
         def my_cool_coroutine(input: Input) -> Output:
