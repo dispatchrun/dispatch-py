@@ -81,7 +81,7 @@ class TestClient(unittest.TestCase):
         proto_any = any_pb2.Any()
         proto_any.Pack(proto)
         results = self.client.create_tasks(
-            [TaskInput(coroutine_uri="my-cool-coroutine", input=proto)]
+            [TaskInput(coroutine_uri="my-cool-coroutine", input=proto_any)]
         )
         id = results[0]
         created_tasks = self.servicer.created_tasks
