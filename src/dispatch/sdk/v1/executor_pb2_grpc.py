@@ -2,9 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from ring.coroutine.v1 import (
-    coroutine_pb2 as ring_dot_coroutine_dot_v1_dot_coroutine__pb2,
-)
+from dispatch.sdk.v1 import executor_pb2 as dispatch_dot_sdk_dot_v1_dot_executor__pb2
 
 
 class ExecutorServiceStub(object):
@@ -17,9 +15,9 @@ class ExecutorServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Execute = channel.unary_unary(
-            "/ring.coroutine.v1.ExecutorService/Execute",
-            request_serializer=ring_dot_coroutine_dot_v1_dot_coroutine__pb2.ExecuteRequest.SerializeToString,
-            response_deserializer=ring_dot_coroutine_dot_v1_dot_coroutine__pb2.ExecuteResponse.FromString,
+            "/dispatch.sdk.v1.ExecutorService/Execute",
+            request_serializer=dispatch_dot_sdk_dot_v1_dot_executor__pb2.ExecuteRequest.SerializeToString,
+            response_deserializer=dispatch_dot_sdk_dot_v1_dot_executor__pb2.ExecuteResponse.FromString,
         )
 
 
@@ -37,12 +35,12 @@ def add_ExecutorServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
         "Execute": grpc.unary_unary_rpc_method_handler(
             servicer.Execute,
-            request_deserializer=ring_dot_coroutine_dot_v1_dot_coroutine__pb2.ExecuteRequest.FromString,
-            response_serializer=ring_dot_coroutine_dot_v1_dot_coroutine__pb2.ExecuteResponse.SerializeToString,
+            request_deserializer=dispatch_dot_sdk_dot_v1_dot_executor__pb2.ExecuteRequest.FromString,
+            response_serializer=dispatch_dot_sdk_dot_v1_dot_executor__pb2.ExecuteResponse.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        "ring.coroutine.v1.ExecutorService", rpc_method_handlers
+        "dispatch.sdk.v1.ExecutorService", rpc_method_handlers
     )
     server.add_generic_rpc_handlers((generic_handler,))
 
@@ -67,9 +65,9 @@ class ExecutorService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/ring.coroutine.v1.ExecutorService/Execute",
-            ring_dot_coroutine_dot_v1_dot_coroutine__pb2.ExecuteRequest.SerializeToString,
-            ring_dot_coroutine_dot_v1_dot_coroutine__pb2.ExecuteResponse.FromString,
+            "/dispatch.sdk.v1.ExecutorService/Execute",
+            dispatch_dot_sdk_dot_v1_dot_executor__pb2.ExecuteRequest.SerializeToString,
+            dispatch_dot_sdk_dot_v1_dot_executor__pb2.ExecuteResponse.FromString,
             options,
             channel_credentials,
             insecure,

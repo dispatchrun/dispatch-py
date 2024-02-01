@@ -51,8 +51,6 @@ class TestClient(unittest.TestCase):
         )
         self.assertEqual(len(results), 1)
         id = results[0]
-        self.assertTrue(id.partition_number != 0)
-        self.assertTrue(id.block_id != 0)
 
         created_tasks = self.servicer.created_tasks
         self.assertEqual(len(created_tasks), 1)
@@ -89,13 +87,3 @@ class TestClient(unittest.TestCase):
         task = entry["task"]
         # proto any has not been modified
         self.assertEqual(task.input, proto_any)
-
-
-class TestTaskID(unittest.TestCase):
-    def test_string(self):
-        t = TaskID(partition_number=1, block_id=2, record_offset=3, record_size=4)
-        self.assertEqual(str(t), "00000001000000020000000300000004")
-
-    def test_repr(self):
-        t = TaskID(partition_number=1, block_id=2, record_offset=3, record_size=4)
-        self.assertEqual(repr(t), "TaskID(00000001000000020000000300000004)")

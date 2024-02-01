@@ -25,7 +25,7 @@ import fastapi
 import fastapi.responses
 from httpx import _urlparse
 
-import ring.coroutine.v1.coroutine_pb2
+from dispatch.sdk.v1 import executor_pb2 as executor_pb
 import dispatch.coroutine
 
 
@@ -65,7 +65,7 @@ def configure(
     dispatch_app = _new_app(public_url)
 
     app.__setattr__("dispatch_coroutine", dispatch_app.dispatch_coroutine)
-    app.mount("/ring.coroutine.v1.ExecutorService", dispatch_app)
+    app.mount("/dispatch.sdk.v1.ExecutorService", dispatch_app)
 
 
 class _DispatchAPI(fastapi.FastAPI):
@@ -117,7 +117,7 @@ def _new_app(public_url: str):
         # forcing execute() to be async.
         data: bytes = await request.body()
 
-        req = ring.coroutine.v1.coroutine_pb2.ExecuteRequest.FromString(data)
+        req = executor_pb.ExecuteRequest.FromString(data)
 
         if not req.coroutine_uri:
             raise fastapi.HTTPException(
