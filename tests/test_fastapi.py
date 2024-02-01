@@ -55,6 +55,11 @@ class TestFastAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             dispatch.fastapi.configure(app, api_key="test", public_url="")
 
+    def test_configure_public_url_no_scheme(self):
+        app = fastapi.FastAPI()
+        with self.assertRaises(ValueError):
+            dispatch.fastapi.configure(app, api_key="test", public_url="127.0.0.1:9999")
+
     def test_fastapi_simple_request(self):
         app = fastapi.FastAPI()
         dispatch.fastapi.configure(
