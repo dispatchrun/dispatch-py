@@ -19,5 +19,14 @@ dev = [
     "black==24.1.0",
     "mypy==1.8.0",
     "fastapi==0.109.0",
-    "httpx==0.26.0"
+    "httpx==0.26.0",
+    "coverage==7.4.1"
+]
+
+
+[tool.coverage.run]
+omit = [
+    "*_pb2_grpc.py",
+    "*_pb2.py",
+    "tests/*"
 ]
