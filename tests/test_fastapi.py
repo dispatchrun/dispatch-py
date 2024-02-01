@@ -317,6 +317,43 @@ class TestCoroutine(unittest.TestCase):
         out = response_output(resp)
         self.assertEqual("length=10 text='cool stuff'", out)
 
+    def test_coroutine_poll_error(self):
+        @self.app.dispatch_coroutine()
+        def coro_compute_len(input: Input) -> Output:
+            return Output.error(Error(Status.PERMANENT_ERROR, "type", "Dead"))
+
+        @self.app.dispatch_coroutine()
+        def coroutine_main(input: Input) -> Output:
+            if input.is_first_call:
+                text: str = input.input
+                return Output.callback(
+                    state=text, calls=[coro_compute_len.call_with(text)]
+                )
+            msg = input.calls[0].error.message
+            type = input.calls[0].error.type
+            return Output.value(f"msg={msg} type='{type}'")
+
+        resp = self.execute(coroutine_main, input="cool stuff")
+
+        # main saved some state
+        state = resp.poll.state
+        self.assertTrue(len(state) > 0)
+        # main asks for 1 call to compute_len
+        self.assertEqual(len(resp.poll.calls), 1)
+        call = resp.poll.calls[0]
+        self.assertEqual(call.coroutine_uri, coro_compute_len.uri)
+        self.assertEqual(dispatch.coroutine._any_unpickle(call.input), "cool stuff")
+
+        # make the requested compute_len
+        resp2 = self.call(call)
+
+        # resume main with the result
+        resp = self.execute(coroutine_main, state=state, calls=[resp2])
+        # validate the final result
+        self.assertTrue(len(resp.poll.state) == 0)
+        out = response_output(resp)
+        self.assertEqual(out, "msg=Dead type='type'")
+
     def test_coroutine_error(self):
         @self.app.dispatch_coroutine()
         def mycoro(input: Input) -> Output:
