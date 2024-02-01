@@ -422,3 +422,11 @@ class TestError(unittest.TestCase):
     def test_error_with_ok_status(self):
         with self.assertRaises(ValueError):
             Error(Status.OK, type="type", message="yep")
+
+    def test_from_exception_timeout(self):
+        err = Error.from_exception(TimeoutError())
+        self.assertEqual(Status.TIMEOUT, err.status)
+
+    def test_from_exception_syntax_error(self):
+        err = Error.from_exception(SyntaxError())
+        self.assertEqual(Status.PERMANENT_ERROR, err.status)
