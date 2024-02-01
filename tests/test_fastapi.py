@@ -412,3 +412,13 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(
             42, dispatch.coroutine._any_unpickle(resp.exit.tail_call.input)
         )
+
+
+class TestError(unittest.TestCase):
+    def test_missing_type_and_message(self):
+        with self.assertRaises(ValueError):
+            Error(Status.TEMPORARY_ERROR, type=None, message=None)
+
+    def test_error_with_ok_status(self):
+        with self.assertRaises(ValueError):
+            Error(Status.OK, type="type", message="yep")
