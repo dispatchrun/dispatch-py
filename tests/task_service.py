@@ -2,17 +2,19 @@ import concurrent.futures.thread
 
 import grpc
 
-import ring.task.v1.service_pb2 as service_pb
-import ring.task.v1.service_pb2_grpc as service_grpc
-from ring.coroutine.v1 import coroutine_pb2_grpc as coroutine_grpc
-from ring.coroutine.v1 import coroutine_pb2 as coroutine_pb
+import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
+import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
+
+import dispatch.sdk.v1.executor_pb2 as executor_pb
+import dispatch.sdk.v1.executor_pb2_grpc as executor_grpc
+
 from dispatch import Client, TaskInput, TaskID
 
 
 _test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
 
 
-class FakeRing(service_grpc.ServiceServicer):
+class FakeRing(endpoint_grpc.EndpointServiceServicer):
     def __init__(self):
         super().__init__()
         self.current_partition = 1
@@ -23,6 +25,15 @@ class FakeRing(service_grpc.ServiceServicer):
         self.responses = {}  # indexed by task id
 
         self.pending_tasks = []
+
+    def _make_task_id(self) -> TaskID:
+        parts = [
+            self.current_partition,
+            self.current_block_id,
+            self.current_offset,
+            1,  # record_size
+        ]
+        return "".join("{:08x}".format(a) for a in parts)
 
     def _validate_authentication(self, context: grpc.ServicerContext):
         expected = f"Bearer {_test_auth_token}"
@@ -36,27 +47,22 @@ class FakeRing(service_grpc.ServiceServicer):
                 )
         context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization header")
 
-    def CreateTasks(self, request: service_pb.CreateTasksRequest, context):
+    def CreateExecutions(self, request: endpoint_pb.CreateExecutionsRequest, context):
         self._validate_authentication(context)
 
-        resp = service_pb.CreateTasksResponse()
+        resp = endpoint_pb.CreateExecutionsResponse()
 
-        for t in request.tasks:
-            id = TaskID(
-                partition_number=self.current_partition,
-                block_id=self.current_block_id,
-                record_offset=self.current_offset,
-                record_size=1,
-            )
+        for t in request.executions:
+            id = self._make_task_id()
             self.current_offset += 1
             self.created_tasks.append({"id": id, "task": t})
             self.pending_tasks.append({"id": id, "task": t})
-            resp.tasks.append(service_pb.CreateTaskOutput(id=id._to_proto()))
+            resp.ids.append(id)
         self.current_block_id += 1
 
         return resp
 
-    def execute(self, client: coroutine_grpc.ExecutorServiceStub):
+    def execute(self, client: executor_grpc.ExecutorServiceStub):
         """Synchronously execute all the pending tasks until there is no
         pending task left.
 
@@ -65,7 +71,7 @@ class FakeRing(service_grpc.ServiceServicer):
             entry = self.pending_tasks.pop(0)
             task = entry["task"]
 
-            req = coroutine_pb.ExecuteRequest(
+            req = executor_pb.ExecuteRequest(
                 coroutine_uri=task.coroutine_uri, input=task.input
             )
 
@@ -89,7 +95,7 @@ class ServerTest:
 
         self.servicer = FakeRing()
 
-        service_grpc.add_ServiceServicer_to_server(self.servicer, self.server)
+        endpoint_grpc.add_EndpointServiceServicer_to_server(self.servicer, self.server)
         self.server.start()
 
         self.client = Client(
@@ -101,5 +107,5 @@ class ServerTest:
         self.server.wait_for_termination()
         self.thread_pool.shutdown(wait=True, cancel_futures=True)
 
-    def execute(self, client: coroutine_grpc.ExecutorServiceStub):
+    def execute(self, client: executor_grpc.ExecutorServiceStub):
         return self.servicer.execute(client)

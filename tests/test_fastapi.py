@@ -10,7 +10,7 @@ import google.protobuf.wrappers_pb2
 import dispatch.fastapi
 import dispatch.coroutine
 from dispatch.coroutine import Input, Output, Error, Status
-from ring.coroutine.v1 import coroutine_pb2
+from dispatch.sdk.v1 import executor_pb2 as executor_pb
 from . import executor_service
 
 
@@ -34,7 +34,7 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(resp.json(), {"Hello": "World"})
 
         # Ensure Dispatch root is available.
-        resp = client.post("/ring.coroutine.v1.ExecutorService/Execute")
+        resp = client.post("/dispatch.sdk.v1.ExecutorService/Execute")
         self.assertEqual(resp.status_code, 400)
 
     def test_configure_no_app(self):
@@ -80,7 +80,7 @@ class TestFastAPI(unittest.TestCase):
         input_any = google.protobuf.any_pb2.Any()
         input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
 
-        req = coroutine_pb2.ExecuteRequest(
+        req = executor_pb.ExecuteRequest(
             coroutine_uri=my_cool_coroutine.uri,
             coroutine_version="1",
             input=input_any,
@@ -88,7 +88,7 @@ class TestFastAPI(unittest.TestCase):
 
         resp = client.Execute(req)
 
-        self.assertIsInstance(resp, coroutine_pb2.ExecuteResponse)
+        self.assertIsInstance(resp, executor_pb.ExecuteResponse)
         self.assertEqual(resp.coroutine_uri, req.coroutine_uri)
         self.assertEqual(resp.coroutine_version, req.coroutine_version)
 
@@ -100,7 +100,7 @@ class TestFastAPI(unittest.TestCase):
         self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
 
 
-def response_output(resp: coroutine_pb2.ExecuteResponse) -> Any:
+def response_output(resp: executor_pb.ExecuteResponse) -> Any:
     return dispatch.coroutine._any_unpickle(resp.exit.result.output)
 
 
@@ -115,9 +115,9 @@ class TestCoroutine(unittest.TestCase):
 
     def execute(
         self, coroutine, input=None, state=None, calls=None
-    ) -> coroutine_pb2.ExecuteResponse:
+    ) -> executor_pb.ExecuteResponse:
         """Test helper to invoke coroutines on the local server."""
-        req = coroutine_pb2.ExecuteRequest(
+        req = executor_pb.ExecuteRequest(
             coroutine_uri=coroutine.uri,
             coroutine_version="1",
         )
@@ -134,23 +134,23 @@ class TestCoroutine(unittest.TestCase):
                 req.poll_response.results.append(c)
 
         resp = self.client.Execute(req)
-        self.assertIsInstance(resp, coroutine_pb2.ExecuteResponse)
+        self.assertIsInstance(resp, executor_pb.ExecuteResponse)
         return resp
 
-    def call(self, call: coroutine_pb2.Call) -> coroutine_pb2.CallResult:
-        req = coroutine_pb2.ExecuteRequest(
+    def call(self, call: executor_pb.Call) -> executor_pb.CallResult:
+        req = executor_pb.ExecuteRequest(
             coroutine_uri=call.coroutine_uri,
             coroutine_version=call.coroutine_version,
             input=call.input,
         )
         resp = self.client.Execute(req)
-        self.assertIsInstance(resp, coroutine_pb2.ExecuteResponse)
+        self.assertIsInstance(resp, executor_pb.ExecuteResponse)
 
         # Assert the response is terminal. Good enough until the test client can
         # orchestrate coroutines.
         self.assertTrue(len(resp.poll.state) == 0)
 
-        return coroutine_pb2.CallResult(
+        return executor_pb.CallResult(
             coroutine_uri=resp.coroutine_uri,
             coroutine_version=resp.coroutine_version,
             correlation_id=call.correlation_id,
@@ -168,7 +168,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(out, "Hello World!")
 
     def test_missing_coroutine(self):
-        req = coroutine_pb2.ExecuteRequest(
+        req = executor_pb.ExecuteRequest(
             coroutine_uri="does-not-exist",
             coroutine_version="1",
         )

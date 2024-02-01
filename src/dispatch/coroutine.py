@@ -18,8 +18,8 @@ from dataclasses import dataclass
 
 import google.protobuf.message
 
-from ring.coroutine.v1 import coroutine_pb2
-from ring.status.v1 import status_pb2
+from dispatch.sdk.v1 import executor_pb2 as executor_pb
+from dispatch.sdk.v1 import status_pb2 as status_pb
 
 
 # Most types in this package are thin wrappers around the various protobuf
@@ -33,46 +33,46 @@ class Status(int, enum.Enum):
 
     """
 
-    UNSPECIFIED = status_pb2.STATUS_UNSPECIFIED
-    OK = status_pb2.STATUS_OK
-    TIMEOUT = status_pb2.STATUS_TIMEOUT
-    THROTTLED = status_pb2.STATUS_THROTTLED
-    INVALID_ARGUMENT = status_pb2.STATUS_INVALID_ARGUMENT
-    INVALID_RESPONSE = status_pb2.STATUS_INVALID_RESPONSE
-    TEMPORARY_ERROR = status_pb2.STATUS_TEMPORARY_ERROR
-    PERMANENT_ERROR = status_pb2.STATUS_PERMANENT_ERROR
-    INCOMPATIBLE_STATE = status_pb2.STATUS_INCOMPATIBLE_STATE
+    UNSPECIFIED = status_pb.STATUS_UNSPECIFIED
+    OK = status_pb.STATUS_OK
+    TIMEOUT = status_pb.STATUS_TIMEOUT
+    THROTTLED = status_pb.STATUS_THROTTLED
+    INVALID_ARGUMENT = status_pb.STATUS_INVALID_ARGUMENT
+    INVALID_RESPONSE = status_pb.STATUS_INVALID_RESPONSE
+    TEMPORARY_ERROR = status_pb.STATUS_TEMPORARY_ERROR
+    PERMANENT_ERROR = status_pb.STATUS_PERMANENT_ERROR
+    INCOMPATIBLE_STATE = status_pb.STATUS_INCOMPATIBLE_STATE
 
-    _proto: status_pb2.Status
+    _proto: status_pb.Status
 
 
 # Maybe we should find a better way to define that enum. It's that way to please
 # Mypy and provide documentation for the enum values.
 
 Status.UNSPECIFIED.__doc__ = "Status not specified (default)"
-Status.UNSPECIFIED._proto = status_pb2.STATUS_UNSPECIFIED
+Status.UNSPECIFIED._proto = status_pb.STATUS_UNSPECIFIED
 Status.OK.__doc__ = "Coroutine returned as expected"
-Status.OK._proto = status_pb2.STATUS_OK
+Status.OK._proto = status_pb.STATUS_OK
 Status.TIMEOUT.__doc__ = "Coroutine encountered a timeout and may be retried"
-Status.TIMEOUT._proto = status_pb2.STATUS_TIMEOUT
+Status.TIMEOUT._proto = status_pb.STATUS_TIMEOUT
 Status.THROTTLED.__doc__ = "Coroutine was throttled and may be retried later"
-Status.THROTTLED._proto = status_pb2.STATUS_THROTTLED
+Status.THROTTLED._proto = status_pb.STATUS_THROTTLED
 Status.INVALID_ARGUMENT.__doc__ = "Coroutine was provided an invalid type of input"
-Status.INVALID_ARGUMENT._proto = status_pb2.STATUS_INVALID_ARGUMENT
+Status.INVALID_ARGUMENT._proto = status_pb.STATUS_INVALID_ARGUMENT
 Status.INVALID_RESPONSE.__doc__ = "Coroutine was provided an unexpected reponse"
-Status.INVALID_RESPONSE._proto = status_pb2.STATUS_INVALID_RESPONSE
+Status.INVALID_RESPONSE._proto = status_pb.STATUS_INVALID_RESPONSE
 Status.TEMPORARY_ERROR.__doc__ = (
     "Coroutine encountered a temporary error, may be retried"
 )
-Status.TEMPORARY_ERROR._proto = status_pb2.STATUS_TEMPORARY_ERROR
+Status.TEMPORARY_ERROR._proto = status_pb.STATUS_TEMPORARY_ERROR
 Status.PERMANENT_ERROR.__doc__ = (
     "Coroutine encountered a permanent error, should not be retried"
 )
-Status.PERMANENT_ERROR._proto = status_pb2.STATUS_PERMANENT_ERROR
+Status.PERMANENT_ERROR._proto = status_pb.STATUS_PERMANENT_ERROR
 Status.INCOMPATIBLE_STATE.__doc__ = (
     "Coroutine was provided an incompatible state. May be restarted from scratch"
 )
-Status.INCOMPATIBLE_STATE._proto = status_pb2.STATUS_INCOMPATIBLE_STATE
+Status.INCOMPATIBLE_STATE._proto = status_pb.STATUS_INCOMPATIBLE_STATE
 
 
 class Coroutine:
@@ -127,7 +127,7 @@ class Input:
     # TODO: first implementation with a single Input type, but we should
     # consider using some dynamic filling positional and keyword arguments.
 
-    def __init__(self, req: coroutine_pb2.ExecuteRequest):
+    def __init__(self, req: executor_pb.ExecuteRequest):
         self._has_input = req.HasField("input")
         if self._has_input:
             input_pb = google.protobuf.wrappers_pb2.BytesValue()
@@ -184,7 +184,7 @@ class Output:
 
     """
 
-    def __init__(self, proto: coroutine_pb2.ExecuteResponse):
+    def __init__(self, proto: executor_pb.ExecuteResponse):
         self._message = proto
 
     @classmethod
@@ -192,9 +192,9 @@ class Output:
         """Terminally exit the coroutine with the provided return value."""
         output_any = _pb_any_pickle(value)
         return Output(
-            coroutine_pb2.ExecuteResponse(
+            executor_pb.ExecuteResponse(
                 status=status._proto,
-                exit=coroutine_pb2.Exit(result=coroutine_pb2.Result(output=output_any)),
+                exit=executor_pb.Exit(result=executor_pb.Result(output=output_any)),
             )
         )
 
@@ -202,10 +202,10 @@ class Output:
     def error(cls, error: Error) -> Output:
         """Terminally exit the coroutine with the provided error."""
         return Output(
-            coroutine_pb2.ExecuteResponse(
+            executor_pb.ExecuteResponse(
                 status=error.status._proto,
-                exit=coroutine_pb2.Exit(
-                    result=coroutine_pb2.Result(error=error._as_proto())
+                exit=executor_pb.Exit(
+                    result=executor_pb.Result(error=error._as_proto())
                 ),
             )
         )
@@ -216,12 +216,12 @@ class Output:
         coroutine with the provided state. The state will be made available in
         Input.state."""
         state_bytes = pickle.dumps(state)
-        poll = coroutine_pb2.Poll(state=state_bytes)
+        poll = executor_pb.Poll(state=state_bytes)
 
         if calls is not None:
             for c in calls:
                 input_bytes = _pb_any_pickle(c.input)
-                x = coroutine_pb2.Call(
+                x = executor_pb.Call(
                     coroutine_uri=c.coroutine_uri,
                     coroutine_version=c.coroutine_version,
                     correlation_id=c.correlation_id,
@@ -229,22 +229,20 @@ class Output:
                 )
                 poll.calls.append(x)
 
-        return Output(coroutine_pb2.ExecuteResponse(poll=poll))
+        return Output(executor_pb.ExecuteResponse(poll=poll))
 
     @classmethod
     def tailcall(cls, call: Call) -> Output:
         """Exit the coroutine instructing the orchestrator to call the provided
         coroutine."""
         input_bytes = _pb_any_pickle(call.input)
-        x = coroutine_pb2.Call(
+        x = executor_pb.Call(
             coroutine_uri=call.coroutine_uri,
             coroutine_version=call.coroutine_version,
             correlation_id=call.correlation_id,
             input=input_bytes,
         )
-        return Output(
-            coroutine_pb2.ExecuteResponse(exit=coroutine_pb2.Exit(tail_call=x))
-        )
+        return Output(executor_pb.ExecuteResponse(exit=executor_pb.Exit(tail_call=x)))
 
 
 # Note: contrary to other classes here Call is not just a wrapper around its
@@ -276,7 +274,7 @@ class CallResult:
     This class is not meant to be instantiated directly.
     """
 
-    def __init__(self, proto: coroutine_pb2.CallResult):
+    def __init__(self, proto: executor_pb.CallResult):
         self.coroutine_uri = proto.coroutine_uri
         self.coroutine_version = proto.coroutine_version
         self.correlation_id = proto.correlation_id
@@ -344,11 +342,11 @@ class Error:
         return Error(status, ex.__class__.__qualname__, str(ex))
 
     @classmethod
-    def _from_proto(cls, proto: coroutine_pb2.Error) -> Error:
+    def _from_proto(cls, proto: executor_pb.Error) -> Error:
         return cls(Status.UNSPECIFIED, proto.type, proto.message)
 
-    def _as_proto(self) -> coroutine_pb2.Error:
-        return coroutine_pb2.Error(type=self.type, message=self.message)
+    def _as_proto(self) -> executor_pb.Error:
+        return executor_pb.Error(type=self.type, message=self.message)
 
 
 def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:

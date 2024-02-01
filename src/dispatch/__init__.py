@@ -13,55 +13,19 @@ from dataclasses import dataclass
 import grpc
 import google.protobuf
 
-import ring.record.v1.record_pb2 as record_pb
-import ring.task.v1.service_pb2 as service
-import ring.task.v1.service_pb2_grpc as service_grpc
+import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
+import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
 import dispatch.coroutine
 
 
 __all__ = ["Client", "TaskID", "TaskInput", "TaskDef"]
 
 
-@dataclass(frozen=True, repr=False)
-class TaskID:
-    """Unique task identifier in Dispatch.
+TaskID: TypeAlias = str
+"""Unique task identifier in Dispatch.
 
-    It should be treated as an opaque value.
-    """
-
-    partition_number: int
-    block_id: int
-    record_offset: int
-    record_size: int
-
-    @classmethod
-    def _from_proto(cls, proto: record_pb.ID) -> TaskID:
-        return cls(
-            partition_number=proto.partition_number,
-            block_id=proto.block_id,
-            record_offset=proto.record_offset,
-            record_size=proto.record_size,
-        )
-
-    def _to_proto(self) -> record_pb.ID:
-        return record_pb.ID(
-            partition_number=self.partition_number,
-            block_id=self.block_id,
-            record_offset=self.record_offset,
-            record_size=self.record_size,
-        )
-
-    def __str__(self) -> str:
-        parts = [
-            self.partition_number,
-            self.block_id,
-            self.record_offset,
-            self.record_size,
-        ]
-        return "".join("{:08x}".format(a) for a in parts)
-
-    def __repr__(self) -> str:
-        return f"TaskID({self})"
+It should be treated as an opaque value.
+"""
 
 
 @dataclass(frozen=True)
@@ -90,7 +54,7 @@ current code base.
 """
 
 
-def _taskdef_to_proto(taskdef: TaskDef) -> service.CreateTaskInput:
+def _taskdef_to_proto(taskdef: TaskDef) -> endpoint_pb.Execution:
     input = taskdef.input
     match input:
         case google.protobuf.any_pb2.Any():
@@ -102,7 +66,7 @@ def _taskdef_to_proto(taskdef: TaskDef) -> service.CreateTaskInput:
             pickled = pickle.dumps(input)
             input_any = google.protobuf.any_pb2.Any()
             input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
-    return service.CreateTaskInput(coroutine_uri=taskdef.coroutine_uri, input=input_any)
+    return endpoint_pb.Execution(coroutine_uri=taskdef.coroutine_uri, input=input_any)
 
 
 class Client:
@@ -140,7 +104,7 @@ class Client:
         creds = grpc.composite_channel_credentials(creds, call_creds)
         channel = grpc.secure_channel(result.netloc, creds)
 
-        self._stub = service_grpc.ServiceStub(channel)
+        self._stub = endpoint_grpc.EndpointServiceStub(channel)
 
     def create_tasks(self, tasks: Iterable[TaskDef]) -> Iterable[TaskID]:
         """Create tasks on Dispatch using the provided inputs.
@@ -148,8 +112,8 @@ class Client:
         Returns:
             The ID of the created tasks, in the same order as the inputs.
         """
-        req = service.CreateTasksRequest()
+        req = endpoint_pb.CreateExecutionsRequest()
         for task in tasks:
-            req.tasks.append(_taskdef_to_proto(task))
-        resp = self._stub.CreateTasks(req)
-        return [TaskID._from_proto(x.id) for x in resp.tasks]
+            req.executions.append(_taskdef_to_proto(task))
+        resp = self._stub.CreateExecutions(req)
+        return [TaskID(x) for x in resp.ids]

@@ -1,7 +1,8 @@
 import httpx
 import grpc
-import ring.coroutine.v1.coroutine_pb2
-import ring.coroutine.v1.coroutine_pb2_grpc
+
+from dispatch.sdk.v1 import executor_pb2 as executor_pb
+from dispatch.sdk.v1 import executor_pb2_grpc as executor_grpc
 
 # This file provides a grpc client that can talk to the ExecutorService
 # interface. This is achieved by implementing the bare minimum of the
@@ -132,6 +133,6 @@ class HttpxGrpcChannel(grpc.Channel):
 
 def client(
     http_client: httpx.Client,
-) -> ring.coroutine.v1.coroutine_pb2_grpc.ExecutorServiceStub:
+) -> executor_grpc.ExecutorServiceStub:
     channel = HttpxGrpcChannel(http_client)
-    return ring.coroutine.v1.coroutine_pb2_grpc.ExecutorServiceStub(channel)
+    return executor_grpc.ExecutorServiceStub(channel)
