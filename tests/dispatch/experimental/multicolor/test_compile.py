@@ -14,7 +14,8 @@ from enum import Enum
 class YieldTypes(Enum):
     SLEEP = 0
     ADD = 1
-    STAR_ARGS_KWARGS = 2
+    MUL = 2
+    STAR_ARGS_KWARGS = 3
 
 
 @yields(type=YieldTypes.SLEEP)
@@ -196,6 +197,32 @@ class TestCompile(unittest.TestCase):
             CustomYield(type=YieldTypes.SLEEP, args=[2]),
         ]
         self.assert_yields(fn, yields=yields, returns=3)
+
+    def test_class_method(self):
+        class Foo:
+            def sleep_then_fma(self, m, a, b):
+                sleep(100)
+                return self.mul(m, self.add_indirect(a, b))
+
+            @yields(type=YieldTypes.MUL)
+            def mul(self):
+                raise RuntimeError("implementation is provided elsewhere")
+
+            def add_indirect(self, a, b):
+                return add(a, b)
+
+        foo = Foo()
+        self.assert_yields(
+            foo.sleep_then_fma,
+            args=[10, 1, 2],
+            yields=[
+                CustomYield(type=YieldTypes.SLEEP, args=[100]),
+                CustomYield(type=YieldTypes.ADD, args=[1, 2]),
+                CustomYield(type=YieldTypes.MUL, args=[10, 3]),
+            ],
+            sends=[None, 3, 30],
+            returns=30,
+        )
 
     def assert_yields(
         self,

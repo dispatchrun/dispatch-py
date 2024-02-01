@@ -1,8 +1,9 @@
 import ast
 import inspect
 import os
+import types
 from enum import Enum
-from types import FunctionType, GeneratorType
+from types import FunctionType, GeneratorType, MethodType
 from typing import cast
 from .desugar import desugar_function
 from .generator import is_generator, empty_generator
@@ -15,7 +16,7 @@ TRACE = os.getenv("MULTICOLOR_TRACE", False)
 
 def compile_function(
     fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
-) -> FunctionType:
+) -> FunctionType | MethodType:
     """Compile a regular function into a generator that yields data passed
     to functions marked with the @multicolor.yields decorator. Decorated
     functions can be called from anywhere in the call stack, and functions
@@ -87,16 +88,26 @@ class FunctionColor(Enum):
 
 def compile_internal(
     fn: FunctionType, decorator: FunctionType | None, cache_key: str
-) -> tuple[FunctionType, FunctionColor]:
+) -> tuple[FunctionType | MethodType, FunctionColor]:
     if hasattr(fn, "_multicolor_yield_type"):
         raise ValueError("cannot compile a yield point directly")
 
+    # Give the function a unique name.
+    fn_name = fn.__name__ + "__multicolor_" + cache_key
+
     # Check if the function has already been compiled.
-    if hasattr(fn, "_multicolor_cache"):
+    cache_holder = fn
+    if isinstance(fn, MethodType):
+        cache_holder = fn.__self__
+    if hasattr(cache_holder, "_multicolor_cache"):
         try:
-            return fn._multicolor_cache[cache_key]
+            compiled_fn, color = cache_holder._multicolor_cache[fn_name]
         except KeyError:
             pass
+        else:
+            if isinstance(fn, MethodType):
+                return MethodType(compiled_fn, fn.__self__), color
+            return compiled_fn, color
 
     # Parse an abstract syntax tree from the function source.
     try:
@@ -119,6 +130,8 @@ def compile_internal(
         print("\n-------------------------------------------------")
         print("[MULTICOLOR] COMPILING:")
         print(repair_indentation(inspect.getsource(fn)).rstrip())
+
+    fn_def.name = fn_name
 
     # De-sugar the AST to simplify subsequent transformations.
     desugar_function(fn_def)
@@ -143,9 +156,6 @@ def compile_internal(
         g = ast.Call(func=empty, args=[], keywords=[])
         fn_def.body.insert(0, ast.Expr(ast.YieldFrom(value=g)))
 
-    name = fn_def.name + "__multicolor_" + cache_key
-    fn_def.name = name
-
     # Patch AST nodes that were inserted without location info.
     ast.fix_missing_locations(root)
 
@@ -169,21 +179,25 @@ def compile_internal(
     # Re-compile.
     code = compile(root, filename="<multicolor>", mode="exec")
     exec(code, namespace)
-    compiled_fn = namespace[name]
+    compiled_fn = namespace[fn_name]
 
     # Apply the custom decorator, if applicable.
     if decorator is not None:
         compiled_fn = decorator(compiled_fn)
 
     # Cache the compiled function.
-    if hasattr(fn, "_multicolor_cache"):
+    if hasattr(cache_holder, "_multicolor_cache"):
         cache = cast(
-            dict[str, tuple[FunctionType, FunctionColor]], fn._multicolor_cache
+            dict[str, tuple[FunctionType, FunctionColor]],
+            cache_holder._multicolor_cache,
         )
     else:
         cache = {}
-        setattr(fn, "_multicolor_cache", cache)
-    cache[cache_key] = (compiled_fn, color)
+        setattr(cache_holder, "_multicolor_cache", cache)
+    cache[fn_name] = (compiled_fn, color)
+
+    if isinstance(fn, MethodType):
+        return MethodType(compiled_fn, fn.__self__), color
 
     return compiled_fn, color
 
