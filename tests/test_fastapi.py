@@ -1,12 +1,15 @@
 import pickle
 import unittest
 from typing import Any
-import dispatch.coroutine
-from dispatch.coroutine import Input, Output, Error, Status
-import dispatch.fastapi
+
+import httpx
 import fastapi
 from fastapi.testclient import TestClient
 import google.protobuf.wrappers_pb2
+
+import dispatch.fastapi
+import dispatch.coroutine
+from dispatch.coroutine import Input, Output, Error, Status
 from ring.coroutine.v1 import coroutine_pb2
 from . import executor_service
 
@@ -158,6 +161,16 @@ class TestCoroutine(unittest.TestCase):
 
         out = response_output(resp)
         self.assertEqual(out, "Hello World!")
+
+    def test_missing_coroutine(self):
+        req = coroutine_pb2.ExecuteRequest(
+            coroutine_uri="does-not-exist",
+            coroutine_version="1",
+        )
+
+        with self.assertRaises(httpx.HTTPStatusError) as cm:
+            self.client.Execute(req)
+        self.assertEqual(cm.exception.response.status_code, 404)
 
     def test_string_input(self):
         @self.app.dispatch_coroutine()

@@ -132,12 +132,9 @@ def _new_app(public_url: str):
         coroutine = app._coroutines.get(uri, None)
         if coroutine is None:
             # TODO: integrate with logging
-            print("Coroutine not found:")
-            print("    uri:", uri)
-            print("Available coroutines:")
-            for k in app._coroutines:
-                print("    ", k)
-            raise KeyError(f"coroutine '{uri}' not available on this system")
+            raise fastapi.HTTPException(
+                status_code=404, detail=f"Coroutine URI '{uri}' does not exist"
+            )
 
         coro_input = dispatch.coroutine.Input(req)
 
