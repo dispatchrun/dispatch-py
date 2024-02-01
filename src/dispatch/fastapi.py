@@ -146,11 +146,6 @@ def _new_app(public_url: str):
             err = dispatch.coroutine.Error.from_exception(ex)
             output = dispatch.coroutine.Output.error(err)
 
-        if not isinstance(output, dispatch.coroutine.Output):
-            raise ValueError(
-                f"coroutine output should be an instance of {dispatch.coroutine.Output}, not {type(output)}"
-            )
-
         resp = output._message
         resp.coroutine_uri = req.coroutine_uri
         resp.coroutine_version = req.coroutine_version
