@@ -17,8 +17,6 @@ class TestClient(unittest.TestCase):
     def tearDown(self):
         self.server.stop()
 
-    def test_authentication(self): ...
-
     def test_create_one_task_pickle(self):
         results = self.client.create_tasks(
             [TaskInput(coroutine_uri="my-cool-coroutine", input=42)]
