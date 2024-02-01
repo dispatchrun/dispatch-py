@@ -35,6 +35,16 @@ class TestClient(unittest.TestCase):
             client = Client()
         self.assertEqual(str(mc.exception), "api_key is required")
 
+    def test_url_bad_scheme(self):
+        with self.assertRaises(ValueError) as mc:
+            client = Client(api_url="ftp://example.com", api_key="foo")
+        self.assertEqual(str(mc.exception), "Invalid API scheme: 'ftp'")
+
+    def test_can_be_constructed_on_https(self):
+        # Goal is to not raise an exception here. We don't have an HTTPS server
+        # around to actually test this.
+        Client(api_url="https://example.com", api_key="foo")
+
     def test_create_one_task_pickle(self):
         results = self.client.create_tasks(
             [TaskInput(coroutine_uri="my-cool-coroutine", input=42)]
