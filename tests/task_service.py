@@ -32,7 +32,7 @@ class FakeRing(service_grpc.ServiceServicer):
                     return
                 context.abort(
                     grpc.StatusCode.UNAUTHENTICATED,
-                    f"Invalid authorization header. Expected '{expected}', got '{value!r}'",
+                    f"Invalid authorization header. Expected '{expected}', got {value!r}",
                 )
         context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization header")
 
@@ -85,7 +85,7 @@ class ServerTest:
         self.thread_pool = concurrent.futures.thread.ThreadPoolExecutor()
         self.server = grpc.server(self.thread_pool)
 
-        port = self.server.add_insecure_port("127.0.0.1:0")
+        self.port = self.server.add_insecure_port("127.0.0.1:0")
 
         self.servicer = FakeRing()
 
@@ -93,7 +93,7 @@ class ServerTest:
         self.server.start()
 
         self.client = Client(
-            api_key=_test_auth_token, api_url=f"http://127.0.0.1:{port}"
+            api_key=_test_auth_token, api_url=f"http://127.0.0.1:{self.port}"
         )
 
     def stop(self):

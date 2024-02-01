@@ -1,4 +1,4 @@
-.PHONY: install test typecheck unittest dev fmt generate clean update-proto
+.PHONY: install test typecheck unittest dev fmt generate clean update-proto coverage
 
 PYTHON := python
 
@@ -18,6 +18,11 @@ typecheck:
 
 unittest:
 	$(PYTHON) -m unittest discover
+
+coverage: typecheck
+	coverage run -m unittest discover
+	coverage html -d .coverage-html
+	coverage report
 
 test: typecheck unittest
 
@@ -42,5 +47,7 @@ generate: .proto/ring .proto/dispatch
 
 clean:
 	rm -rf .proto
+	rm -rf .coverage
+	rm -rf .coverage-html
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -exec rm -r {} \;

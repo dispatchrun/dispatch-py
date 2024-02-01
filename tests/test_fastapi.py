@@ -1,12 +1,15 @@
 import pickle
 import unittest
 from typing import Any
-import dispatch.coroutine
-from dispatch.coroutine import Input, Output, Error, Status
-import dispatch.fastapi
+
+import httpx
 import fastapi
 from fastapi.testclient import TestClient
 import google.protobuf.wrappers_pb2
+
+import dispatch.fastapi
+import dispatch.coroutine
+from dispatch.coroutine import Input, Output, Error, Status
 from ring.coroutine.v1 import coroutine_pb2
 from . import executor_service
 
@@ -51,6 +54,11 @@ class TestFastAPI(unittest.TestCase):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
             dispatch.fastapi.configure(app, api_key="test", public_url="")
+
+    def test_configure_public_url_no_scheme(self):
+        app = fastapi.FastAPI()
+        with self.assertRaises(ValueError):
+            dispatch.fastapi.configure(app, api_key="test", public_url="127.0.0.1:9999")
 
     def test_fastapi_simple_request(self):
         app = fastapi.FastAPI()
@@ -159,6 +167,16 @@ class TestCoroutine(unittest.TestCase):
         out = response_output(resp)
         self.assertEqual(out, "Hello World!")
 
+    def test_missing_coroutine(self):
+        req = coroutine_pb2.ExecuteRequest(
+            coroutine_uri="does-not-exist",
+            coroutine_version="1",
+        )
+
+        with self.assertRaises(httpx.HTTPStatusError) as cm:
+            self.client.Execute(req)
+        self.assertEqual(cm.exception.response.status_code, 404)
+
     def test_string_input(self):
         @self.app.dispatch_coroutine()
         def my_cool_coroutine(input: Input) -> Output:
@@ -167,6 +185,45 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(my_cool_coroutine, input="cool stuff")
         out = response_output(resp)
         self.assertEqual(out, "You sent 'cool stuff'")
+
+    def test_error_on_access_state_in_first_call(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            print(input.state)
+            return Output.value("not reached")
+
+        resp = self.execute(my_cool_coroutine, input="cool stuff")
+        self.assertEqual("ValueError", resp.exit.result.error.type)
+        self.assertEqual(
+            "This input is for a first coroutine call", resp.exit.result.error.message
+        )
+
+    def test_error_on_access_input_in_second_call(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            if input.is_first_call:
+                return Output.callback(state=42)
+            print(input.input)
+            return Output.value("not reached")
+
+        resp = self.execute(my_cool_coroutine, input="cool stuff")
+        resp = self.execute(my_cool_coroutine, state=resp.poll.state)
+
+        self.assertEqual("ValueError", resp.exit.result.error.type)
+        self.assertEqual(
+            "This input is for a resumed coroutine", resp.exit.result.error.message
+        )
+
+    def test_duplicate_coro(self):
+        @self.app.dispatch_coroutine()
+        def my_cool_coroutine(input: Input) -> Output:
+            return Output.value("Do one thing")
+
+        with self.assertRaises(ValueError):
+
+            @self.app.dispatch_coroutine()
+            def my_cool_coroutine(input: Input) -> Output:
+                return Output.value("Do something else")
 
     def test_two_simple_coroutines(self):
         @self.app.dispatch_coroutine()
@@ -260,6 +317,43 @@ class TestCoroutine(unittest.TestCase):
         out = response_output(resp)
         self.assertEqual("length=10 text='cool stuff'", out)
 
+    def test_coroutine_poll_error(self):
+        @self.app.dispatch_coroutine()
+        def coro_compute_len(input: Input) -> Output:
+            return Output.error(Error(Status.PERMANENT_ERROR, "type", "Dead"))
+
+        @self.app.dispatch_coroutine()
+        def coroutine_main(input: Input) -> Output:
+            if input.is_first_call:
+                text: str = input.input
+                return Output.callback(
+                    state=text, calls=[coro_compute_len.call_with(text)]
+                )
+            msg = input.calls[0].error.message
+            type = input.calls[0].error.type
+            return Output.value(f"msg={msg} type='{type}'")
+
+        resp = self.execute(coroutine_main, input="cool stuff")
+
+        # main saved some state
+        state = resp.poll.state
+        self.assertTrue(len(state) > 0)
+        # main asks for 1 call to compute_len
+        self.assertEqual(len(resp.poll.calls), 1)
+        call = resp.poll.calls[0]
+        self.assertEqual(call.coroutine_uri, coro_compute_len.uri)
+        self.assertEqual(dispatch.coroutine._any_unpickle(call.input), "cool stuff")
+
+        # make the requested compute_len
+        resp2 = self.call(call)
+
+        # resume main with the result
+        resp = self.execute(coroutine_main, state=state, calls=[resp2])
+        # validate the final result
+        self.assertTrue(len(resp.poll.state) == 0)
+        out = response_output(resp)
+        self.assertEqual(out, "msg=Dead type='type'")
+
     def test_coroutine_error(self):
         @self.app.dispatch_coroutine()
         def mycoro(input: Input) -> Output:
@@ -318,3 +412,21 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(
             42, dispatch.coroutine._any_unpickle(resp.exit.tail_call.input)
         )
+
+
+class TestError(unittest.TestCase):
+    def test_missing_type_and_message(self):
+        with self.assertRaises(ValueError):
+            Error(Status.TEMPORARY_ERROR, type=None, message=None)
+
+    def test_error_with_ok_status(self):
+        with self.assertRaises(ValueError):
+            Error(Status.OK, type="type", message="yep")
+
+    def test_from_exception_timeout(self):
+        err = Error.from_exception(TimeoutError())
+        self.assertEqual(Status.TIMEOUT, err.status)
+
+    def test_from_exception_syntax_error(self):
+        err = Error.from_exception(SyntaxError())
+        self.assertEqual(Status.PERMANENT_ERROR, err.status)

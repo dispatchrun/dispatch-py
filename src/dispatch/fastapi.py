@@ -132,27 +132,19 @@ def _new_app(public_url: str):
         coroutine = app._coroutines.get(uri, None)
         if coroutine is None:
             # TODO: integrate with logging
-            print("Coroutine not found:")
-            print("    uri:", uri)
-            print("Available coroutines:")
-            for k in app._coroutines:
-                print("    ", k)
-            raise KeyError(f"coroutine '{uri}' not available on this system")
+            raise fastapi.HTTPException(
+                status_code=404, detail=f"Coroutine URI '{uri}' does not exist"
+            )
 
         coro_input = dispatch.coroutine.Input(req)
 
         try:
             output = coroutine(coro_input)
         except Exception as ex:
-            # TODO: distinguish unaught exceptions from exceptions returned by
+            # TODO: distinguish uncaught exceptions from exceptions returned by
             # coroutine?
             err = dispatch.coroutine.Error.from_exception(ex)
             output = dispatch.coroutine.Output.error(err)
-
-        if not isinstance(output, dispatch.coroutine.Output):
-            raise ValueError(
-                f"coroutine output should be an instance of {dispatch.coroutine.Output}, not {type(output)}"
-            )
 
         resp = output._message
         resp.coroutine_uri = req.coroutine_uri
