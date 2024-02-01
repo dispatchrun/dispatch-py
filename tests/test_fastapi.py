@@ -15,7 +15,9 @@ class TestFastAPI(unittest.TestCase):
     def test_configure(self):
         app = fastapi.FastAPI()
 
-        dispatch.fastapi.configure(app, api_key="test-key")
+        dispatch.fastapi.configure(
+            app, api_key="test-key", public_url="https://127.0.0.1:9999"
+        )
 
         @app.get("/")
         def read_root():
@@ -34,16 +36,27 @@ class TestFastAPI(unittest.TestCase):
 
     def test_configure_no_app(self):
         with self.assertRaises(ValueError):
-            dispatch.fastapi.configure(None, api_key="test-key")
+            dispatch.fastapi.configure(
+                None, api_key="test-key", public_url="http://127.0.0.1:9999"
+            )
 
     def test_configure_no_api_key(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
-            dispatch.fastapi.configure(app, api_key=None)
+            dispatch.fastapi.configure(
+                app, api_key=None, public_url="http://127.0.0.1:9999"
+            )
+
+    def test_configure_no_public_url(self):
+        app = fastapi.FastAPI()
+        with self.assertRaises(ValueError):
+            dispatch.fastapi.configure(app, api_key="test", public_url="")
 
     def test_fastapi_simple_request(self):
         app = fastapi.FastAPI()
-        dispatch.fastapi.configure(app, api_key="test-key")
+        dispatch.fastapi.configure(
+            app, api_key="test-key", public_url="http://127.0.0.1:9999/"
+        )
 
         @app.dispatch_coroutine()
         def my_cool_coroutine(input: Input) -> Output:
@@ -86,7 +99,9 @@ def response_output(resp: coroutine_pb2.ExecuteResponse) -> Any:
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
-        dispatch.fastapi.configure(self.app, api_key="test-key")
+        dispatch.fastapi.configure(
+            self.app, api_key="test-key", public_url="https://127.0.0.1:9999"
+        )
         http_client = TestClient(self.app)
         self.client = executor_service.client(http_client)
 

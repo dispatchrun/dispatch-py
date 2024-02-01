@@ -12,10 +12,12 @@ type Input, and return an Output value.
 
 from __future__ import annotations
 import enum
-from typing import Any
-from dataclasses import dataclass
-import google.protobuf.message
 import pickle
+from typing import Any, Callable
+from dataclasses import dataclass
+
+import google.protobuf.message
+
 from ring.coroutine.v1 import coroutine_pb2
 from ring.status.v1 import status_pb2
 
@@ -77,7 +79,8 @@ class Coroutine:
     """Callable wrapper around a function meant to be used throughout the
     Dispatch Python SDK."""
 
-    def __init__(self, func):
+    def __init__(self, uri: str, func: Callable[[Input], Output]):
+        self._uri = uri
         self._func = func
 
     def __call__(self, *args, **kwargs):
@@ -85,7 +88,7 @@ class Coroutine:
 
     @property
     def uri(self) -> str:
-        return self._func.__qualname__
+        return self._uri
 
     def call_with(self, input: Any, correlation_id: int | None = None) -> Call:
         """Create a Call of this coroutine with the provided input. Useful to
@@ -362,8 +365,3 @@ def _pb_any_pickle(x: Any) -> google.protobuf.any_pb2.Any:
     pb_any = google.protobuf.any_pb2.Any()
     pb_any.Pack(pb_bytes)
     return pb_any
-
-
-def _coroutine_uri_to_qualname(coroutine_uri: str) -> str:
-    # TODO: fix this when we decide on the format of coroutine URIs.
-    return coroutine_uri.split("/")[-1]

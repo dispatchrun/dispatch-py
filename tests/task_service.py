@@ -44,9 +44,7 @@ class FakeRing(service_grpc.ServiceServicer):
         pending task left.
 
         """
-        while True:
-            if len(self.pending_tasks) == 0:
-                return
+        while len(self.pending_tasks) > 0:
             entry = self.pending_tasks.pop(0)
             task = entry["task"]
 

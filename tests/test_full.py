@@ -14,7 +14,9 @@ from . import executor_service
 class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
-        dispatch.fastapi.configure(self.app, api_key="test-key")
+        dispatch.fastapi.configure(
+            self.app, api_key="test-key", public_url="http://test"
+        )
         http_client = TestClient(self.app)
         self.app_client = executor_service.client(http_client)
         self.server = ServerTest()
