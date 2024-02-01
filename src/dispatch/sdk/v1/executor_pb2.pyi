@@ -1,4 +1,4 @@
-from ring.status.v1 import status_pb2 as _status_pb2
+from dispatch.sdk.v1 import status_pb2 as _status_pb2
 from google.protobuf import any_pb2 as _any_pb2
 from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf.internal import containers as _containers
@@ -15,30 +15,21 @@ from typing import (
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ExecuteRequest(_message.Message):
-    __slots__ = (
-        "coroutine_uri",
-        "coroutine_version",
-        "input",
-        "poll_response",
-        "signing_key_urn",
-    )
+    __slots__ = ("coroutine_uri", "coroutine_version", "input", "poll_response")
     COROUTINE_URI_FIELD_NUMBER: _ClassVar[int]
     COROUTINE_VERSION_FIELD_NUMBER: _ClassVar[int]
     INPUT_FIELD_NUMBER: _ClassVar[int]
     POLL_RESPONSE_FIELD_NUMBER: _ClassVar[int]
-    SIGNING_KEY_URN_FIELD_NUMBER: _ClassVar[int]
     coroutine_uri: str
     coroutine_version: str
     input: _any_pb2.Any
     poll_response: PollResponse
-    signing_key_urn: str
     def __init__(
         self,
         coroutine_uri: _Optional[str] = ...,
         coroutine_version: _Optional[str] = ...,
         input: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...,
         poll_response: _Optional[_Union[PollResponse, _Mapping]] = ...,
-        signing_key_urn: _Optional[str] = ...,
     ) -> None: ...
 
 class ExecuteResponse(_message.Message):
