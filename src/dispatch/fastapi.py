@@ -17,18 +17,21 @@ Example:
         my_cool_coroutine.call()
 """
 
-import ring.coroutine.v1.coroutine_pb2
-from collections.abc import Callable
-from typing import Any
 import os
+from typing import Any, Dict
+from collections.abc import Callable
+
 import fastapi
 import fastapi.responses
-import google.protobuf.wrappers_pb2
+from httpx import _urlparse
+
+import ring.coroutine.v1.coroutine_pb2
 import dispatch.coroutine
 
 
 def configure(
     app: fastapi.FastAPI,
+    public_url: str,
     api_key: None | str = None,
 ):
     """Configure the FastAPI app to use Dispatch programmable endpoints.
@@ -40,6 +43,8 @@ def configure(
         app: The FastAPI app to configure.
         api_key: Dispatch API key to use for authentication. Uses the value of
           the DISPATCH_API_KEY environment variable by default.
+        public_url: Full URL of the application the dispatch programmable
+          endpoint will be running on.
 
     Raises:
         ValueError: If any of the required arguments are missing.
@@ -48,19 +53,26 @@ def configure(
 
     if not app:
         raise ValueError("app is required")
+    if not public_url:
+        raise ValueError("public_url is required")
     if not api_key:
         raise ValueError("api_key is required")
 
-    dispatch_app = _new_app()
+    parsed_url = _urlparse.urlparse(public_url)
+    if not parsed_url.netloc or not parsed_url.scheme:
+        raise ValueError("public_url must be a full URL with protocol and domain")
+
+    dispatch_app = _new_app(public_url)
 
     app.__setattr__("dispatch_coroutine", dispatch_app.dispatch_coroutine)
     app.mount("/ring.coroutine.v1.ExecutorService", dispatch_app)
 
 
 class _DispatchAPI(fastapi.FastAPI):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._coroutines = {}
+    def __init__(self, public_url: str):
+        super().__init__()
+        self._coroutines: Dict[str, dispatch.coroutine.Coroutine] = {}
+        self._public_url = _urlparse.urlparse(public_url)
 
     def dispatch_coroutine(self):
         """Register a coroutine with the Dispatch programmable endpoints.
@@ -74,7 +86,9 @@ class _DispatchAPI(fastapi.FastAPI):
         """
 
         def wrap(func: Callable[[dispatch.coroutine.Input], dispatch.coroutine.Output]):
-            coro = dispatch.coroutine.Coroutine(func)
+            name = func.__qualname__
+            uri = str(self._public_url.copy_with(fragment="function=" + name))
+            coro = dispatch.coroutine.Coroutine(uri, func)
             if coro.uri in self._coroutines:
                 raise ValueError(f"Coroutine {coro.uri} already registered")
             self._coroutines[coro.uri] = coro
@@ -87,9 +101,8 @@ class _GRPCResponse(fastapi.Response):
     media_type = "application/grpc+proto"
 
 
-def _new_app():
-    app = _DispatchAPI()
-    app._coroutines = {}
+def _new_app(public_url: str):
+    app = _DispatchAPI(public_url)
 
     @app.post(
         # The endpoint for execution is hardcoded at the moment. If the service
@@ -113,9 +126,18 @@ def _new_app():
 
         # TODO: be more graceful. This will crash if the coroutine is not found,
         # and the coroutine version is not taken into account.
-        coroutine = app._coroutines[
-            dispatch.coroutine._coroutine_uri_to_qualname(req.coroutine_uri)
-        ]
+
+        uri = req.coroutine_uri
+
+        coroutine = app._coroutines.get(uri, None)
+        if coroutine is None:
+            # TODO: integrate with logging
+            print("Coroutine not found:")
+            print("    uri:", uri)
+            print("Available coroutines:")
+            for k in app._coroutines:
+                print("    ", k)
+            raise KeyError(f"coroutine '{uri}' not available on this system")
 
         coro_input = dispatch.coroutine.Input(req)
 
