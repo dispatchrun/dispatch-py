@@ -122,23 +122,24 @@ class Client:
         Raises:
             ValueError: if the API key is missing.
         """
-        self._api_key = api_key or os.environ.get("DISPATCH_API_KEY")
-        if not self._api_key:
+        if not api_key:
+            api_key = os.environ.get("DISPATCH_API_KEY")
+        if not api_key:
             raise ValueError("api_key is required")
-
-        # TODO: actually use the API key when we have defined the authentication
-        # mechanism.
 
         result = urlparse(api_url)
         match result.scheme:
             case "http":
-                port = result.port if result.port else 80
-                channel = grpc.insecure_channel(f"{result.hostname}:{port}")
+                creds = grpc.local_channel_credentials()
             case "https":
-                port = result.port if result.port else 443
-                channel = grpc.insecure_channel(f"{result.hostname}:{port}")
+                creds = grpc.ssl_channel_credentials()
             case _:
                 raise ValueError(f"Invalid API scheme: '{result.scheme}'")
+
+        call_creds = grpc.access_token_call_credentials(api_key)
+        creds = grpc.composite_channel_credentials(creds, call_creds)
+        channel = grpc.secure_channel(result.netloc, creds)
+
         self._stub = service_grpc.ServiceStub(channel)
 
     def create_tasks(self, tasks: Iterable[TaskDef]) -> Iterable[TaskID]:

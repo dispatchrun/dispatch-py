@@ -9,6 +9,9 @@ from ring.coroutine.v1 import coroutine_pb2 as coroutine_pb
 from dispatch import Client, TaskInput, TaskID
 
 
+_test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
+
+
 class FakeRing(service_grpc.ServiceServicer):
     def __init__(self):
         super().__init__()
@@ -21,7 +24,21 @@ class FakeRing(service_grpc.ServiceServicer):
 
         self.pending_tasks = []
 
+    def _validate_authentication(self, context: grpc.ServicerContext):
+        expected = f"Bearer {_test_auth_token}"
+        for key, value in context.invocation_metadata():
+            if key == "authorization":
+                if value == expected:
+                    return
+                context.abort(
+                    grpc.StatusCode.UNAUTHENTICATED,
+                    f"Invalid authorization header. Expected '{expected}', got '{value!r}'",
+                )
+        context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization header")
+
     def CreateTasks(self, request: service_pb.CreateTasksRequest, context):
+        self._validate_authentication(context)
+
         resp = service_pb.CreateTasksResponse()
 
         for t in request.tasks:
@@ -75,7 +92,9 @@ class ServerTest:
         service_grpc.add_ServiceServicer_to_server(self.servicer, self.server)
         self.server.start()
 
-        self.client = Client(api_key="test", api_url=f"http://127.0.0.1:{port}")
+        self.client = Client(
+            api_key=_test_auth_token, api_url=f"http://127.0.0.1:{port}"
+        )
 
     def stop(self):
         self.server.stop(0)
