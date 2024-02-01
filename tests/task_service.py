@@ -14,7 +14,7 @@ from dispatch import Client, TaskInput, TaskID
 _test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
 
 
-class FakeRing(endpoint_grpc.EndpointServiceServicer):
+class FakeEndpointService(endpoint_grpc.EndpointServiceServicer):
     def __init__(self):
         super().__init__()
         self.current_partition = 1
@@ -93,7 +93,7 @@ class ServerTest:
 
         self.port = self.server.add_insecure_port("127.0.0.1:0")
 
-        self.servicer = FakeRing()
+        self.servicer = FakeEndpointService()
 
         endpoint_grpc.add_EndpointServiceServicer_to_server(self.servicer, self.server)
         self.server.start()
