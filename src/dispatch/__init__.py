@@ -35,9 +35,9 @@ class TaskInput:
     Attributes:
         coroutine_uri: The URI of the coroutine to execute.
         input: The input to pass to the coroutine. If the input is a protobuf
-            message, it will be wrapped in a google.protobuf.Any message. If the
-            input is not a protobuf message, it will be pickled and wrapped in a
-            google.protobuf.Any message.
+          message, it will be wrapped in a google.protobuf.Any message. If the
+          input is not a protobuf message, it will be pickled and wrapped in a
+          google.protobuf.Any message.
     """
 
     coroutine_uri: str
