@@ -12,25 +12,26 @@ from dataclasses import dataclass
 
 import grpc
 import google.protobuf
+import google.protobuf.any_pb2
 
 import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
 import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
 import dispatch.coroutine
 
 
-__all__ = ["Client", "TaskID", "TaskInput", "TaskDef"]
+__all__ = ["Client", "ExecutionID", "ExecutionInput", "ExecutionDef"]
 
 
-TaskID: TypeAlias = str
-"""Unique task identifier in Dispatch.
+ExecutionID: TypeAlias = str
+"""Unique execution identifier in Dispatch.
 
 It should be treated as an opaque value.
 """
 
 
 @dataclass(frozen=True)
-class TaskInput:
-    """Definition of a task to be created on Dispatch.
+class ExecutionInput:
+    """Definition of an execution to be created on Dispatch.
 
     Attributes:
         coroutine_uri: The URI of the coroutine to execute.
@@ -44,18 +45,18 @@ class TaskInput:
     input: Any
 
 
-TaskDef: TypeAlias = TaskInput | dispatch.coroutine.Call
-"""Definition of a task to be created on Dispatch.
+ExecutionDef: TypeAlias = ExecutionInput | dispatch.coroutine.Call
+"""Definition of an execution to be ran on Dispatch.
 
-Can be either a TaskInput or a Call. TaskInput can be created manually, likely
-to call a coroutine outside the current code base. Call is created by the
-`dispatch.coroutine` module and is used to call a coroutine defined in the
-current code base.
+Can be either an ExecutionInput or a Call. ExecutionInput can be created
+manually, likely to call a coroutine outside the current code base. Call is
+created by the `dispatch.coroutine` module and is used to call a coroutine
+defined in the current code base.
 """
 
 
-def _taskdef_to_proto(taskdef: TaskDef) -> endpoint_pb.Execution:
-    input = taskdef.input
+def _executiondef_to_proto(execdef: ExecutionDef) -> endpoint_pb.Execution:
+    input = execdef.input
     match input:
         case google.protobuf.any_pb2.Any():
             input_any = input
@@ -66,7 +67,7 @@ def _taskdef_to_proto(taskdef: TaskDef) -> endpoint_pb.Execution:
             pickled = pickle.dumps(input)
             input_any = google.protobuf.any_pb2.Any()
             input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
-    return endpoint_pb.Execution(coroutine_uri=taskdef.coroutine_uri, input=input_any)
+    return endpoint_pb.Execution(coroutine_uri=execdef.coroutine_uri, input=input_any)
 
 
 class Client:
@@ -106,14 +107,14 @@ class Client:
 
         self._stub = endpoint_grpc.EndpointServiceStub(channel)
 
-    def create_tasks(self, tasks: Iterable[TaskDef]) -> Iterable[TaskID]:
-        """Create tasks on Dispatch using the provided inputs.
+    def execute(self, executions: Iterable[ExecutionDef]) -> Iterable[ExecutionID]:
+        """Execute on Dispatch using the provided inputs.
 
         Returns:
-            The ID of the created tasks, in the same order as the inputs.
+            The ID of the created executions, in the same order as the inputs.
         """
         req = endpoint_pb.CreateExecutionsRequest()
-        for task in tasks:
-            req.executions.append(_taskdef_to_proto(task))
+        for e in executions:
+            req.executions.append(_executiondef_to_proto(e))
         resp = self._stub.CreateExecutions(req)
-        return [TaskID(x) for x in resp.ids]
+        return [ExecutionID(x) for x in resp.ids]

@@ -3,7 +3,7 @@ import unittest
 import fastapi
 from fastapi.testclient import TestClient
 
-from dispatch import Client, TaskInput, TaskID
+from dispatch import Client, ExecutionInput, ExecutionID
 from dispatch.coroutine import Input, Output, Error, Status
 from dispatch.coroutine import _any_unpickle as any_unpickle
 import dispatch.fastapi
@@ -27,7 +27,7 @@ class TestFullFastapi(unittest.TestCase):
     def tearDown(self):
         self.server.stop()
 
-    def execute_tasks(self):
+    def execute(self):
         self.server.execute(self.app_client)
 
     def test_simple_end_to_end(self):
@@ -37,12 +37,12 @@ class TestFullFastapi(unittest.TestCase):
             return Output.value(f"Hello world: {input.input}")
 
         # The client.
-        [task_id] = self.client.create_tasks(
-            [TaskInput(coroutine_uri=my_cool_coroutine.uri, input=52)]
+        [task_id] = self.client.execute(
+            [ExecutionInput(coroutine_uri=my_cool_coroutine.uri, input=52)]
         )
 
         # Simulate execution for testing purposes.
-        self.execute_tasks()
+        self.execute()
 
         # Validate results.
         resp = self.servicer.responses[task_id]
@@ -53,7 +53,7 @@ class TestFullFastapi(unittest.TestCase):
         def my_cool_coroutine(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 
-        [task_id] = self.client.create_tasks([my_cool_coroutine.call_with(52)])
-        self.execute_tasks()
+        [task_id] = self.client.execute([my_cool_coroutine.call_with(52)])
+        self.execute()
         resp = self.servicer.responses[task_id]
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
