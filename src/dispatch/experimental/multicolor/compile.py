@@ -120,6 +120,8 @@ def compile_internal(
                 return fn, FunctionColor.GENERATOR_FUNCTION
         except TypeError:
             raise e
+        else:
+            raise
 
     # Determine what type of function we're working with.
     color = FunctionColor.REGULAR_FUNCTION
