@@ -7,7 +7,6 @@ import os
 import pickle
 from collections.abc import Iterable
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Any, TypeAlias
 from urllib.parse import urlparse
 

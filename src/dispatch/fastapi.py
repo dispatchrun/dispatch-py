@@ -19,7 +19,7 @@ Example:
 
 import os
 from collections.abc import Callable
-from typing import Any, Dict
+from typing import Dict
 
 import fastapi
 import fastapi.responses
