@@ -13,6 +13,8 @@ from dataclasses import dataclass
 import grpc
 import google.protobuf
 import google.protobuf.any_pb2
+import google.protobuf.message
+import google.protobuf.wrappers_pb2
 
 import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
 import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
