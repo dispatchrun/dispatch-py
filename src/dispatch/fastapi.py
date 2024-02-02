@@ -18,15 +18,15 @@ Example:
 """
 
 import os
-from typing import Any, Dict
 from collections.abc import Callable
+from typing import Any, Dict
 
 import fastapi
 import fastapi.responses
 from httpx import _urlparse
 
-from dispatch.sdk.v1 import executor_pb2 as executor_pb
 import dispatch.coroutine
+from dispatch.sdk.v1 import executor_pb2 as executor_pb
 
 
 def configure(

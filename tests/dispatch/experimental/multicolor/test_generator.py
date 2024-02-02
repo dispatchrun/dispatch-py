@@ -1,6 +1,7 @@
 import unittest
-from dispatch.experimental.multicolor.parse import parse_function
+
 from dispatch.experimental.multicolor.generator import YieldCounter, is_generator
+from dispatch.experimental.multicolor.parse import parse_function
 
 
 class TestYieldCounter(unittest.TestCase):

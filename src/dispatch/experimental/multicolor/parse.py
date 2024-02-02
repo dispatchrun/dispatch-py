@@ -1,7 +1,7 @@
 import ast
 import inspect
-from typing import cast
 from types import FunctionType
+from typing import cast
 
 
 def parse_function(fn: FunctionType) -> tuple[ast.Module, ast.FunctionDef]:

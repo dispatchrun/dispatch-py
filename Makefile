@@ -11,6 +11,7 @@ dev:
 	$(PYTHON) -m pip install -e .[dev]
 
 fmt:
+	$(PYTHON) -m isort .
 	$(PYTHON) -m black .
 
 typecheck:

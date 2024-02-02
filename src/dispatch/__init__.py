@@ -2,24 +2,24 @@
 """
 
 from __future__ import annotations
-import pickle
-import os
-from urllib.parse import urlparse
-from functools import cached_property
-from collections.abc import Iterable
-from typing import Any, TypeAlias
-from dataclasses import dataclass
 
-import grpc
+import os
+import pickle
+from collections.abc import Iterable
+from dataclasses import dataclass
+from functools import cached_property
+from typing import Any, TypeAlias
+from urllib.parse import urlparse
+
 import google.protobuf
 import google.protobuf.any_pb2
 import google.protobuf.message
 import google.protobuf.wrappers_pb2
+import grpc
 
+import dispatch.coroutine
 import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
 import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
-import dispatch.coroutine
-
 
 __all__ = ["Client", "ExecutionID", "ExecutionInput", "ExecutionDef"]
 

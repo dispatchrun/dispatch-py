@@ -3,12 +3,13 @@ import unittest
 import fastapi
 from fastapi.testclient import TestClient
 
-from dispatch import Client, ExecutionInput, ExecutionID
-from dispatch.coroutine import Input, Output, Error, Status
-from dispatch.coroutine import _any_unpickle as any_unpickle
 import dispatch.fastapi
-from .test_client import ServerTest
+from dispatch import Client, ExecutionID, ExecutionInput
+from dispatch.coroutine import Error, Input, Output, Status
+from dispatch.coroutine import _any_unpickle as any_unpickle
+
 from . import executor_service
+from .test_client import ServerTest
 
 
 class TestFullFastapi(unittest.TestCase):

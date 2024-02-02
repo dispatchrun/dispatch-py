@@ -1,4 +1,4 @@
 from .compile import compile_function
-from .yields import yields, CustomYield, GeneratorYield
+from .yields import CustomYield, GeneratorYield, yields
 
 __all__ = ["compile_function", "yields", "CustomYield", "GeneratorYield"]
