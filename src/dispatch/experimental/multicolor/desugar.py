@@ -110,7 +110,7 @@ class Desugar:
 
             # Delete(expr* targets)
             case ast.Delete():
-                stmt.targets, deps = self._desugar_exprs(stmt.targets)
+                stmt.targets, deps = self._desugar_exprs(stmt.targets, del_stmt=True)
 
             # Raise(expr? exc, expr? cause)
             case ast.Raise():
@@ -156,6 +156,13 @@ class Desugar:
                 stmt.orelse = self._desugar_stmts(stmt.orelse)
                 stmt.finalbody = self._desugar_stmts(stmt.finalbody)
 
+            # TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
+            case ast.TryStar():
+                stmt.body = self._desugar_stmts(stmt.body)
+                stmt.handlers, deps = self._desugar_except_handlers(stmt.handlers)
+                stmt.orelse = self._desugar_stmts(stmt.orelse)
+                stmt.finalbody = self._desugar_stmts(stmt.finalbody)
+
             # Match(expr subject, match_case* cases)
             case ast.Match():
                 stmt.subject, deps = self._desugar_expr(stmt.subject)
@@ -193,20 +200,12 @@ class Desugar:
                 pass  # do not recurse
 
             case _:
-                # Handle nodes added after Python 3.10.
-                if sys.version_info >= (3, 11) and isinstance(stmt, ast.TryStar):
-                    # TryStar(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
-                    stmt.body = self._desugar_stmts(stmt.body)
-                    stmt.handlers, deps = self._desugar_except_handlers(stmt.handlers)
-                    stmt.orelse = self._desugar_stmts(stmt.orelse)
-                    stmt.finalbody = self._desugar_stmts(stmt.finalbody)
-                else:
-                    raise NotImplementedError(f"desugar {stmt}")
+                raise NotImplementedError(f"desugar {stmt}")
 
         return stmt, deps
 
     def _desugar_expr(
-        self, expr: ast.expr, expr_stmt=False
+        self, expr: ast.expr, expr_stmt=False, del_stmt=False
     ) -> tuple[ast.expr, list[ast.stmt]]:
         # These cases have no nested expressions or statements. Return
         # early so that no superfluous temporaries are generated.
@@ -222,7 +221,7 @@ class Desugar:
 
         deps: list[ast.stmt] = []
         wrapper = None
-        create_temporary = not expr_stmt
+        create_temporary = not expr_stmt and not del_stmt
         is_store = False
         match expr:
             # Call(expr func, expr* args, keyword* keywords)
@@ -323,11 +322,8 @@ class Desugar:
             # FormattedValue(expr value, int conversion, expr? format_spec)
             case ast.FormattedValue():
                 expr.value, deps = self._desugar_expr(expr.value)
-                if expr.format_spec is not None:
-                    expr.format_spec, format_spec_deps = self._desugar_expr(
-                        expr.format_spec
-                    )
-                    deps.extend(format_spec_deps)
+                # Note: expr.format_spec is an expression, but we do not expect to
+                # find compound expressions there.
 
                 conversion = expr.conversion
                 format_spec = expr.format_spec
@@ -519,12 +515,12 @@ class Desugar:
         return desugared
 
     def _desugar_exprs(
-        self, exprs: list[ast.expr]
+        self, exprs: list[ast.expr], del_stmt=False
     ) -> tuple[list[ast.expr], list[ast.stmt]]:
         desugared = []
         deps = []
         for expr in exprs:
-            expr, expr_deps = self._desugar_expr(expr)
+            expr, expr_deps = self._desugar_expr(expr, del_stmt=del_stmt)
             deps.extend(expr_deps)
             desugared.append(expr)
         return desugared, deps
