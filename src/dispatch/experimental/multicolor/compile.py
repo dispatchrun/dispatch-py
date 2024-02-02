@@ -1,13 +1,13 @@
 import ast
 import inspect
 import os
-import types
+import textwrap
 from enum import Enum
 from types import FunctionType, GeneratorType, MethodType
 from typing import cast
 from .desugar import desugar_function
 from .generator import is_generator, empty_generator
-from .parse import parse_function, NoSourceError, repair_indentation
+from .parse import parse_function, NoSourceError
 from .template import rewrite_template
 from .yields import CustomYield, GeneratorYield
 
@@ -129,7 +129,7 @@ def compile_internal(
     if TRACE:
         print("\n-------------------------------------------------")
         print("[MULTICOLOR] COMPILING:")
-        print(repair_indentation(inspect.getsource(fn)).rstrip())
+        print(textwrap.dedent(inspect.getsource(fn)).rstrip())
 
     fn_def.name = fn_name
 
