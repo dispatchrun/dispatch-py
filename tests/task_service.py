@@ -8,7 +8,7 @@ import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
 import dispatch.sdk.v1.executor_pb2 as executor_pb
 import dispatch.sdk.v1.executor_pb2_grpc as executor_grpc
 
-from dispatch import Client, TaskInput, TaskID
+from dispatch import Client, ExecutionInput, ExecutionID
 
 
 _test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
@@ -26,7 +26,7 @@ class FakeEndpointService(endpoint_grpc.EndpointServiceServicer):
 
         self.pending_tasks = []
 
-    def _make_task_id(self) -> TaskID:
+    def _make_task_id(self) -> ExecutionID:
         parts = [
             self.current_partition,
             self.current_block_id,

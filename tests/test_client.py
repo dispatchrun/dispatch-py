@@ -5,7 +5,7 @@ from unittest import mock
 import grpc
 from google.protobuf import wrappers_pb2, any_pb2
 
-from dispatch import Client, TaskInput, TaskID
+from dispatch import Client, ExecutionInput, ExecutionID
 from dispatch.coroutine import _any_unpickle as any_unpickle
 from .task_service import ServerTest
 
@@ -25,8 +25,8 @@ class TestClient(unittest.TestCase):
         client = Client(api_url=f"http://127.0.0.1:{self.server.port}")
 
         with self.assertRaises(grpc._channel._InactiveRpcError) as mc:
-            client.create_tasks(
-                [TaskInput(coroutine_uri="my-cool-coroutine", input=42)]
+            client.execute(
+                [ExecutionInput(coroutine_uri="my-cool-coroutine", input=42)]
             )
         self.assertTrue("got 'Bearer WHATEVER'" in str(mc.exception))
 
@@ -45,9 +45,9 @@ class TestClient(unittest.TestCase):
         # around to actually test this.
         Client(api_url="https://example.com", api_key="foo")
 
-    def test_create_one_task_pickle(self):
-        results = self.client.create_tasks(
-            [TaskInput(coroutine_uri="my-cool-coroutine", input=42)]
+    def test_create_one_execution_pickle(self):
+        results = self.client.execute(
+            [ExecutionInput(coroutine_uri="my-cool-coroutine", input=42)]
         )
         self.assertEqual(len(results), 1)
         id = results[0]
@@ -62,8 +62,8 @@ class TestClient(unittest.TestCase):
 
     def test_create_one_task_proto(self):
         proto = wrappers_pb2.Int32Value(value=42)
-        results = self.client.create_tasks(
-            [TaskInput(coroutine_uri="my-cool-coroutine", input=proto)]
+        results = self.client.execute(
+            [ExecutionInput(coroutine_uri="my-cool-coroutine", input=proto)]
         )
         id = results[0]
         created_tasks = self.servicer.created_tasks
@@ -78,8 +78,8 @@ class TestClient(unittest.TestCase):
         proto = wrappers_pb2.Int32Value(value=42)
         proto_any = any_pb2.Any()
         proto_any.Pack(proto)
-        results = self.client.create_tasks(
-            [TaskInput(coroutine_uri="my-cool-coroutine", input=proto_any)]
+        results = self.client.execute(
+            [ExecutionInput(coroutine_uri="my-cool-coroutine", input=proto_any)]
         )
         id = results[0]
         created_tasks = self.servicer.created_tasks
