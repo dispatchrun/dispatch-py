@@ -1,4 +1,5 @@
 from types import FunctionType, GeneratorType
+
 from .generator import DurableGenerator
 from .registry import register_function
 

@@ -11,16 +11,16 @@ type Input, and return an Output value.
 """
 
 from __future__ import annotations
+
 import enum
 import pickle
-from typing import Any, Callable
 from dataclasses import dataclass
+from typing import Any, Callable
 
 import google.protobuf.message
 
 from dispatch.sdk.v1 import executor_pb2 as executor_pb
 from dispatch.sdk.v1 import status_pb2 as status_pb
-
 
 # Most types in this package are thin wrappers around the various protobuf
 # messages of ring.coroutine.v1. They provide some safeguards and ergonomics.

@@ -1,6 +1,5 @@
 from types import FunctionType
 
-
 _REGISTRY: dict[str, FunctionType] = {}
 
 

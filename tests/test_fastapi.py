@@ -2,15 +2,16 @@ import pickle
 import unittest
 from typing import Any
 
-import httpx
 import fastapi
-from fastapi.testclient import TestClient
 import google.protobuf.wrappers_pb2
+import httpx
+from fastapi.testclient import TestClient
 
-import dispatch.fastapi
 import dispatch.coroutine
-from dispatch.coroutine import Input, Output, Error, Status
+import dispatch.fastapi
+from dispatch.coroutine import Error, Input, Output, Status
 from dispatch.sdk.v1 import executor_pb2 as executor_pb
+
 from . import executor_service
 
 
