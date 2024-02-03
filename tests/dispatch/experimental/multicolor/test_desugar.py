@@ -34,6 +34,16 @@ class TestDesugar(unittest.TestCase):
 
         self.assert_desugar_is_noop(fn)
 
+    def test_nonlocal(self):
+        foo = 1
+        bar = 2
+
+        def fn():
+            nonlocal foo
+            nonlocal foo, bar
+
+        self.assert_desugar_is_noop(fn)
+
     def test_expr_stmt(self):
         def fn():
             identity(1)
@@ -398,6 +408,32 @@ class TestDesugar(unittest.TestCase):
 
         self.assert_desugared(before, after)
 
+    def test_try_star(self):
+        def before():
+            try:
+                return identity(1)
+            except* RuntimeError as e:
+                identity(2)
+            else:
+                return identity(3)
+            finally:
+                return identity(4)
+
+        def after():
+            try:
+                _v0 = identity(1)
+                return _v0
+            except* RuntimeError as e:
+                identity(2)
+            else:
+                _v1 = identity(3)
+                return _v1
+            finally:
+                _v2 = identity(4)
+                return _v2
+
+        self.assert_desugared(before, after)
+
     def test_match(self):
         def before():
             match identity(1):
@@ -520,12 +556,12 @@ class TestDesugar(unittest.TestCase):
 
     def test_f_strings(self):
         def before():
-            print(f"a {identity(1)} b {identity(2)} c")
+            print(f"a {identity(1)} b {identity(2):.2f} c")
 
         def after():
             _v0 = identity(1)
             _v1 = identity(2)
-            _v2 = f"a {_v0} b {_v1} c"
+            _v2 = f"a {_v0} b {_v1:.2f} c"
             print(_v2)
 
         self.assert_desugared(before, after)
@@ -727,6 +763,64 @@ class TestDesugar(unittest.TestCase):
             foo = _v3
 
         self.assert_desugared(before, after)
+
+    def test_raise(self):
+        def before():
+            raise
+            raise identity(1)
+            raise identity(2) from identity(3)
+
+        def after():
+            raise
+            _v0 = identity(1)
+            raise _v0
+            _v1 = identity(2)
+            _v2 = identity(3)
+            raise _v1 from _v2
+
+        self.assert_desugared(before, after)
+
+    def test_delete(self):
+        def before(a):
+            del a[identity(1)], (identity(2)).a
+            del a
+
+        def after(a):
+            _v0 = identity(1)
+            _v1 = identity(2)
+            del a[_v0], _v1.a
+            del a
+
+        self.assert_desugared(before, after)
+
+    def test_nested_defs(self):
+        def fn():
+            def nested_fn():
+                return identity(1)  # not desugared
+
+            async def async_nested_fn():
+                return identity(2)  # not desugared
+
+            class Nested:
+                def nested_fn(self):
+                    return identity(3)  # not desugared
+
+            lambda x: identity(4) + identity(x)  # not desugared
+
+        self.assert_desugar_is_noop(fn)
+
+    def test_unsupported_nodes(self):
+        class NewStmt(ast.stmt):
+            pass
+
+        class NewExpr(ast.expr):
+            pass
+
+        with self.assertRaises(NotImplementedError):
+            desugar_function(ast.FunctionDef(body=[NewStmt()]))
+
+        with self.assertRaises(NotImplementedError):
+            desugar_function(ast.FunctionDef(body=[ast.Expr(value=NewExpr())]))
 
     def assert_desugar_is_noop(self, fn):
         self.assert_desugared(fn, fn)

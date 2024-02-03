@@ -1,3 +1,5 @@
+import ast
+import textwrap
 import time
 import unittest
 from enum import Enum
@@ -7,6 +9,7 @@ from typing import Any
 from dispatch.experimental.multicolor import (
     CustomYield,
     GeneratorYield,
+    NoSourceError,
     compile_function,
     yields,
 )
@@ -251,6 +254,93 @@ class TestCompile(unittest.TestCase):
         self.assert_yields(
             zipper, args=[generator, 3], yields=yields, returns=[(0, 0), (1, 1), (2, 2)]
         )
+
+    def test_cache_compiled_function(self):
+        compiled = compile_function(adder)
+        compiled2 = compile_function(adder)
+        self.assertIs(compiled, compiled2)
+
+        compiled3 = compile_function(adder, cache_key="abc")
+        self.assertNotEqual(compiled, compiled3)
+
+    def test_cache_compiled_method(self):
+        class Wrapper:
+            @yields
+            def add(self, a, b): ...
+
+        instance = Wrapper()
+        compiled = compile_function(instance.add)
+        compiled2 = compile_function(instance.add)
+        self.assertIs(compiled.__code__, compiled2.__code__)
+        self.assertIs(compiled.__self__, compiled2.__self__)
+
+        new_instance = Wrapper()
+        compiled3 = compile_function(new_instance.add)
+        self.assertIs(compiled.__code__, compiled3.__code__)
+        self.assertNotEqual(compiled.__self__, compiled3.__self__)
+
+        compiled4 = compile_function(new_instance.add, cache_key="abc")
+        self.assertNotEqual(compiled3.__code__, compiled4.__code__)
+        self.assertEqual(compiled3.__self__, compiled4.__self__)
+
+    def test_compile_yield_point(self):
+        with self.assertRaises(ValueError):
+            compile_function(add)
+
+    def test_no_source(self):
+        # builtin function source is not available.
+        with self.assertRaises(NoSourceError):
+            compile_function(print)
+
+        # Source is not available (or rather, not preserved) when functions
+        # are created via compile().
+        src = ast.parse(
+            textwrap.dedent(
+                """
+        def foo():
+            pass
+        """
+            )
+        )
+        namespace = {}
+        code = compile(src, filename="<ast>", mode="exec")
+        exec(code, namespace)
+        foo = namespace["foo"]
+        foo()  # sanity check
+        with self.assertRaises(NoSourceError):
+            compile_function(foo)
+
+    def test_decorator(self):
+        def a(x):
+            return x + 1
+
+        def b(x):
+            return a(x) * 10
+
+        calls = 0
+
+        def decorator(fn):
+            def wrapper(*args, **kwargs):
+                nonlocal calls
+                calls += 1
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        # Note that functions are compiled and decorated recursively.
+        # Both a and b will be compiled and decorated.
+        compiled_b = compile_function(b, decorator=decorator)
+        compiled_b.__globals__["a"] = a
+        g = compiled_b(3)
+
+        try:
+            next(g)
+            raise RuntimeError("generator unexpectedly yielded")
+        except StopIteration as e:
+            result = e.value
+
+        self.assertEqual(result, 40)
+        self.assertEqual(calls, 2)
 
     def assert_yields(
         self,

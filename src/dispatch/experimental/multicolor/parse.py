@@ -1,11 +1,19 @@
 import ast
 import inspect
+import textwrap
 from types import FunctionType
 from typing import cast
 
 
 def parse_function(fn: FunctionType) -> tuple[ast.Module, ast.FunctionDef]:
-    """Parse an AST from a function definition."""
+    """Parse an AST from a function. The function source must be available.
+
+    Args:
+        fn: The function to parse.
+
+    Raises:
+        NoSourceError: If the function source cannot be retrieved.
+    """
     try:
         src = inspect.getsource(fn)
     except TypeError as e:
@@ -18,31 +26,11 @@ def parse_function(fn: FunctionType) -> tuple[ast.Module, ast.FunctionDef]:
     try:
         module = ast.parse(src)
     except IndentationError:
-        src = repair_indentation(src)
-        module = ast.parse(src)
+        module = ast.parse(textwrap.dedent(src))
 
     fn_def = cast(ast.FunctionDef, module.body[0])
     return module, fn_def
 
 
 class NoSourceError(RuntimeError):
-    """Error that occurs when a function AST is not available because
-    the (Python) source code is not available."""
-
-
-def repair_indentation(src: str) -> str:
-    """Repair (remove excess) indentation from the source of a function
-    definition that's nested within a class or function."""
-    lines = src.split("\n")
-    head = lines[0]
-    indent_len = len(head) - len(head.lstrip())
-    indent = head[:indent_len]
-    for i in range(len(lines)):
-        if len(lines[i]) == 0:
-            continue
-        if not lines[i].startswith(indent):
-            raise IndentationError(
-                f"inconsistent indentation '{head}' vs. '{lines[i]}'"
-            )
-        lines[i] = lines[i][indent_len:]
-    return "\n".join(lines)
+    """Function source code is not available."""

@@ -1,14 +1,14 @@
 import ast
 import inspect
 import os
-import types
+import textwrap
 from enum import Enum
 from types import FunctionType, GeneratorType, MethodType
 from typing import cast
 
 from .desugar import desugar_function
 from .generator import empty_generator, is_generator
-from .parse import NoSourceError, parse_function, repair_indentation
+from .parse import NoSourceError, parse_function
 from .template import rewrite_template
 from .yields import CustomYield, GeneratorYield
 
@@ -19,7 +19,7 @@ def compile_function(
     fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
 ) -> FunctionType | MethodType:
     """Compile a regular function into a generator that yields data passed
-    to functions marked with the @multicolor.yields decorator. Decorated
+    to functions marked with the @multicolor.yields decorator. Decorated yield
     functions can be called from anywhere in the call stack, and functions
     in between do not have to be generators or async functions (coroutines).
 
@@ -29,7 +29,7 @@ def compile_function(
         def sleep(seconds): ...
 
         def parent():
-            sleep(3)  # yield point!
+            sleep(3)  # yield point
 
         def grandparent():
             parent()
@@ -42,7 +42,7 @@ def compile_function(
     Two-way data flow works as expected. At a yield point, generator.send(value)
     can be used to send data back to the yield point and to resume execution.
     The data sent back will be the return value of the function decorated with
-    @multicolor.yields.
+    @multicolor.yields:
 
         @multicolor.yields(type="add")
         def add(a: int, b: int) -> int:
@@ -77,17 +77,39 @@ def compile_function(
 
     The default implementation could also raise an error, to ensure that
     the function is only ever called from a compiled function.
+
+
+    fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
+
+    Args:
+        fn: The function to compile.
+        decorator: An optional decorator to apply to the compiled function.
+        cache_key: Cache key to use when caching compiled functions.
+
+    Returns:
+        FunctionType: A compiled generator function.
     """
-    compiled_fn, _ = compile_internal(fn, decorator, cache_key)
+    compiled_fn, _ = _compile_internal(fn, decorator, cache_key)
     return compiled_fn
 
 
 class FunctionColor(Enum):
+    """Color (aka. type/flavor) of a function.
+
+    There are four colors of functions in Python:
+    * regular (e.g. def fn(): pass)
+    * generator (e.g. def fn(): yield)
+    * async (e.g. async def fn(): pass)
+    * async generator (e.g. async def fn(): yield)
+
+    Only the first two colors are supported at this time.
+    """
+
     REGULAR_FUNCTION = 0
     GENERATOR_FUNCTION = 1
 
 
-def compile_internal(
+def _compile_internal(
     fn: FunctionType, decorator: FunctionType | None, cache_key: str
 ) -> tuple[FunctionType | MethodType, FunctionColor]:
     if hasattr(fn, "_multicolor_yield_type"):
@@ -99,7 +121,7 @@ def compile_internal(
     # Check if the function has already been compiled.
     cache_holder = fn
     if isinstance(fn, MethodType):
-        cache_holder = fn.__self__
+        cache_holder = fn.__self__.__class__
     if hasattr(cache_holder, "_multicolor_cache"):
         try:
             compiled_fn, color = cache_holder._multicolor_cache[fn_name]
@@ -121,6 +143,8 @@ def compile_internal(
                 return fn, FunctionColor.GENERATOR_FUNCTION
         except TypeError:
             raise e
+        else:
+            raise
 
     # Determine what type of function we're working with.
     color = FunctionColor.REGULAR_FUNCTION
@@ -130,7 +154,7 @@ def compile_internal(
     if TRACE:
         print("\n-------------------------------------------------")
         print("[MULTICOLOR] COMPILING:")
-        print(repair_indentation(inspect.getsource(fn)).rstrip())
+        print(textwrap.dedent(inspect.getsource(fn)).rstrip())
 
     fn_def.name = fn_name
 
@@ -171,7 +195,7 @@ def compile_internal(
     namespace["_multicolor_no_source_error"] = NoSourceError
     namespace["_multicolor_custom_yield"] = CustomYield
     namespace["_multicolor_generator_yield"] = GeneratorYield
-    namespace["_multicolor_compile"] = compile_internal
+    namespace["_multicolor_compile"] = _compile_internal
     namespace["_multicolor_generator_type"] = GeneratorType
     namespace["_multicolor_decorator"] = decorator
     namespace["_multicolor_cache_key"] = cache_key
@@ -269,38 +293,36 @@ class CallTransformer(ast.NodeTransformer):
 
         result = rewrite_template(
             """
-if hasattr(__fn__, "_multicolor_yield_type"):
-    _multicolor_result = yield _multicolor_custom_yield(type=__fn__._multicolor_yield_type, args=__args__, kwargs=__kwargs__)
-    __assign_result__
-else:
-    _multicolor_result = None
-    try:
-        __compiled_fn__, _multicolor_color = _multicolor_compile(__fn__, _multicolor_decorator, _multicolor_cache_key)
-    except _multicolor_no_source_error:
-        _multicolor_result = __fn_call__
-    else:
-        _multicolor_generator = __compiled_fn_call__
-        if _multicolor_color == _multicolor_generator_color:
-            _multicolor_result = []
-            for _multicolor_yield in _multicolor_generator:
-                if isinstance(_multicolor_yield, _multicolor_generator_yield):
-                    _multicolor_result.append(_multicolor_yield.value)
+            if hasattr(__fn__, "_multicolor_yield_type"):
+                _multicolor_result = yield _multicolor_custom_yield(type=__fn__._multicolor_yield_type, args=__args__, kwargs=__kwargs__)
+                __assign_result__
+            else:
+                _multicolor_result = None
+                try:
+                    __compiled_fn__, _multicolor_color = _multicolor_compile(__fn__, _multicolor_decorator, _multicolor_cache_key)
+                except _multicolor_no_source_error:
+                    _multicolor_result = __fn_call__
                 else:
-                    yield _multicolor_yield
-        else:
-            _multicolor_result = yield from _multicolor_generator
-    finally:
-        __assign_result__
+                    _multicolor_generator = __compiled_fn_call__
+                    if _multicolor_color == _multicolor_generator_color:
+                        _multicolor_result = []
+                        for _multicolor_yield in _multicolor_generator:
+                            if isinstance(_multicolor_yield, _multicolor_generator_yield):
+                                _multicolor_result.append(_multicolor_yield.value)
+                            else:
+                                yield _multicolor_yield
+                    else:
+                        _multicolor_result = yield from _multicolor_generator
+                finally:
+                    __assign_result__
             """,
-            expressions=dict(
-                __fn__=fn,
-                __fn_call__=fn_call,
-                __args__=args,
-                __kwargs__=kwargs,
-                __compiled_fn__=compiled_fn,
-                __compiled_fn_call__=compiled_fn_call,
-            ),
-            statements=dict(__assign_result__=assign_result),
+            __fn__=fn,
+            __fn_call__=fn_call,
+            __args__=args,
+            __kwargs__=kwargs,
+            __compiled_fn__=compiled_fn,
+            __compiled_fn_call__=compiled_fn_call,
+            __assign_result__=assign_result,
         )
 
         return result[0]
