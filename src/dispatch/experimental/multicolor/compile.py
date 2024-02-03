@@ -78,9 +78,6 @@ def compile_function(
     The default implementation could also raise an error, to ensure that
     the function is only ever called from a compiled function.
 
-
-    fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
-
     Args:
         fn: The function to compile.
         decorator: An optional decorator to apply to the compiled function.
