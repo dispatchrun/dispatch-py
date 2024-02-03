@@ -10,15 +10,17 @@ class TestTemplate(unittest.TestCase):
         self.assert_rewrite(
             """
         a
-        b = c
+        b
+        c = d
         """,
             dict(
-                a=ast.Expr(ast.Name(id="d", ctx=ast.Load())),
-                c=ast.Name(id="e", ctx=ast.Load()),
+                a=ast.Expr(ast.Name(id="e", ctx=ast.Load())),
+                d=ast.Name(id="f", ctx=ast.Load()),
             ),
             """
-        d
-        b = e
+        e
+        b
+        c = f
         """,
         )
 

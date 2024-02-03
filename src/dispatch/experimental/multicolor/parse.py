@@ -6,7 +6,14 @@ from types import FunctionType
 
 
 def parse_function(fn: FunctionType) -> tuple[ast.Module, ast.FunctionDef]:
-    """Parse an AST from a function definition."""
+    """Parse an AST from a function. The function source must be available.
+
+    Args:
+        fn: The function to parse.
+
+    Raises:
+        NoSourceError: If the function source cannot be retrieved.
+    """
     try:
         src = inspect.getsource(fn)
     except TypeError as e:
@@ -26,5 +33,4 @@ def parse_function(fn: FunctionType) -> tuple[ast.Module, ast.FunctionDef]:
 
 
 class NoSourceError(RuntimeError):
-    """Error that occurs when a function AST is not available because
-    the (Python) source code is not available."""
+    """Function source code is not available."""

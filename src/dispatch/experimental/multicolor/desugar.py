@@ -2,17 +2,24 @@ import ast
 from typing import cast
 
 
-def desugar_function(node: ast.FunctionDef) -> ast.FunctionDef:
-    """Desugar a function to simplify subsequent AST transformations."""
-    node.body = Desugar().desugar(node.body)
-    ast.fix_missing_locations(node)
-    return node
+def desugar_function(fn_def: ast.FunctionDef) -> ast.FunctionDef:
+    """Desugar a function to simplify subsequent AST transformations.
+
+    Args:
+        fn_def: A function definition.
+
+    Returns:
+        FunctionDef: The desugared function definition.
+    """
+    fn_def.body = Desugar().desugar(fn_def.body)
+    ast.fix_missing_locations(fn_def)
+    return fn_def
 
 
 class Desugar:
-    """The desugar pass simplifies AST transformations that must replace an
-    expression (e.g. a function call) with a statement (e.g. an if statement
-    or for loop) in a function definition.
+    """The desugar pass simplifies subsequent AST transformations that need
+    to replace an expression (e.g. a function call) with a statement (e.g. an
+    if branch) in a function definition.
 
     The pass recursively simplifies control flow and compound expressions
     in a function definition such that:

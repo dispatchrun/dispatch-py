@@ -18,7 +18,7 @@ def compile_function(
     fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
 ) -> FunctionType | MethodType:
     """Compile a regular function into a generator that yields data passed
-    to functions marked with the @multicolor.yields decorator. Decorated
+    to functions marked with the @multicolor.yields decorator. Decorated yield
     functions can be called from anywhere in the call stack, and functions
     in between do not have to be generators or async functions (coroutines).
 
@@ -28,7 +28,7 @@ def compile_function(
         def sleep(seconds): ...
 
         def parent():
-            sleep(3)  # yield point!
+            sleep(3)  # yield point
 
         def grandparent():
             parent()
@@ -41,7 +41,7 @@ def compile_function(
     Two-way data flow works as expected. At a yield point, generator.send(value)
     can be used to send data back to the yield point and to resume execution.
     The data sent back will be the return value of the function decorated with
-    @multicolor.yields.
+    @multicolor.yields:
 
         @multicolor.yields(type="add")
         def add(a: int, b: int) -> int:
@@ -76,17 +76,39 @@ def compile_function(
 
     The default implementation could also raise an error, to ensure that
     the function is only ever called from a compiled function.
+
+
+    fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
+
+    Args:
+        fn: The function to compile.
+        decorator: An optional decorator to apply to the compiled function.
+        cache_key: Cache key to use when caching compiled functions.
+
+    Returns:
+        FunctionType: A compiled generator function.
     """
-    compiled_fn, _ = compile_internal(fn, decorator, cache_key)
+    compiled_fn, _ = _compile_internal(fn, decorator, cache_key)
     return compiled_fn
 
 
 class FunctionColor(Enum):
+    """Color (aka. type/flavor) of a function.
+
+    There are four colors of functions in Python:
+    * regular (e.g. def fn(): pass)
+    * generator (e.g. def fn(): yield)
+    * async (e.g. async def fn(): pass)
+    * async generator (e.g. async def fn(): yield)
+
+    Only the first two colors are supported at this time.
+    """
+
     REGULAR_FUNCTION = 0
     GENERATOR_FUNCTION = 1
 
 
-def compile_internal(
+def _compile_internal(
     fn: FunctionType, decorator: FunctionType | None, cache_key: str
 ) -> tuple[FunctionType | MethodType, FunctionColor]:
     if hasattr(fn, "_multicolor_yield_type"):
@@ -98,7 +120,7 @@ def compile_internal(
     # Check if the function has already been compiled.
     cache_holder = fn
     if isinstance(fn, MethodType):
-        cache_holder = fn.__self__
+        cache_holder = fn.__self__.__class__
     if hasattr(cache_holder, "_multicolor_cache"):
         try:
             compiled_fn, color = cache_holder._multicolor_cache[fn_name]
@@ -172,7 +194,7 @@ def compile_internal(
     namespace["_multicolor_no_source_error"] = NoSourceError
     namespace["_multicolor_custom_yield"] = CustomYield
     namespace["_multicolor_generator_yield"] = GeneratorYield
-    namespace["_multicolor_compile"] = compile_internal
+    namespace["_multicolor_compile"] = _compile_internal
     namespace["_multicolor_generator_type"] = GeneratorType
     namespace["_multicolor_decorator"] = decorator
     namespace["_multicolor_cache_key"] = cache_key
