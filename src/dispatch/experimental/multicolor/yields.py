@@ -4,7 +4,11 @@ from typing import Any
 
 
 def yields(type: Any):
-    """Mark a function as a custom yield point."""
+    """Returns a decorator that marks functions as a type of yield.
+
+    Args:
+        type: Opaque type for this yield.
+    """
 
     def decorator(fn: FunctionType) -> FunctionType:
         fn._multicolor_yield_type = type  # type: ignore[attr-defined]
@@ -19,7 +23,13 @@ class YieldType:
 
 @dataclass
 class CustomYield(YieldType):
-    """A yield from a function marked with @yields."""
+    """A yield from a function marked with @yields.
+
+    Attributes:
+        type: The type of yield that was specified in the @yields decorator.
+        args: Positional arguments to the function call.
+        kwargs: Keyword arguments to the function call.
+    """
 
     type: Any
     args: list[Any]
@@ -28,6 +38,10 @@ class CustomYield(YieldType):
 
 @dataclass
 class GeneratorYield(YieldType):
-    """A yield from a generator."""
+    """A yield from a generator.
+
+    Attributes:
+        value: The value that was yielded from the generator.
+    """
 
     value: Any = None

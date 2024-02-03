@@ -270,38 +270,36 @@ class CallTransformer(ast.NodeTransformer):
 
         result = rewrite_template(
             """
-if hasattr(__fn__, "_multicolor_yield_type"):
-    _multicolor_result = yield _multicolor_custom_yield(type=__fn__._multicolor_yield_type, args=__args__, kwargs=__kwargs__)
-    __assign_result__
-else:
-    _multicolor_result = None
-    try:
-        __compiled_fn__, _multicolor_color = _multicolor_compile(__fn__, _multicolor_decorator, _multicolor_cache_key)
-    except _multicolor_no_source_error:
-        _multicolor_result = __fn_call__
-    else:
-        _multicolor_generator = __compiled_fn_call__
-        if _multicolor_color == _multicolor_generator_color:
-            _multicolor_result = []
-            for _multicolor_yield in _multicolor_generator:
-                if isinstance(_multicolor_yield, _multicolor_generator_yield):
-                    _multicolor_result.append(_multicolor_yield.value)
+            if hasattr(__fn__, "_multicolor_yield_type"):
+                _multicolor_result = yield _multicolor_custom_yield(type=__fn__._multicolor_yield_type, args=__args__, kwargs=__kwargs__)
+                __assign_result__
+            else:
+                _multicolor_result = None
+                try:
+                    __compiled_fn__, _multicolor_color = _multicolor_compile(__fn__, _multicolor_decorator, _multicolor_cache_key)
+                except _multicolor_no_source_error:
+                    _multicolor_result = __fn_call__
                 else:
-                    yield _multicolor_yield
-        else:
-            _multicolor_result = yield from _multicolor_generator
-    finally:
-        __assign_result__
+                    _multicolor_generator = __compiled_fn_call__
+                    if _multicolor_color == _multicolor_generator_color:
+                        _multicolor_result = []
+                        for _multicolor_yield in _multicolor_generator:
+                            if isinstance(_multicolor_yield, _multicolor_generator_yield):
+                                _multicolor_result.append(_multicolor_yield.value)
+                            else:
+                                yield _multicolor_yield
+                    else:
+                        _multicolor_result = yield from _multicolor_generator
+                finally:
+                    __assign_result__
             """,
-            expressions=dict(
-                __fn__=fn,
-                __fn_call__=fn_call,
-                __args__=args,
-                __kwargs__=kwargs,
-                __compiled_fn__=compiled_fn,
-                __compiled_fn_call__=compiled_fn_call,
-            ),
-            statements=dict(__assign_result__=assign_result),
+            __fn__=fn,
+            __fn_call__=fn_call,
+            __args__=args,
+            __kwargs__=kwargs,
+            __compiled_fn__=compiled_fn,
+            __compiled_fn_call__=compiled_fn_call,
+            __assign_result__=assign_result,
         )
 
         return result[0]
