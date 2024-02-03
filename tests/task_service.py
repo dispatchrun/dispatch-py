@@ -4,12 +4,9 @@ import grpc
 
 import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
 import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
-
 import dispatch.sdk.v1.executor_pb2 as executor_pb
 import dispatch.sdk.v1.executor_pb2_grpc as executor_grpc
-
-from dispatch import Client, ExecutionInput, ExecutionID
-
+from dispatch import Client, ExecutionID, ExecutionInput
 
 _test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
 

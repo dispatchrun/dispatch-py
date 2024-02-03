@@ -1,5 +1,5 @@
 from types import FrameType
-from typing import Any, Tuple, Generator
+from typing import Any, Generator, Tuple
 
 def get_frame_ip(frame: FrameType | Generator) -> int: ...
 def set_frame_ip(frame: FrameType | Generator, ip: int): ...

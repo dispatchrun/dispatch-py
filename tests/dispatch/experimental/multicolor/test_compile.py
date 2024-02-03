@@ -1,17 +1,18 @@
+import ast
 import textwrap
 import time
 import unittest
-import ast
+from enum import Enum
 from types import FunctionType
 from typing import Any
+
 from dispatch.experimental.multicolor import (
-    compile_function,
-    yields,
     CustomYield,
     GeneratorYield,
     NoSourceError,
+    compile_function,
+    yields,
 )
-from enum import Enum
 
 
 class YieldTypes(Enum):

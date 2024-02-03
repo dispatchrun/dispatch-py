@@ -1,9 +1,9 @@
 import ast
 import unittest
 from types import FunctionType
-from dispatch.experimental.multicolor.parse import parse_function
-from dispatch.experimental.multicolor.desugar import desugar_function
 
+from dispatch.experimental.multicolor.desugar import desugar_function
+from dispatch.experimental.multicolor.parse import parse_function
 
 # Disable lint checks:
 # ruff: noqa

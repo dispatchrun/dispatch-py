@@ -1,7 +1,8 @@
+import ast
 import textwrap
 import unittest
-import ast
 from typing import cast
+
 from dispatch.experimental.multicolor.template import rewrite_template
 
 

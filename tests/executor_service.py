@@ -1,5 +1,5 @@
-import httpx
 import grpc
+import httpx
 
 from dispatch.sdk.v1 import executor_pb2 as executor_pb
 from dispatch.sdk.v1 import executor_pb2_grpc as executor_grpc

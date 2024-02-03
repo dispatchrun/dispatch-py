@@ -5,9 +5,10 @@ import textwrap
 from enum import Enum
 from types import FunctionType, GeneratorType, MethodType
 from typing import cast
+
 from .desugar import desugar_function
-from .generator import is_generator, empty_generator
-from .parse import parse_function, NoSourceError
+from .generator import empty_generator, is_generator
+from .parse import NoSourceError, parse_function
 from .template import rewrite_template
 from .yields import CustomYield, GeneratorYield
 
