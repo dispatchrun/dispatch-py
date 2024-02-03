@@ -3,18 +3,13 @@ from .generator import DurableGenerator
 from .registry import register_function
 
 
-def durable(fn):
-    """A decorator that makes generators serializable."""
-    return DurableFunction(fn)
-
-
 class DurableFunction:
     """A wrapper for a generator function that wraps its generator instances
     with a DurableGenerator.
 
     Attributes:
-        fn (FunctionType): A generator function.
-        key (str): A key that uniquely identifies the function.
+        fn: A generator function.
+        key: A key that uniquely identifies the function.
     """
 
     def __init__(self, fn: FunctionType):
@@ -23,8 +18,17 @@ class DurableFunction:
 
     def __call__(self, *args, **kwargs):
         result = self.fn(*args, **kwargs)
-        if isinstance(result, GeneratorType):
-            return DurableGenerator(result, self.key, args, kwargs)
+        if not isinstance(result, GeneratorType):
+            raise NotImplementedError(
+                "only synchronous generator functions are supported"
+            )
+        return DurableGenerator(result, self.key, args, kwargs)
 
-        # TODO: support native coroutines
-        raise NotImplementedError
+
+def durable(fn) -> DurableFunction:
+    """Returns a "durable" function that creates serializable generators.
+
+    Args:
+        fn: A generator function.
+    """
+    return DurableFunction(fn)

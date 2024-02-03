@@ -1,5 +1,5 @@
 from types import GeneratorType, TracebackType, CodeType, FrameType
-from typing import Generator, TypeVar
+from typing import Generator, TypeVar, Any
 from .registry import lookup_function
 from . import frame as ext
 
@@ -10,13 +10,29 @@ _ReturnT = TypeVar("_ReturnT", covariant=True)
 
 
 class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
-    """A generator that can be pickled."""
+    """A wrapper for a generator that makes it serializable (can be pickled).
+    Instances behave like the generators they wrap.
 
-    def __init__(self, gen: GeneratorType, key, args, kwargs):
-        self.generator = gen
+    Attributes:
+        generator: The wrapped generator.
+        key: A unique identifier for the function that created this generator.
+        args: Positional arguments to the function that created this generator.
+        kwargs: Keyword arguments to the function that created this generator.
+    """
 
-        # Capture the information necessary to be able to create a
-        # new instance of the generator.
+    generator: GeneratorType
+    key: str
+    args: list[Any]
+    kwargs: dict[str, Any]
+
+    def __init__(
+        self,
+        generator: GeneratorType,
+        key: str,
+        args: list[Any],
+        kwargs: dict[str, Any],
+    ):
+        self.generator = generator
         self.key = key
         self.args = args
         self.kwargs = kwargs
