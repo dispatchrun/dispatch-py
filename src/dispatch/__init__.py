@@ -4,71 +4,24 @@
 from __future__ import annotations
 
 import os
-import pickle
 from collections.abc import Iterable
-from dataclasses import dataclass
-from typing import Any, TypeAlias
+from typing import TypeAlias
 from urllib.parse import urlparse
 
-import google.protobuf
-import google.protobuf.any_pb2
-import google.protobuf.message
-import google.protobuf.wrappers_pb2
 import grpc
 
-import dispatch.coroutine
-import dispatch.sdk.v1.endpoint_pb2 as endpoint_pb
-import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
+import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
+import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
+from dispatch.function import Call
 
-__all__ = ["Client", "ExecutionID", "ExecutionInput", "ExecutionDef"]
+__all__ = ["Client", "DispatchID", "Call"]
 
 
-ExecutionID: TypeAlias = str
-"""Unique execution identifier in Dispatch.
+DispatchID: TypeAlias = str
+"""Unique identifier in Dispatch.
 
 It should be treated as an opaque value.
 """
-
-
-@dataclass(frozen=True)
-class ExecutionInput:
-    """Definition of an execution to be created on Dispatch.
-
-    Attributes:
-        coroutine_uri: The URI of the coroutine to execute.
-        input: The input to pass to the coroutine. If the input is a protobuf
-          message, it will be wrapped in a google.protobuf.Any message. If the
-          input is not a protobuf message, it will be pickled and wrapped in a
-          google.protobuf.Any message.
-    """
-
-    coroutine_uri: str
-    input: Any
-
-
-ExecutionDef: TypeAlias = ExecutionInput | dispatch.coroutine.Call
-"""Definition of an execution to be ran on Dispatch.
-
-Can be either an ExecutionInput or a Call. ExecutionInput can be created
-manually, likely to call a coroutine outside the current code base. Call is
-created by the `dispatch.coroutine` module and is used to call a coroutine
-defined in the current code base.
-"""
-
-
-def _executiondef_to_proto(execdef: ExecutionDef) -> endpoint_pb.Execution:
-    input = execdef.input
-    match input:
-        case google.protobuf.any_pb2.Any():
-            input_any = input
-        case google.protobuf.message.Message():
-            input_any = google.protobuf.any_pb2.Any()
-            input_any.Pack(input)
-        case _:
-            pickled = pickle.dumps(input)
-            input_any = google.protobuf.any_pb2.Any()
-            input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
-    return endpoint_pb.Execution(coroutine_uri=execdef.coroutine_uri, input=input_any)
 
 
 class Client:
@@ -106,16 +59,14 @@ class Client:
         creds = grpc.composite_channel_credentials(creds, call_creds)
         channel = grpc.secure_channel(result.netloc, creds)
 
-        self._stub = endpoint_grpc.EndpointServiceStub(channel)
+        self._stub = dispatch_grpc.DispatchServiceStub(channel)
 
-    def execute(self, executions: Iterable[ExecutionDef]) -> Iterable[ExecutionID]:
-        """Execute on Dispatch using the provided inputs.
+    def dispatch(self, calls: Iterable[Call]) -> Iterable[DispatchID]:
+        """Dispatch function calls.
 
         Returns:
-            The ID of the created executions, in the same order as the inputs.
+            Identifiers for the function calls, in the same order as the inputs.
         """
-        req = endpoint_pb.CreateExecutionsRequest()
-        for e in executions:
-            req.executions.append(_executiondef_to_proto(e))
-        resp = self._stub.CreateExecutions(req)
-        return [ExecutionID(x) for x in resp.ids]
+        req = dispatch_pb.DispatchRequest(calls=[c._as_proto() for c in calls])
+        resp = self._stub.Dispatch(req)
+        return [DispatchID(x) for x in resp.dispatch_ids]

@@ -1,10 +1,9 @@
 import grpc
 import httpx
 
-from dispatch.sdk.v1 import executor_pb2 as executor_pb
-from dispatch.sdk.v1 import executor_pb2_grpc as executor_grpc
+from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
 
-# This file provides a grpc client that can talk to the ExecutorService
+# This file provides a grpc client that can talk to the FunctionService
 # interface. This is achieved by implementing the bare minimum of the
 # grpc.Channel using httpx to make the requests, which allows us to use the
 # same httpx client as the FastAPI testing framework.
@@ -131,8 +130,6 @@ class HttpxGrpcChannel(grpc.Channel):
         raise NotImplementedError()
 
 
-def client(
-    http_client: httpx.Client,
-) -> executor_grpc.ExecutorServiceStub:
+def client(http_client: httpx.Client) -> function_grpc.FunctionServiceStub:
     channel = HttpxGrpcChannel(http_client)
-    return executor_grpc.ExecutorServiceStub(channel)
+    return function_grpc.FunctionServiceStub(channel)

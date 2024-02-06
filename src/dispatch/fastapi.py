@@ -8,13 +8,13 @@ Example:
     app = fastapi.FastAPI()
     dispatch.fastapi.configure(app, api_key="test-key")
 
-    @app.dispatch_coroutine()
-    def my_cool_coroutine():
+    @app.dispatch_function()
+    def my_function():
         return "Hello World!"
 
     @app.get("/")
     def read_root():
-        my_cool_coroutine.call()
+        my_function.call()
 """
 
 import os
@@ -25,8 +25,8 @@ import fastapi
 import fastapi.responses
 from httpx import _urlparse
 
-import dispatch.coroutine
-from dispatch.sdk.v1 import executor_pb2 as executor_pb
+import dispatch.function
+from dispatch.sdk.v1 import function_pb2 as function_pb
 
 
 def configure(
@@ -37,7 +37,7 @@ def configure(
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
     It mounts a sub-app that implements the Dispatch gRPC interface. It also
-    adds a a decorator named @app.dispatch_coroutine() to register coroutines.
+    adds a a decorator named @app.dispatch_function() to register functions.
 
     Args:
         app: The FastAPI app to configure.
@@ -64,35 +64,34 @@ def configure(
 
     dispatch_app = _new_app(public_url)
 
-    app.__setattr__("dispatch_coroutine", dispatch_app.dispatch_coroutine)
-    app.mount("/dispatch.sdk.v1.ExecutorService", dispatch_app)
+    app.__setattr__("dispatch_function", dispatch_app.dispatch_function)
+    app.mount("/dispatch.sdk.v1.FunctionService", dispatch_app)
 
 
 class _DispatchAPI(fastapi.FastAPI):
-    def __init__(self, public_url: str):
+    def __init__(self, endpoint: str):
         super().__init__()
-        self._coroutines: Dict[str, dispatch.coroutine.Coroutine] = {}
-        self._public_url = _urlparse.urlparse(public_url)
+        self._functions: Dict[str, dispatch.function.Function] = {}
+        self._endpoint = endpoint
 
-    def dispatch_coroutine(self):
-        """Register a coroutine with the Dispatch programmable endpoints.
+    def dispatch_function(self):
+        """Register a function with the Dispatch programmable endpoints.
 
         Args:
-            app: The FastAPI app to register the coroutine with.
-            coroutine: The coroutine to register.
+            app: The FastAPI app to register the function with.
+            function: The function to register.
 
         Raises:
-            ValueError: If the coroutine is already registered.
+            ValueError: If the function is already registered.
         """
 
-        def wrap(func: Callable[[dispatch.coroutine.Input], dispatch.coroutine.Output]):
+        def wrap(func: Callable[[dispatch.function.Input], dispatch.function.Output]):
             name = func.__qualname__
-            uri = str(self._public_url.copy_with(fragment="function=" + name))
-            coro = dispatch.coroutine.Coroutine(uri, func)
-            if coro.uri in self._coroutines:
-                raise ValueError(f"Coroutine {coro.uri} already registered")
-            self._coroutines[coro.uri] = coro
-            return coro
+            wrapped_func = dispatch.function.Function(self._endpoint, name, func)
+            if name in self._functions:
+                raise ValueError(f"Function {name} already registered")
+            self._functions[name] = wrapped_func
+            return wrapped_func
 
         return wrap
 
@@ -101,14 +100,14 @@ class _GRPCResponse(fastapi.Response):
     media_type = "application/grpc+proto"
 
 
-def _new_app(public_url: str):
-    app = _DispatchAPI(public_url)
+def _new_app(endpoint: str):
+    app = _DispatchAPI(endpoint)
 
     @app.post(
         # The endpoint for execution is hardcoded at the moment. If the service
         # gains more endpoints, this should be turned into a dynamic dispatch
         # like the official gRPC server does.
-        "/Execute",
+        "/Run",
         response_class=_GRPCResponse,
     )
     async def execute(request: fastapi.Request):
@@ -117,38 +116,33 @@ def _new_app(public_url: str):
         # forcing execute() to be async.
         data: bytes = await request.body()
 
-        req = executor_pb.ExecuteRequest.FromString(data)
+        req = function_pb.RunRequest.FromString(data)
 
-        if not req.coroutine_uri:
-            raise fastapi.HTTPException(
-                status_code=400, detail="coroutine_uri is required"
-            )
+        if not req.function:
+            raise fastapi.HTTPException(status_code=400, detail="function is required")
 
         # TODO: be more graceful. This will crash if the coroutine is not found,
         # and the coroutine version is not taken into account.
 
-        uri = req.coroutine_uri
-
-        coroutine = app._coroutines.get(uri, None)
-        if coroutine is None:
+        try:
+            func = app._functions[req.function]
+        except KeyError:
             # TODO: integrate with logging
             raise fastapi.HTTPException(
-                status_code=404, detail=f"Coroutine URI '{uri}' does not exist"
+                status_code=404, detail=f"Function '{req.function}' does not exist"
             )
 
-        coro_input = dispatch.coroutine.Input(req)
+        input = dispatch.function.Input(req)
 
         try:
-            output = coroutine(coro_input)
+            output = func(input)
         except Exception as ex:
             # TODO: distinguish uncaught exceptions from exceptions returned by
             # coroutine?
-            err = dispatch.coroutine.Error.from_exception(ex)
-            output = dispatch.coroutine.Output.error(err)
+            err = dispatch.function.Error.from_exception(ex)
+            output = dispatch.function.Output.error(err)
 
         resp = output._message
-        resp.coroutine_uri = req.coroutine_uri
-        resp.coroutine_version = req.coroutine_version
 
         return fastapi.Response(content=resp.SerializeToString())
 
