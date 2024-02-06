@@ -144,7 +144,9 @@ class Input:
                 self._coroutine_state = pickle.loads(state_bytes)
             else:
                 self._coroutine_state = None
-            self._call_results = [CallResult(r) for r in req.poll_result.results]
+            self._call_results = [
+                CallResult._from_proto(r) for r in req.poll_result.results
+            ]
 
     @property
     def is_first_call(self) -> bool:
@@ -193,21 +195,33 @@ class Output:
     @classmethod
     def value(cls, value: Any, status: Status = Status.OK) -> Output:
         """Terminally exit the function with the provided return value."""
-        output_any = _pb_any_pickle(value)
-        return Output(
-            function_pb.RunResponse(
-                status=status._proto,
-                exit=exit_pb.Exit(result=call_pb.CallResult(output=output_any)),
-            )
-        )
+        return cls.exit(result=CallResult.from_value(value), status=status)
 
     @classmethod
     def error(cls, error: Error) -> Output:
         """Terminally exit the function with the provided error."""
+        return cls.exit(result=CallResult.from_error(error), status=error.status)
+
+    @classmethod
+    def tail_call(cls, tail_call: Call) -> Output:
+        """Terminally exit the function, and instruct the orchestrator to
+        tail call the specified function."""
+        return cls.exit(tail_call=tail_call)
+
+    @classmethod
+    def exit(
+        cls,
+        result: CallResult | None = None,
+        tail_call: Call | None = None,
+        status: Status = Status.OK,
+    ) -> Output:
+        """Terminally exit the function."""
+        result_proto = result._as_proto() if result else None
+        tail_call_proto = tail_call._as_proto() if tail_call else None
         return Output(
             function_pb.RunResponse(
-                status=error.status._proto,
-                exit=exit_pb.Exit(result=call_pb.CallResult(error=error._as_proto())),
+                status=status._proto,
+                exit=exit_pb.Exit(result=result_proto, tail_call=tail_call_proto),
             )
         )
 
@@ -228,14 +242,6 @@ class Output:
                 status=status_pb.STATUS_OK,
                 poll=poll,
             )
-        )
-
-    @classmethod
-    def tail_call(cls, tail_call: Call) -> Output:
-        """Exit the function with an optional result, and instruct the orchestrator to
-        tail call the specified function."""
-        return Output(
-            function_pb.RunResponse(exit=exit_pb.Exit(tail_call=tail_call._as_proto()))
         )
 
 
@@ -268,24 +274,46 @@ class Call:
         )
 
 
+@dataclass
 class CallResult:
-    """Result of a Call.
+    """Result of a Call."""
 
-    This class is not meant to be instantiated directly.
-    """
+    correlation_id: int | None = None
+    output: Any | None = None
+    error: Error | None = None
 
-    correlation_id: int | None
-    output: Any | None
-    error: Error | None
+    def _as_proto(self) -> call_pb.CallResult:
+        output_any = None
+        error_proto = None
+        if self.output is not None:
+            output_any = _pb_any_pickle(self.output)
+        if self.error is not None:
+            error_proto = self.error._as_proto()
 
-    def __init__(self, proto: call_pb.CallResult):
-        self.correlation_id = proto.correlation_id
-        self.output = None
-        self.error = None
+        return call_pb.CallResult(
+            correlation_id=self.correlation_id, output=output_any, error=error_proto
+        )
+
+    @classmethod
+    def _from_proto(cls, proto: call_pb.CallResult) -> CallResult:
+        output = None
+        error = None
         if proto.HasField("output"):
-            self.output = _any_unpickle(proto.output)
+            output = _any_unpickle(proto.output)
         if proto.HasField("error"):
-            self.error = Error._from_proto(proto.error)
+            error = Error._from_proto(proto.error)
+
+        return CallResult(
+            correlation_id=proto.correlation_id, output=output, error=error
+        )
+
+    @classmethod
+    def from_value(cls, output: Any, correlation_id: int | None = None) -> CallResult:
+        return CallResult(correlation_id=correlation_id, output=output)
+
+    @classmethod
+    def from_error(cls, error: Error, correlation_id: int | None = None) -> CallResult:
+        return CallResult(correlation_id=correlation_id, error=error)
 
 
 class Error:
