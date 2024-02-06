@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 
 import grpc
 
-import dispatch.function
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
 import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
 from dispatch.function import Call

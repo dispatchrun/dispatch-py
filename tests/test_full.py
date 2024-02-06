@@ -4,8 +4,8 @@ import fastapi
 from fastapi.testclient import TestClient
 
 import dispatch.fastapi
-from dispatch import Call, Client, DispatchID
-from dispatch.function import Error, Input, Output, Status
+from dispatch import Call
+from dispatch.function import Input, Output
 from dispatch.function import _any_unpickle as any_unpickle
 
 from . import function_service

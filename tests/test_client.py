@@ -3,9 +3,8 @@ import unittest
 from unittest import mock
 
 import grpc
-from google.protobuf import any_pb2, wrappers_pb2
 
-from dispatch import Call, Client, DispatchID
+from dispatch import Call, Client
 from dispatch.function import _any_unpickle as any_unpickle
 
 from .dispatch_service import ServerTest
@@ -31,12 +30,12 @@ class TestClient(unittest.TestCase):
 
     def test_api_key_missing(self):
         with self.assertRaises(ValueError) as mc:
-            client = Client()
+            Client()
         self.assertEqual(str(mc.exception), "api_key is required")
 
     def test_url_bad_scheme(self):
         with self.assertRaises(ValueError) as mc:
-            client = Client(api_url="ftp://example.com", api_key="foo")
+            Client(api_url="ftp://example.com", api_key="foo")
         self.assertEqual(str(mc.exception), "Invalid API scheme: 'ftp'")
 
     def test_can_be_constructed_on_https(self):

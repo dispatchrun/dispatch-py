@@ -368,7 +368,7 @@ class TestCoroutine(unittest.TestCase):
     def test_coroutine_unexpected_exception(self):
         @self.app.dispatch_function()
         def mycoro(input: Input) -> Output:
-            uhoh = 1 / 0
+            1 / 0
             self.fail("should not reach here")
 
         resp = self.execute(mycoro)
