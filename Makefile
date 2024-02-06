@@ -1,4 +1,4 @@
-.PHONY: install test typecheck unittest dev fmt generate clean update-proto coverage
+.PHONY: install test typecheck unittest dev fmt fmt-check generate clean update-proto coverage
 
 PYTHON := python
 
@@ -13,6 +13,11 @@ dev:
 fmt:
 	$(PYTHON) -m isort .
 	$(PYTHON) -m black .
+
+fmt-check:
+	@$(PYTHON) -m isort . --check --diff; isort_status=$$?; \
+	$(PYTHON) -m black . --check --diff; black_status=$$?; \
+    exit $$((isort_status + black_status))
 
 typecheck:
 	$(PYTHON) -m mypy src tests
