@@ -194,7 +194,7 @@ class TestCoroutine(unittest.TestCase):
         @self.app.dispatch_function()
         def my_function(input: Input) -> Output:
             if input.is_first_call:
-                return Output.callback(state=42)
+                return Output.poll(state=42)
             print(input.input)
             return Output.value("not reached")
 

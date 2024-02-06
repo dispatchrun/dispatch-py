@@ -287,14 +287,6 @@ class CallResult:
         if proto.HasField("error"):
             self.error = Error._from_proto(proto.error)
 
-    def _as_proto(self) -> call_pb.CallResult:
-        result = call_pb.CallResult(correlation_id=self.correlation_id)
-        if self.output is not None:
-            result.output = _pb_any_pickle(self.output)
-        if self.error is not None:
-            result.error = self.error._as_proto()
-        return result
-
 
 class Error:
     """Error when running a function.

@@ -32,5 +32,9 @@ src_paths = ["src"]
 omit = [
     "*_pb2_grpc.py",
     "*_pb2.py",
-    "tests/*"
+    "tests/*",
+    "src/buf/*"
 ]
+
+[tool.mypy]
+exclude= '^src/buf'
