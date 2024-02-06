@@ -16,6 +16,8 @@ from dispatch.function import Call
 
 __all__ = ["Client", "DispatchID", "Call"]
 
+__version__ = "0.0.1"
+
 
 DispatchID: TypeAlias = str
 """Unique identifier in Dispatch.
