@@ -5,10 +5,10 @@ from unittest import mock
 import grpc
 from google.protobuf import any_pb2, wrappers_pb2
 
-from dispatch import Client, ExecutionID, ExecutionInput
-from dispatch.coroutine import _any_unpickle as any_unpickle
+from dispatch import Call, Client, DispatchID
+from dispatch.function import _any_unpickle as any_unpickle
 
-from .task_service import ServerTest
+from .dispatch_service import ServerTest
 
 
 class TestClient(unittest.TestCase):
@@ -26,9 +26,7 @@ class TestClient(unittest.TestCase):
         client = Client(api_url=f"http://127.0.0.1:{self.server.port}")
 
         with self.assertRaises(grpc._channel._InactiveRpcError) as mc:
-            client.execute(
-                [ExecutionInput(coroutine_uri="my-cool-coroutine", input=42)]
-            )
+            client.dispatch([Call(function="my-function", input=42)])
         self.assertTrue("got 'Bearer WHATEVER'" in str(mc.exception))
 
     def test_api_key_missing(self):
@@ -46,45 +44,15 @@ class TestClient(unittest.TestCase):
         # around to actually test this.
         Client(api_url="https://example.com", api_key="foo")
 
-    def test_create_one_execution_pickle(self):
-        results = self.client.execute(
-            [ExecutionInput(coroutine_uri="my-cool-coroutine", input=42)]
-        )
+    def test_call_pickle(self):
+        results = self.client.dispatch([Call(function="my-function", input=42)])
         self.assertEqual(len(results), 1)
         id = results[0]
 
-        created_tasks = self.servicer.created_tasks
-        self.assertEqual(len(created_tasks), 1)
-        entry = created_tasks[0]
-        self.assertEqual(entry["id"], id)
-        task = entry["task"]
-        self.assertEqual(task.coroutine_uri, "my-cool-coroutine")
-        self.assertEqual(any_unpickle(task.input), 42)
-
-    def test_create_one_task_proto(self):
-        proto = wrappers_pb2.Int32Value(value=42)
-        results = self.client.execute(
-            [ExecutionInput(coroutine_uri="my-cool-coroutine", input=proto)]
-        )
-        id = results[0]
-        created_tasks = self.servicer.created_tasks
-        entry = created_tasks[0]
-        task = entry["task"]
-        # proto has been wrapper in an any
-        x = wrappers_pb2.Int32Value()
-        task.input.Unpack(x)
-        self.assertEqual(x, proto)
-
-    def test_create_one_task_proto_any(self):
-        proto = wrappers_pb2.Int32Value(value=42)
-        proto_any = any_pb2.Any()
-        proto_any.Pack(proto)
-        results = self.client.execute(
-            [ExecutionInput(coroutine_uri="my-cool-coroutine", input=proto_any)]
-        )
-        id = results[0]
-        created_tasks = self.servicer.created_tasks
-        entry = created_tasks[0]
-        task = entry["task"]
-        # proto any has not been modified
-        self.assertEqual(task.input, proto_any)
+        dispatched_calls = self.servicer.dispatched_calls
+        self.assertEqual(len(dispatched_calls), 1)
+        entry = dispatched_calls[0]
+        self.assertEqual(entry["dispatch_id"], id)
+        call = entry["call"]
+        self.assertEqual(call.function, "my-function")
+        self.assertEqual(any_unpickle(call.input), 42)
