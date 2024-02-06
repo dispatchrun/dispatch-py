@@ -24,6 +24,9 @@ dev = [
     "coverage==7.4.1"
 ]
 
+[tool.setuptools.dynamic]
+version = {attr = "dispatch.__version__"}
+
 [tool.isort]
 profile = "black"
 src_paths = ["src"]

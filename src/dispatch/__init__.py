@@ -22,6 +22,8 @@ import dispatch.sdk.v1.endpoint_pb2_grpc as endpoint_grpc
 
 __all__ = ["Client", "ExecutionID", "ExecutionInput", "ExecutionDef"]
 
+__version__ = 0.1
+
 
 ExecutionID: TypeAlias = str
 """Unique execution identifier in Dispatch.
