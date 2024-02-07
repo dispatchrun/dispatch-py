@@ -7,9 +7,26 @@ import dispatch.fastapi
 from dispatch import Call
 from dispatch.function import Input, Output
 from dispatch.function import _any_unpickle as any_unpickle
+from dispatch.signature import private_key_from_pem, public_key_from_pem
 
 from . import function_service
 from .test_client import ServerTest
+
+public_key = public_key_from_pem(
+    """
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
+-----END PUBLIC KEY-----
+"""
+)
+
+private_key = private_key_from_pem(
+    """
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
+-----END PRIVATE KEY-----
+"""
+)
 
 
 class TestFullFastapi(unittest.TestCase):
@@ -18,7 +35,7 @@ class TestFullFastapi(unittest.TestCase):
         dispatch.fastapi.configure(self.app, public_url="http://dispatch-service")
 
         http_client = TestClient(self.app, base_url="http://function-service")
-        self.app_client = function_service.client(http_client)
+        self.app_client = function_service.client(http_client, signing_key=private_key)
 
         self.server = ServerTest()
         # shortcuts

@@ -1,7 +1,10 @@
+from datetime import datetime
+
 import grpc
 import httpx
 
 from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
+from dispatch.signature import Ed25519PrivateKey, Request, sign_request
 
 # This file provides a grpc client that can talk to the FunctionService
 # interface. This is achieved by implementing the bare minimum of the
@@ -12,11 +15,19 @@ from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
 
 
 class UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
-    def __init__(self, client, method, request_serializer, response_deserializer):
+    def __init__(
+        self,
+        client,
+        method,
+        request_serializer,
+        response_deserializer,
+        signing_key: Ed25519PrivateKey | None = None,
+    ):
         self.client = client
         self.method = method
         self.request_serializer = request_serializer
         self.response_deserializer = response_deserializer
+        self.signing_key = signing_key
 
     def __call__(
         self,
@@ -49,11 +60,18 @@ class UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
+        request = Request(
+            method="POST",
+            url=str(httpx.URL(self.client.base_url).join(self.method)),
+            body=self.request_serializer(request),
+            headers={"Content-Type": "application/grpc+proto"},
+        )
+
+        if self.signing_key is not None:
+            sign_request(request, self.signing_key, datetime.now())
 
         response = self.client.post(
-            self.method,
-            content=self.request_serializer(request),
-            headers={"Content-Type": "application/grpc+proto"},
+            request.url, content=request.body, headers=request.headers
         )
         response.raise_for_status()
         return self.response_deserializer(response.content)
@@ -82,8 +100,11 @@ class UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
 
 class HttpxGrpcChannel(grpc.Channel):
-    def __init__(self, http_client: httpx.Client):
+    def __init__(
+        self, http_client: httpx.Client, signing_key: Ed25519PrivateKey | None = None
+    ):
         self.http_client = http_client
+        self.signing_key = signing_key
 
     def subscribe(self, callback, try_to_connect=False):
         raise NotImplementedError()
@@ -101,12 +122,17 @@ class HttpxGrpcChannel(grpc.Channel):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          signing_key: Optional Ed25519 private key to use to sign requests.
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
         return UnaryUnaryMultiCallable(
-            self.http_client, method, request_serializer, response_deserializer
+            self.http_client,
+            method,
+            request_serializer,
+            response_deserializer,
+            self.signing_key,
         )
 
     def unary_stream(self, method, request_serializer=None, response_deserializer=None):
@@ -130,6 +156,8 @@ class HttpxGrpcChannel(grpc.Channel):
         raise NotImplementedError()
 
 
-def client(http_client: httpx.Client) -> function_grpc.FunctionServiceStub:
-    channel = HttpxGrpcChannel(http_client)
+def client(
+    http_client: httpx.Client, signing_key: Ed25519PrivateKey | None = None
+) -> function_grpc.FunctionServiceStub:
+    channel = HttpxGrpcChannel(http_client, signing_key=signing_key)
     return function_grpc.FunctionServiceStub(channel)
