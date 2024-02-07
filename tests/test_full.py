@@ -15,11 +15,11 @@ from .test_client import ServerTest
 class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
-        dispatch.fastapi.configure(
-            self.app, api_key="test-key", public_url="http://test"
-        )
-        http_client = TestClient(self.app)
+        dispatch.fastapi.configure(self.app, public_url="http://dispatch-service")
+
+        http_client = TestClient(self.app, base_url="http://function-service")
         self.app_client = function_service.client(http_client)
+
         self.server = ServerTest()
         # shortcuts
         self.client = self.server.client

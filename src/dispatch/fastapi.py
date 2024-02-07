@@ -32,7 +32,6 @@ from dispatch.sdk.v1 import function_pb2 as function_pb
 def configure(
     app: fastapi.FastAPI,
     public_url: str,
-    api_key: None | str = None,
 ):
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
@@ -41,22 +40,16 @@ def configure(
 
     Args:
         app: The FastAPI app to configure.
-        api_key: Dispatch API key to use for authentication. Uses the value of
-          the DISPATCH_API_KEY environment variable by default.
         public_url: Full URL of the application the dispatch programmable
           endpoint will be running on.
 
     Raises:
         ValueError: If any of the required arguments are missing.
     """
-    api_key = api_key or os.environ.get("DISPATCH_API_KEY")
-
     if not app:
         raise ValueError("app is required")
     if not public_url:
         raise ValueError("public_url is required")
-    if not api_key:
-        raise ValueError("api_key is required")
 
     parsed_url = _urlparse.urlparse(public_url)
     if not parsed_url.netloc or not parsed_url.scheme:
