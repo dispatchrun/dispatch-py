@@ -10,8 +10,6 @@ from cryptography.hazmat.primitives.serialization import (
 )
 from http_message_signatures import HTTPSignatureKeyResolver
 
-from .config import DEFAULT_KEY_ID
-
 
 def public_key_from_pem(pem: str | bytes) -> Ed25519PublicKey:
     """Returns an Ed25519 public key given a PEM representation."""
@@ -58,17 +56,18 @@ class KeyResolver(HTTPSignatureKeyResolver):
     Keys must be Ed25519 keys and have an ID of DEFAULT_KEY_ID.
     """
 
+    key_id: str
     public_key: Ed25519PublicKey | None = None
     private_key: Ed25519PrivateKey | None = None
 
     def resolve_public_key(self, key_id: str):
-        if key_id != DEFAULT_KEY_ID or self.public_key is None:
+        if key_id != self.key_id or self.public_key is None:
             raise ValueError(f"public key '{key_id}' not available")
 
         return self.public_key
 
     def resolve_private_key(self, key_id: str):
-        if key_id != DEFAULT_KEY_ID or self.private_key is None:
+        if key_id != self.key_id or self.private_key is None:
             raise ValueError(f"private key '{key_id}' not available")
 
         return self.private_key

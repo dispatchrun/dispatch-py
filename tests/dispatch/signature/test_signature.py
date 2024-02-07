@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 
 from http_message_signatures import HTTPMessageSigner
+from http_message_signatures._algorithms import ED25519
 
 from dispatch.signature import (
     CaseInsensitiveDict,
@@ -9,12 +10,6 @@ from dispatch.signature import (
     Request,
     sign_request,
     verify_request,
-)
-from dispatch.signature.config import (
-    COVERED_COMPONENT_IDS,
-    DEFAULT_KEY_ID,
-    LABEL,
-    SIGNATURE_ALGORITHM,
 )
 from dispatch.signature.key import (
     KeyResolver,
@@ -86,15 +81,15 @@ class TestSignature(unittest.TestCase):
         # Manually sign the request, but do so without including the
         # Content-Digest header.
         signer = HTTPMessageSigner(
-            signature_algorithm=SIGNATURE_ALGORITHM,
-            key_resolver=KeyResolver(private_key=private_key),
+            signature_algorithm=ED25519,
+            key_resolver=KeyResolver(key_id="default", private_key=private_key),
         )
         signer.sign(
             self.request,
-            key_id=DEFAULT_KEY_ID,
-            covered_component_ids=COVERED_COMPONENT_IDS - {"content-digest"},
+            key_id="default",
+            covered_component_ids=["@method", "@path", "@authority", "content-type"],
             created=datetime.now(),
-            label=LABEL,
+            label="dispatch",
             include_alg=True,
         )
 

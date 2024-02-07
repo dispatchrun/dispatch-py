@@ -7,11 +7,22 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 from http_message_signatures import HTTPMessageSigner, HTTPMessageVerifier, VerifyResult
+from http_message_signatures.algorithms import ED25519
 
-from .config import COVERED_COMPONENT_IDS, DEFAULT_KEY_ID, LABEL, SIGNATURE_ALGORITHM
 from .digest import generate_content_digest, verify_content_digest
 from .key import KeyResolver
 from .request import Request
+
+ALGORITHM = ED25519
+DEFAULT_KEY_ID = "default"
+
+COVERED_COMPONENT_IDS = {
+    "@method",
+    "@path",
+    "@authority",
+    "content-type",
+    "content-digest",
+}
 
 
 def sign_request(request: Request, key: Ed25519PrivateKey, created: datetime):
@@ -22,8 +33,8 @@ def sign_request(request: Request, key: Ed25519PrivateKey, created: datetime):
     https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures
 
     The signature covers the request method, the URL host and path, the
-    Content-Type header, and the request body. At this time, the signature uses
-    a hard-coded key ID of "default".
+    Content-Type header, and the request body. At this time, an ED25519
+    signature is generated with a hard-coded key ID of "default".
 
     Args:
         request: The request to sign.
@@ -33,15 +44,15 @@ def sign_request(request: Request, key: Ed25519PrivateKey, created: datetime):
     request.headers["Content-Digest"] = generate_content_digest(request.body)
 
     signer = HTTPMessageSigner(
-        signature_algorithm=SIGNATURE_ALGORITHM,
-        key_resolver=KeyResolver(private_key=key),
+        signature_algorithm=ALGORITHM,
+        key_resolver=KeyResolver(key_id=DEFAULT_KEY_ID, private_key=key),
     )
     signer.sign(
         request,
         key_id=DEFAULT_KEY_ID,
         covered_component_ids=cast(Sequence[str], COVERED_COMPONENT_IDS),
         created=created,
-        label=LABEL,
+        label="dispatch",
         include_alg=True,
     )
 
@@ -65,9 +76,9 @@ def verify_request(request: Request, key: Ed25519PublicKey, max_age: timedelta):
     """
 
     # Verify embedded signatures.
-    key_resolver = KeyResolver(public_key=key)
+    key_resolver = KeyResolver(key_id=DEFAULT_KEY_ID, public_key=key)
     verifier = HTTPMessageVerifier(
-        signature_algorithm=SIGNATURE_ALGORITHM, key_resolver=key_resolver
+        signature_algorithm=ALGORITHM, key_resolver=key_resolver
     )
     results = verifier.verify(request, max_age=max_age)
 

@@ -6,6 +6,7 @@ from http_message_signatures.exceptions import InvalidSignature
 from http_message_signatures.structures import CaseInsensitiveDict
 
 from .key import (
+    KeyResolver,
     private_key_from_bytes,
     private_key_from_pem,
     public_key_from_bytes,
