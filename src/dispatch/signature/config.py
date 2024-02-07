@@ -1,6 +1,6 @@
 from http_message_signatures.algorithms import ED25519
 
-LABEL = "sig-b26"
+LABEL = "dispatch"
 
 SIGNATURE_ALGORITHM = ED25519
 
