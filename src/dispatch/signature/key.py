@@ -24,6 +24,11 @@ def public_key_from_pem(pem: str | bytes) -> Ed25519PublicKey:
     return key
 
 
+def public_key_from_bytes(key: bytes) -> Ed25519PublicKey:
+    """Returns an Ed25519 public key from 32 raw bytes."""
+    return Ed25519PublicKey.from_public_bytes(key)
+
+
 def private_key_from_pem(
     pem: str | bytes, password: bytes | None = None
 ) -> Ed25519PrivateKey:
@@ -38,6 +43,11 @@ def private_key_from_pem(
     if not isinstance(key, Ed25519PrivateKey):
         raise ValueError(f"unexpected private key type: {type(key)}")
     return key
+
+
+def private_key_from_bytes(key: bytes) -> Ed25519PrivateKey:
+    """Returns an Ed25519 private key from 32 raw bytes."""
+    return Ed25519PrivateKey.from_private_bytes(key)
 
 
 @dataclass
