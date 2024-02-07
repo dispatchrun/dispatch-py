@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
+from typing import Sequence, cast
 
+import http_sfv
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
-from http_message_signatures import HTTPMessageSigner, HTTPMessageVerifier
+from http_message_signatures import HTTPMessageSigner, HTTPMessageVerifier, VerifyResult
 
 from .config import COVERED_COMPONENT_IDS, DEFAULT_KEY_ID, LABEL, SIGNATURE_ALGORITHM
 from .digest import generate_content_digest, verify_content_digest
@@ -37,7 +39,7 @@ def sign_request(request: Request, key: Ed25519PrivateKey, created: datetime):
     signer.sign(
         request,
         key_id=DEFAULT_KEY_ID,
-        covered_component_ids=COVERED_COMPONENT_IDS,
+        covered_component_ids=cast(Sequence[str], COVERED_COMPONENT_IDS),
         created=created,
         label=LABEL,
         include_alg=True,
@@ -61,15 +63,34 @@ def verify_request(request: Request, key: Ed25519PublicKey, max_age: timedelta):
         key: The Ed25519 public key to use to verify the signature.
         max_age: The maximum age of the signature.
     """
+
+    # Verify embedded signatures.
     key_resolver = KeyResolver(public_key=key)
     verifier = HTTPMessageVerifier(
         signature_algorithm=SIGNATURE_ALGORITHM, key_resolver=key_resolver
     )
     results = verifier.verify(request, max_age=max_age)
 
-    if not results:
-        raise ValueError("request does not contain any signatures")
+    # Check that at least one signature covers the required components.
+    for result in results:
+        covered_components = extract_covered_components(result)
+        if covered_components.issuperset(COVERED_COMPONENT_IDS):
+            break
+    else:
+        raise ValueError(
+            f"no signatures found that covered all required components ({COVERED_COMPONENT_IDS})"
+        )
 
-    # TODO: check all required components are covered
-
+    # Check that the Content-Digest header matches the body.
     verify_content_digest(request.headers["Content-Digest"], request.body)
+
+
+def extract_covered_components(result: VerifyResult) -> set[str]:
+    covered_components: set[str] = set()
+    for key in result.covered_components.keys():
+        item = http_sfv.Item()
+        item.parse(key.encode())
+        assert isinstance(item.value, str)
+        covered_components.add(item.value)
+
+    return covered_components
