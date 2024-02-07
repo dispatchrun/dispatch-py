@@ -12,8 +12,15 @@ class TestDigest(unittest.TestCase):
             verify_content_digest(digest_header, value)
 
     def test_known_digests(self):
-        known = {
-            '{"hello": "world"}': "sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:",
-        }
-        for value, digest_header in known.items():
+        known = [
+            (
+                '{"hello": "world"}',
+                "sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:",
+            ),
+            (
+                '{"hello": "world"}',
+                "sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:",
+            ),
+        ]
+        for value, digest_header in known:
             verify_content_digest(digest_header, value)

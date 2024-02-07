@@ -16,7 +16,8 @@ def generate_content_digest(body: str | bytes) -> str:
 
 
 def verify_content_digest(digest_header: str | bytes, body: str | bytes):
-    """Verify a SHA-512 Content-Digest header matches a request body."""
+    """Verify a SHA-256 or SHA-512 Content-Digest header matches a
+    request body."""
     if isinstance(body, str):
         body = body.encode()
     if isinstance(digest_header, str):
@@ -25,14 +26,15 @@ def verify_content_digest(digest_header: str | bytes, body: str | bytes):
     parsed_header = http_sfv.Dictionary()
     parsed_header.parse(digest_header)
 
-    # Note: according to https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-digest-headers-13#establish-hash-algorithm-registry,
-    #  sha-256 is also a valid algorithm here. Should we generalize to handle many algorithms?
-    try:
+    # See https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-digest-headers-13#establish-hash-algorithm-registry
+    if "sha-512" in parsed_header:
         digest = parsed_header["sha-512"].value
-    except KeyError:
+        expect_digest = hashlib.sha512(body).digest()
+    elif "sha-256" in parsed_header:
+        digest = parsed_header["sha-256"].value
+        expect_digest = hashlib.sha256(body).digest()
+    else:
         raise ValueError("missing content digest")
-
-    expect_digest = hashlib.sha512(body).digest()
 
     if not hmac.compare_digest(digest, expect_digest):
         raise ValueError("unexpected content digest")
