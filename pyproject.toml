@@ -11,7 +11,8 @@ dependencies = [
     "grpcio==1.60.0",
     "protobuf==4.24.0",
     "types-protobuf==4.24.0.20240129",
-    "grpc-stubs"
+    "grpc-stubs",
+    "http_message_signatures==0.4.4"
 ]
 
 [project.optional-dependencies]

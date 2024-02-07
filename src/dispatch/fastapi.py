@@ -17,8 +17,8 @@ Example:
         my_function.call()
 """
 
-import os
 from collections.abc import Callable
+from datetime import timedelta
 from typing import Dict
 
 import fastapi
@@ -27,12 +27,18 @@ from httpx import _urlparse
 
 import dispatch.function
 from dispatch.sdk.v1 import function_pb2 as function_pb
+from dispatch.signature import (
+    CaseInsensitiveDict,
+    Ed25519PublicKey,
+    Request,
+    verify_request,
+)
 
 
 def configure(
     app: fastapi.FastAPI,
     public_url: str,
-    api_key: None | str = None,
+    verification_key: Ed25519PublicKey | None = None,
 ):
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
@@ -41,28 +47,23 @@ def configure(
 
     Args:
         app: The FastAPI app to configure.
-        api_key: Dispatch API key to use for authentication. Uses the value of
-          the DISPATCH_API_KEY environment variable by default.
         public_url: Full URL of the application the dispatch programmable
           endpoint will be running on.
+        verification_key: Key to use when verifying signed requests.
 
     Raises:
         ValueError: If any of the required arguments are missing.
     """
-    api_key = api_key or os.environ.get("DISPATCH_API_KEY")
-
     if not app:
         raise ValueError("app is required")
     if not public_url:
         raise ValueError("public_url is required")
-    if not api_key:
-        raise ValueError("api_key is required")
 
     parsed_url = _urlparse.urlparse(public_url)
     if not parsed_url.netloc or not parsed_url.scheme:
         raise ValueError("public_url must be a full URL with protocol and domain")
 
-    dispatch_app = _new_app(public_url)
+    dispatch_app = _new_app(public_url, verification_key)
 
     app.__setattr__("dispatch_function", dispatch_app.dispatch_function)
     app.mount("/dispatch.sdk.v1.FunctionService", dispatch_app)
@@ -100,7 +101,7 @@ class _GRPCResponse(fastapi.Response):
     media_type = "application/grpc+proto"
 
 
-def _new_app(endpoint: str):
+def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
     app = _DispatchAPI(endpoint)
 
     @app.post(
@@ -115,6 +116,16 @@ def _new_app(endpoint: str):
         # starlette Request object's body method, which returns an awaitable,
         # forcing execute() to be async.
         data: bytes = await request.body()
+
+        if verification_key is not None:
+            signed_request = Request(
+                method=request.method,
+                url=str(request.url),
+                headers=CaseInsensitiveDict(request.headers),
+                body=data,
+            )
+            max_age = timedelta(minutes=5)
+            verify_request(signed_request, verification_key, max_age)
 
         req = function_pb.RunRequest.FromString(data)
 
