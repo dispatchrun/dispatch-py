@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from http_message_signatures.structures import CaseInsensitiveDict
+
 
 @dataclass
 class Request:
@@ -7,5 +9,5 @@ class Request:
 
     method: str
     url: str
-    headers: dict[str, str]
+    headers: CaseInsensitiveDict
     body: str | bytes

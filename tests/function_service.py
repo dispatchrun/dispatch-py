@@ -4,7 +4,12 @@ import grpc
 import httpx
 
 from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
-from dispatch.signature import Ed25519PrivateKey, Request, sign_request
+from dispatch.signature import (
+    CaseInsensitiveDict,
+    Ed25519PrivateKey,
+    Request,
+    sign_request,
+)
 
 # This file provides a grpc client that can talk to the FunctionService
 # interface. This is achieved by implementing the bare minimum of the
@@ -64,7 +69,7 @@ class UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             method="POST",
             url=str(httpx.URL(self.client.base_url).join(self.method)),
             body=self.request_serializer(request),
-            headers={"Content-Type": "application/grpc+proto"},
+            headers=CaseInsensitiveDict({"Content-Type": "application/grpc+proto"}),
         )
 
         if self.signing_key is not None:
