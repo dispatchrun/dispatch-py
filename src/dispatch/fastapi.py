@@ -17,12 +17,15 @@ Example:
         my_function.call()
 """
 
+import base64
+import logging
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Dict
 
 import fastapi
 import fastapi.responses
+from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
 import dispatch.function
@@ -34,6 +37,8 @@ from dispatch.signature import (
     verify_request,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def configure(
     app: fastapi.FastAPI,
@@ -43,7 +48,7 @@ def configure(
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
     It mounts a sub-app that implements the Dispatch gRPC interface. It also
-    adds a a decorator named @app.dispatch_function() to register functions.
+    adds a decorator named @app.dispatch_function() to register functions.
 
     Args:
         app: The FastAPI app to configure.
@@ -59,9 +64,17 @@ def configure(
     if not public_url:
         raise ValueError("public_url is required")
 
+    logger.info("configuring function service with public URL %s", public_url)
+
     parsed_url = _urlparse.urlparse(public_url)
     if not parsed_url.netloc or not parsed_url.scheme:
         raise ValueError("public_url must be a full URL with protocol and domain")
+
+    if verification_key:
+        base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
+        logger.info("verifying requests using key %s", base64_key)
+    else:
+        logger.warning("request verification is disabled")
 
     dispatch_app = _new_app(public_url, verification_key)
 
@@ -88,6 +101,7 @@ class _DispatchAPI(fastapi.FastAPI):
 
         def wrap(func: Callable[[dispatch.function.Input], dispatch.function.Output]):
             name = func.__qualname__
+            logger.info("registering function '%s'", name)
             wrapped_func = dispatch.function.Function(self._endpoint, name, func)
             if name in self._functions:
                 raise ValueError(f"Function {name} already registered")
@@ -117,6 +131,8 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
         # forcing execute() to be async.
         data: bytes = await request.body()
 
+        logger.debug("handling run request with %d byte body", len(data))
+
         if verification_key is not None:
             signed_request = Request(
                 method=request.method,
@@ -125,35 +141,50 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
                 body=data,
             )
             max_age = timedelta(minutes=5)
-            verify_request(signed_request, verification_key, max_age)
+            try:
+                verify_request(signed_request, verification_key, max_age)
+            except (InvalidSignature, ValueError):
+                logger.error("failed to verify request signature", exc_info=True)
+                raise fastapi.HTTPException(
+                    status_code=403, detail="request signature is invalid"
+                )
+        else:
+            logger.debug("skipping request signature verification")
 
         req = function_pb.RunRequest.FromString(data)
 
         if not req.function:
             raise fastapi.HTTPException(status_code=400, detail="function is required")
 
-        # TODO: be more graceful. This will crash if the coroutine is not found,
-        # and the coroutine version is not taken into account.
-
         try:
             func = app._functions[req.function]
         except KeyError:
-            # TODO: integrate with logging
+            logger.error("function '%s' not found", req.function)
             raise fastapi.HTTPException(
                 status_code=404, detail=f"Function '{req.function}' does not exist"
             )
 
         input = dispatch.function.Input(req)
 
+        logger.info("running function '%s'", req.function)
         try:
             output = func(input)
         except Exception as ex:
+            logger.error(
+                "function '%s' failed with an error", req.function, exc_info=True
+            )
             # TODO: distinguish uncaught exceptions from exceptions returned by
             # coroutine?
             err = dispatch.function.Error.from_exception(ex)
             output = dispatch.function.Output.error(err)
+        else:
+            logger.debug("function '%s' ran successfully", req.function)
 
         resp = output._message
+        logger.debug(
+            "finished handling run request with status %s",
+            dispatch.function.Status(resp.status).name,
+        )
 
         return fastapi.Response(content=resp.SerializeToString())
 
