@@ -17,6 +17,7 @@ Example:
         my_function.call()
 """
 
+import base64
 import logging
 from collections.abc import Callable
 from datetime import timedelta
@@ -24,6 +25,7 @@ from typing import Dict
 
 import fastapi
 import fastapi.responses
+from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
 import dispatch.function
@@ -69,7 +71,8 @@ def configure(
         raise ValueError("public_url must be a full URL with protocol and domain")
 
     if verification_key:
-        logger.info("verifying requests using key %s", verification_key)
+        base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
+        logger.info("verifying requests using key %s", base64_key)
     else:
         logger.warning("request verification is disabled")
 
@@ -138,7 +141,15 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
                 body=data,
             )
             max_age = timedelta(minutes=5)
-            verify_request(signed_request, verification_key, max_age)
+            try:
+                verify_request(signed_request, verification_key, max_age)
+            except (InvalidSignature, ValueError):
+                logger.error("failed to verify request signature", exc_info=True)
+                raise fastapi.HTTPException(
+                    status_code=403, detail="request signature is invalid"
+                )
+        else:
+            logger.debug("skipping request signature verification")
 
         req = function_pb.RunRequest.FromString(data)
 

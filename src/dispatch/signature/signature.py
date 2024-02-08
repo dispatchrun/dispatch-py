@@ -84,18 +84,14 @@ def verify_request(request: Request, key: Ed25519PublicKey, max_age: timedelta):
         key: The Ed25519 public key to use to verify the signature.
         max_age: The maximum age of the signature.
     """
-    logger.debug("verifying request using key %s", key)
+    logger.debug("verifying request signature")
 
     # Verify embedded signatures.
     key_resolver = KeyResolver(key_id=DEFAULT_KEY_ID, public_key=key)
     verifier = HTTPMessageVerifier(
         signature_algorithm=ALGORITHM, key_resolver=key_resolver
     )
-    try:
-        results = verifier.verify(request, max_age=max_age)
-    except InvalidSignature:
-        logger.error("failed to verify request signature", exc_info=True)
-        raise
+    results = verifier.verify(request, max_age=max_age)
 
     # Check that at least one signature covers the required components.
     for result in results:
@@ -103,9 +99,6 @@ def verify_request(request: Request, key: Ed25519PublicKey, max_age: timedelta):
         if covered_components.issuperset(COVERED_COMPONENT_IDS):
             break
     else:
-        logger.error(
-            "request signature(s) were valid but no signature covered the required components"
-        )
         raise ValueError(
             f"no signatures found that covered all required components ({COVERED_COMPONENT_IDS})"
         )
