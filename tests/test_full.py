@@ -33,10 +33,10 @@ class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
         dispatch.fastapi.configure(
-            self.app, public_url="http://dispatch-service", verification_key=public_key
+            self.app, endpoint="http://function-service", verification_key=public_key
         )
 
-        http_client = TestClient(self.app, base_url="http://function-service")
+        http_client = TestClient(self.app, base_url="http://dispatch-service")
         self.app_client = function_service.client(http_client, signing_key=private_key)
 
         self.server = ServerTest()

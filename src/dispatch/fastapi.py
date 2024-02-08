@@ -19,6 +19,7 @@ Example:
 
 import base64
 import logging
+import os
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Dict
@@ -34,6 +35,8 @@ from dispatch.signature import (
     CaseInsensitiveDict,
     Ed25519PublicKey,
     Request,
+    public_key_from_bytes,
+    public_key_from_pem,
     verify_request,
 )
 
@@ -42,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 def configure(
     app: fastapi.FastAPI,
-    public_url: str,
+    endpoint: str | None = None,
     verification_key: Ed25519PublicKey | None = None,
 ):
     """Configure the FastAPI app to use Dispatch programmable endpoints.
@@ -52,23 +55,47 @@ def configure(
 
     Args:
         app: The FastAPI app to configure.
-        public_url: Full URL of the application the dispatch programmable
-          endpoint will be running on.
-        verification_key: Key to use when verifying signed requests.
+
+        endpoint: Full URL of the application the Dispatch programmable
+          endpoint will be running on. Uses the value of the DISPATCH_ENDPOINT
+          environment variable by default.
+
+        verification_key: Key to use when verifying signed requests. Uses
+          the value of the DISPATCH_VERIFICATION_KEY environment variable
+          by default. The environment variable is expected to carry an
+          Ed25519 public key in base64 or PEM format.
 
     Raises:
         ValueError: If any of the required arguments are missing.
     """
     if not app:
         raise ValueError("app is required")
-    if not public_url:
-        raise ValueError("public_url is required")
 
-    logger.info("configuring function service with public URL %s", public_url)
+    if not endpoint:
+        endpoint = os.getenv("DISPATCH_ENDPOINT")
+    if not endpoint:
+        raise ValueError("endpoint is required")
 
-    parsed_url = _urlparse.urlparse(public_url)
+    if not verification_key:
+        try:
+            verification_key_raw = os.environ["DISPATCH_VERIFICATION_KEY"]
+        except KeyError:
+            pass
+        else:
+            # Be forgiving when accepting keys in PEM format.
+            verification_key_raw = verification_key_raw.replace("\\n", "\n")
+            try:
+                verification_key = public_key_from_pem(verification_key_raw)
+            except ValueError:
+                verification_key = public_key_from_bytes(
+                    base64.b64decode(verification_key_raw)
+                )
+
+    logger.info("configuring function service with endpoint %s", endpoint)
+
+    parsed_url = _urlparse.urlparse(endpoint)
     if not parsed_url.netloc or not parsed_url.scheme:
-        raise ValueError("public_url must be a full URL with protocol and domain")
+        raise ValueError("endpoint must be a full URL with protocol and domain")
 
     if verification_key:
         base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
@@ -76,7 +103,7 @@ def configure(
     else:
         logger.warning("request verification is disabled")
 
-    dispatch_app = _new_app(public_url, verification_key)
+    dispatch_app = _new_app(endpoint, verification_key)
 
     app.__setattr__("dispatch_function", dispatch_app.dispatch_function)
     app.mount("/dispatch.sdk.v1.FunctionService", dispatch_app)

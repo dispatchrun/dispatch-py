@@ -26,6 +26,8 @@ DispatchID: TypeAlias = str
 It should be treated as an opaque value.
 """
 
+DEFAULT_DISPATCH_API_URL = "https://api.stealthrocket.cloud"
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +35,15 @@ logger = logging.getLogger(__name__)
 class Client:
     """Client for the Dispatch API."""
 
-    def __init__(
-        self, api_key: None | str = None, api_url="https://api.stealthrocket.cloud"
-    ):
+    def __init__(self, api_key: None | str = None, api_url: None | str = None):
         """Create a new Dispatch client.
 
         Args:
             api_key: Dispatch API key to use for authentication. Uses the value of
               the DISPATCH_API_KEY environment variable by default.
-            api_url: The URL of the Dispatch API to use. Defaults to the public
-                Dispatch API.
+            api_url: The URL of the Dispatch API to use. Uses the value of the
+              DISPATCH_API_URL environment variable if set, otherwise
+              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).
 
         Raises:
             ValueError: if the API key is missing.
@@ -51,6 +52,13 @@ class Client:
             api_key = os.environ.get("DISPATCH_API_KEY")
         if not api_key:
             raise ValueError("api_key is required")
+
+        if not api_url:
+            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_DISPATCH_API_URL)
+        if not api_url:
+            raise ValueError("api_url is required")
+
+        logger.debug("initializing client for API at URL %s", api_url)
 
         result = urlparse(api_url)
         match result.scheme:
