@@ -56,7 +56,7 @@ def configure(
     Args:
         app: The FastAPI app to configure.
 
-        endpoint: Full URL of the application the dispatch programmable
+        endpoint: Full URL of the application the Dispatch programmable
           endpoint will be running on. Uses the value of the DISPATCH_ENDPOINT
           environment variable by default.
 
