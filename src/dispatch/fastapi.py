@@ -126,12 +126,12 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
         response_class=_GRPCResponse,
     )
     async def execute(request: fastapi.Request):
-        logger.debug("handling run request")
-
         # Raw request body bytes are only available through the underlying
         # starlette Request object's body method, which returns an awaitable,
         # forcing execute() to be async.
         data: bytes = await request.body()
+
+        logger.debug("handling run request with %d byte body", len(data))
 
         if verification_key is not None:
             signed_request = Request(
@@ -156,9 +156,6 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
         if not req.function:
             raise fastapi.HTTPException(status_code=400, detail="function is required")
 
-        # TODO: be more graceful. This will crash if the coroutine is not found,
-        # and the coroutine version is not taken into account.
-
         try:
             func = app._functions[req.function]
         except KeyError:
@@ -167,9 +164,9 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
                 status_code=404, detail=f"Function '{req.function}' does not exist"
             )
 
-        logger.info("running function '%s'", req.function)
         input = dispatch.function.Input(req)
 
+        logger.info("running function '%s'", req.function)
         try:
             output = func(input)
         except Exception as ex:
@@ -184,7 +181,10 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
             logger.debug("function '%s' ran successfully", req.function)
 
         resp = output._message
-        logger.debug("finished handling run request with status %s", resp.status)
+        logger.debug(
+            "finished handling run request with status %s",
+            dispatch.function.Status(resp.status).name,
+        )
 
         return fastapi.Response(content=resp.SerializeToString())
 
