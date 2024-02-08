@@ -17,6 +17,7 @@ Example:
         my_function.call()
 """
 
+import logging
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Dict
@@ -33,6 +34,8 @@ from dispatch.signature import (
     Request,
     verify_request,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def configure(
@@ -59,9 +62,16 @@ def configure(
     if not public_url:
         raise ValueError("public_url is required")
 
+    logger.info("configuring function service with public URL %s", public_url)
+
     parsed_url = _urlparse.urlparse(public_url)
     if not parsed_url.netloc or not parsed_url.scheme:
         raise ValueError("public_url must be a full URL with protocol and domain")
+
+    if verification_key:
+        logger.info("verifying requests using key %s", verification_key)
+    else:
+        logger.warning("request verification is disabled")
 
     dispatch_app = _new_app(public_url, verification_key)
 
@@ -88,6 +98,7 @@ class _DispatchAPI(fastapi.FastAPI):
 
         def wrap(func: Callable[[dispatch.function.Input], dispatch.function.Output]):
             name = func.__qualname__
+            logger.info("registering function '%s'", name)
             wrapped_func = dispatch.function.Function(self._endpoint, name, func)
             if name in self._functions:
                 raise ValueError(f"Function {name} already registered")
@@ -112,6 +123,8 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
         response_class=_GRPCResponse,
     )
     async def execute(request: fastapi.Request):
+        logger.debug("handling run request")
+
         # Raw request body bytes are only available through the underlying
         # starlette Request object's body method, which returns an awaitable,
         # forcing execute() to be async.
@@ -138,22 +151,29 @@ def _new_app(endpoint: str, verification_key: Ed25519PublicKey | None):
         try:
             func = app._functions[req.function]
         except KeyError:
-            # TODO: integrate with logging
+            logger.error("function '%s' not found", req.function)
             raise fastapi.HTTPException(
                 status_code=404, detail=f"Function '{req.function}' does not exist"
             )
 
+        logger.info("running function '%s'", req.function)
         input = dispatch.function.Input(req)
 
         try:
             output = func(input)
         except Exception as ex:
+            logger.error(
+                "function '%s' failed with an error", req.function, exc_info=True
+            )
             # TODO: distinguish uncaught exceptions from exceptions returned by
             # coroutine?
             err = dispatch.function.Error.from_exception(ex)
             output = dispatch.function.Output.error(err)
+        else:
+            logger.debug("function '%s' ran successfully", req.function)
 
         resp = output._message
+        logger.debug("finished handling run request with status %s", resp.status)
 
         return fastapi.Response(content=resp.SerializeToString())
 

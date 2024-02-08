@@ -1,5 +1,6 @@
 import ast
 import inspect
+import logging
 import os
 import textwrap
 from enum import Enum
@@ -13,6 +14,9 @@ from .template import rewrite_template
 from .yields import CustomYield, GeneratorYield
 
 TRACE = os.getenv("MULTICOLOR_TRACE", False)
+
+
+logger = logging.getLogger(__name__)
 
 
 def compile_function(
@@ -111,6 +115,8 @@ def _compile_internal(
 ) -> tuple[FunctionType | MethodType, FunctionColor]:
     if hasattr(fn, "_multicolor_yield_type"):
         raise ValueError("cannot compile a yield point directly")
+
+    logger.debug("compiling function %s", fn.__name__)
 
     # Give the function a unique name.
     fn_name = fn.__name__ + "__multicolor_" + cache_key

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Iterable
 from typing import TypeAlias
@@ -24,6 +25,9 @@ DispatchID: TypeAlias = str
 
 It should be treated as an opaque value.
 """
+
+
+logger = logging.getLogger(__name__)
 
 
 class Client:
@@ -69,6 +73,15 @@ class Client:
         Returns:
             Identifiers for the function calls, in the same order as the inputs.
         """
-        req = dispatch_pb.DispatchRequest(calls=[c._as_proto() for c in calls])
+        calls_proto = [c._as_proto() for c in calls]
+        logger.debug("dispatching %d function call(s)", len(calls_proto))
+        req = dispatch_pb.DispatchRequest(calls=calls_proto)
         resp = self._stub.Dispatch(req)
-        return [DispatchID(x) for x in resp.dispatch_ids]
+        dispatch_ids = [DispatchID(x) for x in resp.dispatch_ids]
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                "dispatched %d function call(s): %s",
+                len(calls_proto),
+                ", ".join(dispatch_ids),
+            )
+        return dispatch_ids
