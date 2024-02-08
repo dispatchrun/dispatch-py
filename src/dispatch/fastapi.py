@@ -66,8 +66,8 @@ def configure(
         app: The FastAPI app to configure.
 
         endpoint: Full URL of the application the Dispatch programmable
-          endpoint will be running on. Uses the value of the DISPATCH_ENDPOINT
-          environment variable by default.
+          endpoint will be running on. Uses the value of the
+          DISPATCH_ENDPOINT_URL environment variable by default.
 
         verification_key: Key to use when verifying signed requests. Uses
           the value of the DISPATCH_VERIFICATION_KEY environment variable
@@ -88,7 +88,7 @@ def configure(
         raise ValueError("app is required")
 
     if not endpoint:
-        endpoint = os.getenv("DISPATCH_ENDPOINT")
+        endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
     if not endpoint:
         raise ValueError("endpoint is required")
 
