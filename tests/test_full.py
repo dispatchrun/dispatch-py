@@ -32,7 +32,7 @@ MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
-        dispatch.fastapi.configure(
+        self.dispatch = dispatch.fastapi.configure(
             self.app, endpoint="http://function-service", verification_key=public_key
         )
 
@@ -52,7 +52,7 @@ class TestFullFastapi(unittest.TestCase):
 
     def test_simple_end_to_end(self):
         # The FastAPI server.
-        @self.app.dispatch_function()
+        @self.dispatch.function()
         def my_function(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 
@@ -69,7 +69,7 @@ class TestFullFastapi(unittest.TestCase):
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
 
     def test_simple_call_with(self):
-        @self.app.dispatch_function()
+        @self.dispatch.function()
         def my_function(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 

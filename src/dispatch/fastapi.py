@@ -3,27 +3,24 @@
 Example:
 
     import fastapi
-    import dispatch.fastapi
+    from dispatch.fastapi import configure
 
     app = fastapi.FastAPI()
-    dispatch.fastapi.configure(app, api_key="test-key")
+    dispatch = configure(app, api_key="test-key")
 
-    @app.dispatch_function()
+    @dispatch.function()
     def my_function():
         return "Hello World!"
 
     @app.get("/")
     def read_root():
-        my_function.call()
-"""
+        dispatch.
+    """
 
 import base64
 import logging
 import os
-from collections.abc import Callable
 from datetime import timedelta
-from types import FunctionType
-from typing import Any, Dict
 
 import fastapi
 import fastapi.responses
@@ -31,7 +28,8 @@ from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
 import dispatch.function
-from dispatch import DEFAULT_DISPATCH_API_URL, Client, DispatchID
+from dispatch import DEFAULT_DISPATCH_API_URL, Client
+from dispatch.registry import FunctionRegistry
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
     CaseInsensitiveDict,
@@ -51,16 +49,10 @@ def configure(
     verification_key: Ed25519PublicKey | None = None,
     api_key: str | None = None,
     api_url: str | None = None,
-):
+) -> FunctionRegistry:
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
-    It mounts a sub-app that implements the Dispatch gRPC interface. It also
-    adds a decorator named @app.dispatch_function() to register functions.
-
-    The app can optionally be configured to dispatch function calls that
-    have been registered locally. If an api_key is provided,
-    app.dispatch(fn, input) can be used to dispatch a call a local function
-    via the Dispatch API.
+    It mounts a sub-app that implements the Dispatch gRPC interface.
 
     Args:
         app: The FastAPI app to configure.
@@ -80,6 +72,10 @@ def configure(
         api_url: The URL of the Dispatch API to use. Uses the value of the
           DISPATCH_API_URL environment variable if set, otherwise
           defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).
+
+    Returns:
+        FunctionRegistry: For registering functions that are accessible
+          at this programmable endpoint.
 
     Raises:
         ValueError: If any of the required arguments are missing.
@@ -126,79 +122,13 @@ def configure(
 
     client = Client(api_key=api_key, api_url=api_url) if api_key and api_url else None
 
-    dispatch_app = _new_app(endpoint, verification_key, client)
+    function_registry = FunctionRegistry(endpoint, client)
 
-    app.__setattr__("dispatch_function", dispatch_app.dispatch_function)
-    app.__setattr__("dispatch", dispatch_app.dispatch)
-    app.mount("/dispatch.sdk.v1.FunctionService", dispatch_app)
+    function_service = _new_app(function_registry, verification_key)
 
+    app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
-class _DispatchAPI(fastapi.FastAPI):
-    def __init__(self, endpoint: str, client: Client | None):
-        super().__init__()
-        self._dispatch_functions: Dict[str, dispatch.function.Function] = {}
-        self._dispatch_endpoint = endpoint
-        self._dispatch_client = client
-
-    def dispatch_function(self):
-        """Register a function with the Dispatch programmable endpoints.
-
-        Args:
-            app: The FastAPI app to register the function with.
-            function: The function to register.
-
-        Raises:
-            ValueError: If the function is already registered.
-        """
-
-        def wrap(func: Callable[[dispatch.function.Input], dispatch.function.Output]):
-            name = func.__qualname__
-            logger.info("registering function '%s'", name)
-            wrapped_func = dispatch.function.Function(
-                self._dispatch_endpoint, name, func
-            )
-            if name in self._dispatch_functions:
-                raise ValueError(f"Function {name} already registered")
-            self._dispatch_functions[name] = wrapped_func
-            return wrapped_func
-
-        return wrap
-
-    def dispatch(
-        self, fn: FunctionType | dispatch.function.Function | str, input: Any = None
-    ) -> DispatchID:
-        """Dispatch a call to a local function.
-
-        Args:
-            fn: The function to dispatch a call to.
-            input: Input to the function.
-
-        Returns:
-            DispatchID: ID of the dispatched call.
-
-        Raises:
-            RuntimeError: if a Dispatch client has not been configured.
-            ValueError: if the function has not been registered.
-        """
-        if self._dispatch_client is None:
-            raise RuntimeError(
-                "Dispatch client has not been configured (api_key not provided when configuring FastAPI app)"
-            )
-
-        if isinstance(fn, FunctionType):
-            fn = fn.__name__
-        elif isinstance(fn, dispatch.function.Function):
-            fn = fn.name
-
-        try:
-            wrapped_func = self._dispatch_functions[fn]
-        except KeyError:
-            raise ValueError(
-                f"function {fn} has not been registered (via app.dispatch_function)"
-            )
-
-        [dispatch_id] = self._dispatch_client.dispatch([wrapped_func.call_with(input)])
-        return dispatch_id
+    return function_registry
 
 
 class _GRPCResponse(fastapi.Response):
@@ -206,9 +136,9 @@ class _GRPCResponse(fastapi.Response):
 
 
 def _new_app(
-    endpoint: str, verification_key: Ed25519PublicKey | None, client: Client | None
+    function_registry: FunctionRegistry, verification_key: Ed25519PublicKey | None
 ):
-    app = _DispatchAPI(endpoint, client)
+    app = fastapi.FastAPI()
 
     @app.post(
         # The endpoint for execution is hardcoded at the moment. If the service
@@ -249,7 +179,7 @@ def _new_app(
             raise fastapi.HTTPException(status_code=400, detail="function is required")
 
         try:
-            func = app._dispatch_functions[req.function]
+            func = function_registry._functions[req.function]
         except KeyError:
             logger.error("function '%s' not found", req.function)
             raise fastapi.HTTPException(
