@@ -55,9 +55,11 @@ def configure(
 
     Args:
         app: The FastAPI app to configure.
+
         endpoint: Full URL of the application the dispatch programmable
           endpoint will be running on. Uses the value of the DISPATCH_ENDPOINT
           environment variable by default.
+
         verification_key: Key to use when verifying signed requests. Uses
           the value of the DISPATCH_VERIFICATION_KEY environment variable
           by default. The environment variable is expected to carry an
