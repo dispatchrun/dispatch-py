@@ -48,7 +48,7 @@ def configure(
     """Configure the FastAPI app to use Dispatch programmable endpoints.
 
     It mounts a sub-app that implements the Dispatch gRPC interface. It also
-    adds a a decorator named @app.dispatch_function() to register functions.
+    adds a decorator named @app.dispatch_function() to register functions.
 
     Args:
         app: The FastAPI app to configure.
