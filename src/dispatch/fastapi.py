@@ -89,11 +89,11 @@ def configure(
                     base64.b64decode(verification_key_raw)
                 )
 
-    logger.info("configuring function service with public URL %s", endpoint)
+    logger.info("configuring function service with endpoint %s", endpoint)
 
     parsed_url = _urlparse.urlparse(endpoint)
     if not parsed_url.netloc or not parsed_url.scheme:
-        raise ValueError("public_url must be a full URL with protocol and domain")
+        raise ValueError("endpoint must be a full URL with protocol and domain")
 
     if verification_key:
         base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()

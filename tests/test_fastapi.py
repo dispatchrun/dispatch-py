@@ -43,12 +43,12 @@ class TestFastAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             dispatch.fastapi.configure(None, endpoint="http://127.0.0.1:9999")
 
-    def test_configure_no_public_url(self):
+    def test_configure_no_endpoint(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
             dispatch.fastapi.configure(app, endpoint="")
 
-    def test_configure_public_url_no_scheme(self):
+    def test_configure_endpoint_no_scheme(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
             dispatch.fastapi.configure(app, endpoint="127.0.0.1:9999")
