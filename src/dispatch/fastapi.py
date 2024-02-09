@@ -220,9 +220,7 @@ def _new_app(
                     result = exit.result
                     if result.HasField("output"):
                         logger.debug(
-                            "function '%s' exiting with value: %s",
-                            req.function,
-                            result.output.value,
+                            "function '%s' exiting with output value", req.function
                         )
                     elif result.HasField("error"):
                         err = result.error

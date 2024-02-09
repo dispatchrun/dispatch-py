@@ -151,7 +151,5 @@ class FunctionRegistry:
                 f"function {fn} has not been registered (via @dispatch.function)"
             )
 
-        print(fn, wrapped_func.primitive_call_with(input))
-
         [dispatch_id] = self._client.dispatch([wrapped_func.primitive_call_with(input)])
         return dispatch_id
