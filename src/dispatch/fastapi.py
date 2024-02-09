@@ -27,9 +27,9 @@ import fastapi.responses
 from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
-import dispatch.function
-import dispatch.registry
-from dispatch import DEFAULT_DISPATCH_API_URL, Client
+from dispatch.client import DEFAULT_API_URL, Client
+from dispatch.function import Registry
+from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
     CaseInsensitiveDict,
@@ -39,11 +39,12 @@ from dispatch.signature import (
     public_key_from_pem,
     verify_request,
 )
+from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
 
 
-class Dispatch(dispatch.registry.FunctionRegistry):
+class Dispatch(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
     def __init__(
@@ -103,7 +104,7 @@ class Dispatch(dispatch.registry.FunctionRegistry):
                         base64.b64decode(verification_key_raw)
                     )
 
-        logger.info("configuring function service with endpoint %s", endpoint)
+        logger.info("configuring Dispatch endpoint %s", endpoint)
 
         parsed_url = _urlparse.urlparse(endpoint)
         if not parsed_url.netloc or not parsed_url.scheme:
@@ -111,14 +112,14 @@ class Dispatch(dispatch.registry.FunctionRegistry):
 
         if verification_key:
             base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
-            logger.info("verifying requests using key %s", base64_key)
+            logger.info("verifying request signatures using key %s", base64_key)
         else:
             logger.warning("request verification is disabled")
 
         if not api_key:
             api_key = os.environ.get("DISPATCH_API_KEY")
         if not api_url:
-            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_DISPATCH_API_URL)
+            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_API_URL)
 
         client = (
             Client(api_key=api_key, api_url=api_url) if api_key and api_url else None
@@ -184,7 +185,7 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
                 status_code=404, detail=f"Function '{req.function}' does not exist"
             )
 
-        input = dispatch.function.Input(req)
+        input = Input(req)
 
         logger.info("running function '%s'", req.function)
         try:
@@ -202,7 +203,7 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
             )
         else:
             response = output._message
-            status = dispatch.function.Status(response.status)
+            status = Status(response.status)
 
             if response.HasField("poll"):
                 logger.debug(

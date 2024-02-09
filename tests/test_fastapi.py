@@ -8,9 +8,9 @@ import google.protobuf.wrappers_pb2
 import httpx
 from fastapi.testclient import TestClient
 
-import dispatch.function
 from dispatch.fastapi import Dispatch
 from dispatch.function import Error, Function, Input, Output, Status, _Arguments
+from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
 
@@ -89,7 +89,7 @@ class TestFastAPI(unittest.TestCase):
 
 
 def response_output(resp: function_pb.RunResponse) -> Any:
-    return dispatch.function._any_unpickle(resp.exit.result.output)
+    return any_unpickle(resp.exit.result.output)
 
 
 class TestCoroutine(unittest.TestCase):
@@ -297,12 +297,12 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(len(resp.poll.calls), 1)
         call = resp.poll.calls[0]
         self.assertEqual(call.function, coro_compute_len.name)
-        self.assertEqual(dispatch.function._any_unpickle(call.input), "cool stuff")
+        self.assertEqual(any_unpickle(call.input), "cool stuff")
 
         # make the requested compute_len
         resp2 = self.proto_call(call)
         # check the result is the terminal expected response
-        len_resp = dispatch.function._any_unpickle(resp2.output)
+        len_resp = any_unpickle(resp2.output)
         self.assertEqual(10, len_resp)
 
         # resume main with the result
@@ -337,7 +337,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(len(resp.poll.calls), 1)
         call = resp.poll.calls[0]
         self.assertEqual(call.function, coro_compute_len.name)
-        self.assertEqual(dispatch.function._any_unpickle(call.input), "cool stuff")
+        self.assertEqual(any_unpickle(call.input), "cool stuff")
 
         # make the requested compute_len
         resp2 = self.proto_call(call)
@@ -404,7 +404,7 @@ class TestCoroutine(unittest.TestCase):
 
         resp = self.call(mycoro)
         self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)
-        self.assertEqual(42, dispatch.function._any_unpickle(resp.exit.tail_call.input))
+        self.assertEqual(42, any_unpickle(resp.exit.tail_call.input))
 
 
 class TestError(unittest.TestCase):

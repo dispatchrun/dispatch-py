@@ -3,10 +3,9 @@ import unittest
 import fastapi
 from fastapi.testclient import TestClient
 
-from dispatch import Call
+from dispatch import Call, Input, Output
 from dispatch.fastapi import Dispatch
-from dispatch.function import Input, Output
-from dispatch.function import _any_unpickle as any_unpickle
+from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
 
 from . import function_service
