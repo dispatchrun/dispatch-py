@@ -1,3 +1,4 @@
+import functools
 import logging
 from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
@@ -57,6 +58,7 @@ class FunctionRegistry:
             ValueError: If the function is already registered.
         """
 
+        @functools.wraps(func)
         def primitive_func(input: Input) -> Output:
             try:
                 args, kwargs = input.input_arguments()
@@ -149,5 +151,5 @@ class FunctionRegistry:
                 f"function {fn} has not been registered (via @dispatch.function)"
             )
 
-        [dispatch_id] = self._client.dispatch([wrapped_func.call_with(input)])
+        [dispatch_id] = self._client.dispatch([wrapped_func.primitive_call_with(input)])
         return dispatch_id
