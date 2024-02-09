@@ -47,7 +47,26 @@ class Function:
     def name(self) -> str:
         return self._name
 
-    def call_with(self, input: Any, correlation_id: int | None = None) -> Call:
+    def call_with(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
+        """Create a Call for this function with the provided input. Useful to
+        generate calls when polling.
+
+        Args:
+            *args: Positional arguments for the function.
+            correlation_id: optional arbitrary integer the caller can use to
+              match this call to a call result.
+            **kwargs: Keyword arguments for the function.
+
+        Returns:
+            Call: can be passed to Output.poll().
+        """
+        return self.primitive_call_with(
+            _Arguments(list(args), kwargs), correlation_id=correlation_id
+        )
+
+    def primitive_call_with(
+        self, input: Any, correlation_id: int | None = None
+    ) -> Call:
         """Create a Call for this function with the provided input. Useful to
         generate calls when polling.
 
@@ -58,7 +77,7 @@ class Function:
               match this call to a call result.
 
         Returns:
-          A Call object. It can be passed to Output.poll().
+            Call: can be passed to Output.poll().
         """
         return Call(
             correlation_id=correlation_id,
@@ -79,9 +98,6 @@ class Input:
 
     This class is intended to be used as read-only.
     """
-
-    # TODO: first implementation with a single Input type, but we should
-    # consider using some dynamic filling positional and keyword arguments.
 
     def __init__(self, req: function_pb.RunRequest):
         self._has_input = req.HasField("input")
@@ -113,7 +129,7 @@ class Input:
         self._assert_first_call()
         return self._input
 
-    def arguments(self) -> tuple[list[Any], dict[str, Any]]:
+    def input_arguments(self) -> tuple[list[Any], dict[str, Any]]:
         """Returns positional and keyword arguments carried by the input."""
         self._assert_first_call()
         if not isinstance(self._input, _Arguments):

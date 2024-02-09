@@ -14,7 +14,7 @@ Example:
 
     @app.get("/")
     def read_root():
-        dispatch.
+        dispatch.call(my_function)
     """
 
 import base64

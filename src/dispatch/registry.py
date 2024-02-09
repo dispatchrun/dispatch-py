@@ -3,8 +3,7 @@ from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
 from dispatch import Client, DispatchID
-from dispatch.function import Error, Function, Input, Output, Status
-from dispatch.status import status_for_error
+from dispatch.function import Error, Function, Input, Output, Status, _Arguments
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +59,7 @@ class FunctionRegistry:
 
         def primitive_func(input: Input) -> Output:
             try:
-                args, kwargs = input.arguments()
+                args, kwargs = input.input_arguments()
             except ValueError:
                 return Output.error(
                     Error(
@@ -98,10 +97,30 @@ class FunctionRegistry:
         self._functions[name] = wrapped_func
         return wrapped_func
 
-    def call(self, fn: Function | str, input: Any = None) -> DispatchID:
+    def call(self, fn: Function | str, *args, **kwargs) -> DispatchID:
         """Dispatch a call to a local function.
 
-        The registry must be initialize with a client for this call facility
+        The registry must be initialized with a client for this call facility
+        to be available.
+
+        Args:
+            fn: The function to dispatch a call to.
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+
+        Returns:
+            DispatchID: ID of the dispatched call.
+
+        Raises:
+            RuntimeError: if a Dispatch client has not been configured.
+            ValueError: if the function has not been registered.
+        """
+        return self.primitive_call(fn, _Arguments(list(args), kwargs))
+
+    def primitive_call(self, fn: Function | str, input: Any = None) -> DispatchID:
+        """Dispatch a call to a local primitive function.
+
+        The registry must be initialized with a client for this call facility
         to be available.
 
         Args:
