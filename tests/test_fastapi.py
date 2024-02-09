@@ -281,7 +281,9 @@ class TestCoroutine(unittest.TestCase):
         def coroutine_main(input: Input) -> Output:
             if input.is_first_call:
                 text: str = input.input
-                return Output.poll(state=text, calls=[coro_compute_len.call_with(text)])
+                return Output.poll(
+                    state=text, calls=[coro_compute_len.primitive_call_with(text)]
+                )
             text = input.coroutine_state
             length = input.call_results[0].output
             return Output.value(f"length={length} text='{text}'")
@@ -319,7 +321,9 @@ class TestCoroutine(unittest.TestCase):
         def coroutine_main(input: Input) -> Output:
             if input.is_first_call:
                 text: str = input.input
-                return Output.poll(state=text, calls=[coro_compute_len.call_with(text)])
+                return Output.poll(
+                    state=text, calls=[coro_compute_len.primitive_call_with(text)]
+                )
             msg = input.call_results[0].error.message
             type = input.call_results[0].error.type
             return Output.value(f"msg={msg} type='{type}'")
@@ -390,15 +394,15 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(Status.THROTTLED, resp.status)
 
     def test_tailcall(self):
-        @self.dispatch.primitive_function()
-        def other_coroutine(input: Input) -> Output:
-            return Output.value(f"Hello {input.input}")
+        @self.dispatch.function()
+        def other_coroutine(value: Any) -> str:
+            return f"Hello {value}"
 
         @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
-            return Output.tail_call(other_coroutine.call_with(42))
+            return Output.tail_call(other_coroutine.primitive_call_with(42))
 
-        resp = self.execute(mycoro)
+        resp = self.call(mycoro)
         self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)
         self.assertEqual(42, dispatch.function._any_unpickle(resp.exit.tail_call.input))
 
