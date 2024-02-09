@@ -5,8 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Iterable
-from typing import TypeAlias
+from typing import Iterable, TypeAlias
 from urllib.parse import urlparse
 
 import grpc
@@ -78,6 +77,9 @@ class Client:
 
     def dispatch(self, calls: Iterable[Call]) -> Iterable[DispatchID]:
         """Dispatch function calls.
+
+        Args:
+            calls: Calls to dispatch.
 
         Returns:
             Identifiers for the function calls, in the same order as the inputs.
