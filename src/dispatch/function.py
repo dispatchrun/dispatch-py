@@ -18,8 +18,15 @@ class Function:
     Dispatch Python SDK.
     """
 
-    def __init__(self, endpoint: str, name: str, func: Callable[[Input], Output]):
+    def __init__(
+        self,
+        endpoint: str,
+        client: Client | None,
+        name: str,
+        func: Callable[[Input], Output],
+    ):
         self._endpoint = endpoint
+        self._client = client
         self._name = name
         self._func = func
 
@@ -33,6 +40,47 @@ class Function:
     @property
     def name(self) -> str:
         return self._name
+
+    def dispatch(self, *args, **kwargs) -> DispatchID:
+        """Dispatch a call to the function.
+
+        The Registry this function was registered with must be initialized
+        with a Client / api_key for this call facility to be available.
+
+        Args:
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+
+        Returns:
+            DispatchID: ID of the dispatched call.
+
+        Raises:
+            RuntimeError: if a Dispatch client has not been configured.
+        """
+        return self.primitive_dispatch(_Arguments(list(args), kwargs))
+
+    def primitive_dispatch(self, input: Any = None) -> DispatchID:
+        """Dispatch a primitive call.
+
+        The Registry this function was registered with must be initialized
+        with a Client / api_key for this call facility to be available.
+
+        Args:
+            input: Input to the function.
+
+        Returns:
+            DispatchID: ID of the dispatched call.
+
+        Raises:
+            RuntimeError: if a Dispatch client has not been configured.
+        """
+        if self._client is None:
+            raise RuntimeError(
+                "Dispatch Client has not been configured (api_key not provided)"
+            )
+
+        [dispatch_id] = self._client.dispatch([self.primitive_call_with(input)])
+        return dispatch_id
 
     def call_with(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
         """Create a Call for this function with the provided input. Useful to
@@ -160,61 +208,6 @@ class Registry:
         logger.info("registering function '%s'", name)
         if name in self._functions:
             raise ValueError(f"Function {name} already registered")
-        wrapped_func = Function(self._endpoint, name, func)
+        wrapped_func = Function(self._endpoint, self._client, name, func)
         self._functions[name] = wrapped_func
         return wrapped_func
-
-    def call(self, fn: Function | str, *args, **kwargs) -> DispatchID:
-        """Dispatch a call to a local function.
-
-        The registry must be initialized with a client for this call facility
-        to be available.
-
-        Args:
-            fn: The function to dispatch a call to.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
-
-        Returns:
-            DispatchID: ID of the dispatched call.
-
-        Raises:
-            RuntimeError: if a Dispatch client has not been configured.
-            ValueError: if the function has not been registered.
-        """
-        return self.primitive_call(fn, _Arguments(list(args), kwargs))
-
-    def primitive_call(self, fn: Function | str, input: Any = None) -> DispatchID:
-        """Dispatch a call to a local primitive function.
-
-        The registry must be initialized with a client for this call facility
-        to be available.
-
-        Args:
-            fn: The function to dispatch a call to.
-            input: Input to the function.
-
-        Returns:
-            DispatchID: ID of the dispatched call.
-
-        Raises:
-            RuntimeError: if a Dispatch client has not been configured.
-            ValueError: if the function has not been registered.
-        """
-        if self._client is None:
-            raise RuntimeError(
-                "Dispatch client has not been configured (api_key not provided)"
-            )
-
-        if isinstance(fn, Function):
-            fn = fn.name
-
-        try:
-            wrapped_func = self._functions[fn]
-        except KeyError:
-            raise ValueError(
-                f"function {fn} has not been registered (via @dispatch.function)"
-            )
-
-        [dispatch_id] = self._client.dispatch([wrapped_func.primitive_call_with(input)])
-        return dispatch_id
