@@ -14,7 +14,7 @@ Example:
 
     @app.get("/")
     def read_root():
-        dispatch.
+        dispatch.call(my_function)
     """
 
 import base64
@@ -27,9 +27,9 @@ import fastapi.responses
 from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
-import dispatch.function
-import dispatch.registry
-from dispatch import DEFAULT_DISPATCH_API_URL, Client
+from dispatch.client import DEFAULT_API_URL, Client
+from dispatch.function import Registry
+from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
     CaseInsensitiveDict,
@@ -39,11 +39,12 @@ from dispatch.signature import (
     public_key_from_pem,
     verify_request,
 )
+from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
 
 
-class Dispatch(dispatch.registry.FunctionRegistry):
+class Dispatch(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
     def __init__(
@@ -103,7 +104,7 @@ class Dispatch(dispatch.registry.FunctionRegistry):
                         base64.b64decode(verification_key_raw)
                     )
 
-        logger.info("configuring function service with endpoint %s", endpoint)
+        logger.info("configuring Dispatch endpoint %s", endpoint)
 
         parsed_url = _urlparse.urlparse(endpoint)
         if not parsed_url.netloc or not parsed_url.scheme:
@@ -111,14 +112,14 @@ class Dispatch(dispatch.registry.FunctionRegistry):
 
         if verification_key:
             base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
-            logger.info("verifying requests using key %s", base64_key)
+            logger.info("verifying request signatures using key %s", base64_key)
         else:
             logger.warning("request verification is disabled")
 
         if not api_key:
             api_key = os.environ.get("DISPATCH_API_KEY")
         if not api_url:
-            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_DISPATCH_API_URL)
+            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_API_URL)
 
         client = (
             Client(api_key=api_key, api_url=api_url) if api_key and api_url else None
@@ -179,33 +180,63 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
         try:
             func = function_registry._functions[req.function]
         except KeyError:
-            logger.error("function '%s' not found", req.function)
+            logger.debug("function '%s' not found", req.function)
             raise fastapi.HTTPException(
                 status_code=404, detail=f"Function '{req.function}' does not exist"
             )
 
-        input = dispatch.function.Input(req)
+        input = Input(req)
 
         logger.info("running function '%s'", req.function)
         try:
             output = func(input)
-        except Exception as ex:
-            logger.error(
-                "function '%s' failed with an error", req.function, exc_info=True
+        except Exception:
+            # This indicates that an exception was raised in a primitive
+            # function. Primitive functions must catch exceptions, categorize
+            # them in order to derive a Status, and then return a RunResponse
+            # that carries the Status and the error details. A failure to do
+            # so indicates a problem, and we return a 500 rather than attempt
+            # to catch and categorize the error here.
+            logger.error("function '%s' fatal error", req.function, exc_info=True)
+            raise fastapi.HTTPException(
+                status_code=500, detail=f"function '{req.function}' fatal error"
             )
-            # TODO: distinguish uncaught exceptions from exceptions returned by
-            # coroutine?
-            err = dispatch.function.Error.from_exception(ex)
-            output = dispatch.function.Output.error(err)
         else:
-            logger.debug("function '%s' ran successfully", req.function)
+            response = output._message
+            status = Status(response.status)
 
-        resp = output._message
-        logger.debug(
-            "finished handling run request with status %s",
-            dispatch.function.Status(resp.status).name,
-        )
+            if response.HasField("poll"):
+                logger.debug(
+                    "function '%s' polling with %d call(s)",
+                    req.function,
+                    len(response.poll.calls),
+                )
+            elif response.HasField("exit"):
+                exit = response.exit
+                if not exit.HasField("result"):
+                    logger.debug("function '%s' exiting with no result", req.function)
+                else:
+                    result = exit.result
+                    if result.HasField("output"):
+                        logger.debug(
+                            "function '%s' exiting with output value", req.function
+                        )
+                    elif result.HasField("error"):
+                        err = result.error
+                        logger.debug(
+                            "function '%s' exiting with error: %s (%s)",
+                            req.function,
+                            err.message,
+                            err.type,
+                        )
+                if exit.HasField("tail_call"):
+                    logger.debug(
+                        "function '%s' tail calling function '%s'",
+                        exit.tail_call.function,
+                    )
 
-        return fastapi.Response(content=resp.SerializeToString())
+        logger.debug("finished handling run request with status %s", status.name)
+
+        return fastapi.Response(content=response.SerializeToString())
 
     return app

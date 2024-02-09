@@ -1,0 +1,76 @@
+import enum
+from typing import Any
+
+from dispatch.sdk.v1 import status_pb2 as status_pb
+
+
+@enum.unique
+class Status(int, enum.Enum):
+    """Enumeration of the possible values that can be used in the return status
+    of functions.
+    """
+
+    UNSPECIFIED = status_pb.STATUS_UNSPECIFIED
+    OK = status_pb.STATUS_OK
+    TIMEOUT = status_pb.STATUS_TIMEOUT
+    THROTTLED = status_pb.STATUS_THROTTLED
+    INVALID_ARGUMENT = status_pb.STATUS_INVALID_ARGUMENT
+    INVALID_RESPONSE = status_pb.STATUS_INVALID_RESPONSE
+    TEMPORARY_ERROR = status_pb.STATUS_TEMPORARY_ERROR
+    PERMANENT_ERROR = status_pb.STATUS_PERMANENT_ERROR
+    INCOMPATIBLE_STATE = status_pb.STATUS_INCOMPATIBLE_STATE
+
+    _proto: status_pb.Status
+
+
+# Maybe we should find a better way to define that enum. It's that way to please
+# Mypy and provide documentation for the enum values.
+
+Status.UNSPECIFIED.__doc__ = "Status not specified (default)"
+Status.UNSPECIFIED._proto = status_pb.STATUS_UNSPECIFIED
+Status.OK.__doc__ = "Coroutine returned as expected"
+Status.OK._proto = status_pb.STATUS_OK
+Status.TIMEOUT.__doc__ = "Coroutine encountered a timeout and may be retried"
+Status.TIMEOUT._proto = status_pb.STATUS_TIMEOUT
+Status.THROTTLED.__doc__ = "Coroutine was throttled and may be retried later"
+Status.THROTTLED._proto = status_pb.STATUS_THROTTLED
+Status.INVALID_ARGUMENT.__doc__ = "Coroutine was provided an invalid type of input"
+Status.INVALID_ARGUMENT._proto = status_pb.STATUS_INVALID_ARGUMENT
+Status.INVALID_RESPONSE.__doc__ = "Coroutine was provided an unexpected reponse"
+Status.INVALID_RESPONSE._proto = status_pb.STATUS_INVALID_RESPONSE
+Status.TEMPORARY_ERROR.__doc__ = (
+    "Coroutine encountered a temporary error, may be retried"
+)
+Status.TEMPORARY_ERROR._proto = status_pb.STATUS_TEMPORARY_ERROR
+Status.PERMANENT_ERROR.__doc__ = (
+    "Coroutine encountered a permanent error, should not be retried"
+)
+Status.PERMANENT_ERROR._proto = status_pb.STATUS_PERMANENT_ERROR
+Status.INCOMPATIBLE_STATE.__doc__ = (
+    "Coroutine was provided an incompatible state. May be restarted from scratch"
+)
+Status.INCOMPATIBLE_STATE._proto = status_pb.STATUS_INCOMPATIBLE_STATE
+
+
+def status_for_error(error: Exception) -> Status:
+    """Returns a Status that corresponds to the specified error."""
+    status = Status.TEMPORARY_ERROR
+
+    try:
+        # Raise the exception and catch it so that the interpreter deals
+        # with exception groups and chaining for us.
+        raise error
+    except TimeoutError:
+        status = Status.TIMEOUT
+    except SyntaxError:
+        status = Status.PERMANENT_ERROR
+    except BaseException:
+        pass
+
+    return status
+
+
+def status_for_output(output: Any) -> Status:
+    """Returns a Status that corresponds to the specified output value."""
+    # TODO
+    return Status.OK

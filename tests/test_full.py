@@ -3,10 +3,9 @@ import unittest
 import fastapi
 from fastapi.testclient import TestClient
 
-from dispatch import Call
+from dispatch import Call, Input, Output
 from dispatch.fastapi import Dispatch
-from dispatch.function import Input, Output
-from dispatch.function import _any_unpickle as any_unpickle
+from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
 
 from . import function_service
@@ -52,7 +51,7 @@ class TestFullFastapi(unittest.TestCase):
 
     def test_simple_end_to_end(self):
         # The FastAPI server.
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 
@@ -68,12 +67,22 @@ class TestFullFastapi(unittest.TestCase):
         resp = self.servicer.responses[dispatch_id]
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
 
-    def test_simple_call_with(self):
+    def test_call_with(self):
         @self.dispatch.function()
+        def my_function(name: str) -> str:
+            return f"Hello world: {name}"
+
+        [dispatch_id] = self.client.dispatch([my_function.call_with(52)])
+        self.execute()
+        resp = self.servicer.responses[dispatch_id]
+        self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
+
+    def test_primitive_call_with(self):
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 
-        [dispatch_id] = self.client.dispatch([my_function.call_with(52)])
+        [dispatch_id] = self.client.dispatch([my_function.primitive_call_with(52)])
         self.execute()
         resp = self.servicer.responses[dispatch_id]
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")

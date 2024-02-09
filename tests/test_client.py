@@ -5,7 +5,7 @@ from unittest import mock
 import grpc
 
 from dispatch import Call, Client
-from dispatch.function import _any_unpickle as any_unpickle
+from dispatch.proto import _any_unpickle as any_unpickle
 
 from .dispatch_service import ServerTest
 
