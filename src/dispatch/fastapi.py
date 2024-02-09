@@ -191,14 +191,17 @@ def _new_app(
         logger.info("running function '%s'", req.function)
         try:
             output = func(input)
-        except Exception as ex:
-            logger.error(
-                "function '%s' failed with an error", req.function, exc_info=True
+        except Exception:
+            # This indicates that an exception was raised in a primitive
+            # function. Primitive functions must catch exceptions, categorize
+            # them in order to derive a Status, and then return a RunResponse
+            # that carries the Status and the error details. A failure to do
+            # so indicates a problem, and we return a 500 rather than attempt
+            # to catch and categorize the error here.
+            logger.error("function '%s' fatal error", req.function, exc_info=True)
+            raise fastapi.HTTPException(
+                status_code=500, detail=f"function '{req.function}' fatal error"
             )
-            # TODO: distinguish uncaught exceptions from exceptions returned by
-            # coroutine?
-            err = dispatch.function.Error.from_exception(ex)
-            output = dispatch.function.Output.error(err)
         else:
             response = output._message
             status = dispatch.function.Status(response.status)
