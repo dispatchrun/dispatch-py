@@ -57,7 +57,7 @@ class TestFastAPI(unittest.TestCase):
         app = fastapi.FastAPI()
         dispatch = configure(app, endpoint="http://127.0.0.1:9999/")
 
-        @dispatch.function()
+        @dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value(
                 f"You told me: '{input.input}' ({len(input.input)} characters)"
@@ -136,7 +136,7 @@ class TestCoroutine(unittest.TestCase):
         return resp.exit.result
 
     def test_no_input(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value("Hello World!")
 
@@ -155,7 +155,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(cm.exception.response.status_code, 404)
 
     def test_string_input(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value(f"You sent '{input.input}'")
 
@@ -164,7 +164,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(out, "You sent 'cool stuff'")
 
     def test_error_on_access_state_in_first_call(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             print(input.coroutine_state)
             return Output.value("not reached")
@@ -176,7 +176,7 @@ class TestCoroutine(unittest.TestCase):
         )
 
     def test_error_on_access_input_in_second_call(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             if input.is_first_call:
                 return Output.poll(state=42)
@@ -192,22 +192,22 @@ class TestCoroutine(unittest.TestCase):
         )
 
     def test_duplicate_coro(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value("Do one thing")
 
         with self.assertRaises(ValueError):
 
-            @self.dispatch.function()
+            @self.dispatch.primitive_function()
             def my_function(input: Input) -> Output:
                 return Output.value("Do something else")
 
     def test_two_simple_coroutines(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def echoroutine(input: Input) -> Output:
             return Output.value(f"Echo: '{input.input}'")
 
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def len_coroutine(input: Input) -> Output:
             return Output.value(f"Length: {len(input.input)}")
 
@@ -221,7 +221,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(out, "Length: 10")
 
     def test_coroutine_with_state(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def coroutine3(input: Input) -> Output:
             if input.is_first_call:
                 counter = input.input
@@ -255,11 +255,11 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(out, "done")
 
     def test_coroutine_poll(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def coro_compute_len(input: Input) -> Output:
             return Output.value(len(input.input))
 
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def coroutine_main(input: Input) -> Output:
             if input.is_first_call:
                 text: str = input.input
@@ -293,11 +293,11 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual("length=10 text='cool stuff'", out)
 
     def test_coroutine_poll_error(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def coro_compute_len(input: Input) -> Output:
             return Output.error(Error(Status.PERMANENT_ERROR, "type", "Dead"))
 
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def coroutine_main(input: Input) -> Output:
             if input.is_first_call:
                 text: str = input.input
@@ -328,7 +328,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(out, "msg=Dead type='type'")
 
     def test_coroutine_error(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
             return Output.error(Error(Status.PERMANENT_ERROR, "sometype", "dead"))
 
@@ -337,7 +337,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual("dead", resp.exit.result.error.message)
 
     def test_coroutine_expected_exception(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
             try:
                 1 / 0
@@ -351,7 +351,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
 
     def test_coroutine_unexpected_exception(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
             1 / 0
             self.fail("should not reach here")
@@ -362,7 +362,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
 
     def test_specific_status(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
             return Output.error(Error(Status.THROTTLED, "foo", "bar"))
 
@@ -372,11 +372,11 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(Status.THROTTLED, resp.status)
 
     def test_tailcall(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def other_coroutine(input: Input) -> Output:
             return Output.value(f"Hello {input.input}")
 
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
             return Output.tail_call(other_coroutine.call_with(42))
 

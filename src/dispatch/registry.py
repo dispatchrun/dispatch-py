@@ -23,11 +23,15 @@ class FunctionRegistry:
         self._endpoint = endpoint
         self._client = client
 
-    def function(self):
-        """Returns a decorator that registers functions."""
+    def primitive_function(self):
+        """Returns a decorator that registers primitive functions (functions
+        that accept a dispatch.function.Input and return a dispatch.function.Output,
+        and must not raise exceptions)."""
 
-        def wrap(func: Callable[[dispatch.function.Input], dispatch.function.Output]):
-            """Register a function with the Dispatch programmable endpoints.
+        def register(
+            func: Callable[[dispatch.function.Input], dispatch.function.Output]
+        ):
+            """Register a primitive function with the Dispatch programmable endpoints.
 
             Args:
                 func: The function to register.
@@ -37,13 +41,13 @@ class FunctionRegistry:
             """
             name = func.__qualname__
             logger.info("registering function '%s'", name)
-            wrapped_func = dispatch.function.Function(self._endpoint, name, func)
             if name in self._functions:
                 raise ValueError(f"Function {name} already registered")
+            wrapped_func = dispatch.function.Function(self._endpoint, name, func)
             self._functions[name] = wrapped_func
             return wrapped_func
 
-        return wrap
+        return register
 
     def call(
         self, fn: FunctionType | dispatch.function.Function | str, input: Any = None

@@ -52,7 +52,7 @@ class TestFullFastapi(unittest.TestCase):
 
     def test_simple_end_to_end(self):
         # The FastAPI server.
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 
@@ -69,7 +69,7 @@ class TestFullFastapi(unittest.TestCase):
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
 
     def test_simple_call_with(self):
-        @self.dispatch.function()
+        @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
             return Output.value(f"Hello world: {input.input}")
 
