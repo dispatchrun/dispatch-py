@@ -181,7 +181,7 @@ def _new_app(
         try:
             func = function_registry._functions[req.function]
         except KeyError:
-            logger.error("function '%s' not found", req.function)
+            logger.debug("function '%s' not found", req.function)
             raise fastapi.HTTPException(
                 status_code=404, detail=f"Function '{req.function}' does not exist"
             )
