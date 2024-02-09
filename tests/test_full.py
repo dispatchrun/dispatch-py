@@ -3,8 +3,8 @@ import unittest
 import fastapi
 from fastapi.testclient import TestClient
 
-import dispatch.fastapi
 from dispatch import Call
+from dispatch.fastapi import Dispatch
 from dispatch.function import Input, Output
 from dispatch.function import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
@@ -32,7 +32,7 @@ MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
-        self.dispatch = dispatch.fastapi.configure(
+        self.dispatch = Dispatch(
             self.app, endpoint="http://function-service", verification_key=public_key
         )
 

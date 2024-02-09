@@ -9,7 +9,7 @@ import httpx
 from fastapi.testclient import TestClient
 
 import dispatch.function
-from dispatch.fastapi import configure
+from dispatch.fastapi import Dispatch
 from dispatch.function import Error, Input, Output, Status
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -18,10 +18,10 @@ from . import function_service
 
 
 class TestFastAPI(unittest.TestCase):
-    def test_configure(self):
+    def test_Dispatch(self):
         app = fastapi.FastAPI()
 
-        configure(app, endpoint="https://127.0.0.1:9999")
+        Dispatch(app, endpoint="https://127.0.0.1:9999")
 
         @app.get("/")
         def read_root():
@@ -39,23 +39,23 @@ class TestFastAPI(unittest.TestCase):
         resp = client.post("/dispatch.sdk.v1.FunctionService/Run")
         self.assertEqual(resp.status_code, 400)
 
-    def test_configure_no_app(self):
+    def test_Dispatch_no_app(self):
         with self.assertRaises(ValueError):
-            configure(None, endpoint="http://127.0.0.1:9999")
+            Dispatch(None, endpoint="http://127.0.0.1:9999")
 
-    def test_configure_no_endpoint(self):
+    def test_Dispatch_no_endpoint(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
-            configure(app, endpoint="")
+            Dispatch(app, endpoint="")
 
-    def test_configure_endpoint_no_scheme(self):
+    def test_Dispatch_endpoint_no_scheme(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
-            configure(app, endpoint="127.0.0.1:9999")
+            Dispatch(app, endpoint="127.0.0.1:9999")
 
     def test_fastapi_simple_request(self):
         app = fastapi.FastAPI()
-        dispatch = configure(app, endpoint="http://127.0.0.1:9999/")
+        dispatch = Dispatch(app, endpoint="http://127.0.0.1:9999/")
 
         @dispatch.function()
         def my_function(input: Input) -> Output:
@@ -95,7 +95,7 @@ def response_output(resp: function_pb.RunResponse) -> Any:
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
-        self.dispatch = configure(self.app, endpoint="https://127.0.0.1:9999")
+        self.dispatch = Dispatch(self.app, endpoint="https://127.0.0.1:9999")
         http_client = TestClient(self.app)
         self.client = function_service.client(http_client)
 

@@ -3,10 +3,10 @@
 Example:
 
     import fastapi
-    from dispatch.fastapi import configure
+    from dispatch.fastapi import Dispatch
 
     app = fastapi.FastAPI()
-    dispatch = configure(app, api_key="test-key")
+    dispatch = Dispatch(app, api_key="test-key")
 
     @dispatch.function()
     def my_function():
@@ -28,8 +28,8 @@ from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
 import dispatch.function
+import dispatch.registry
 from dispatch import DEFAULT_DISPATCH_API_URL, Client
-from dispatch.registry import FunctionRegistry
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
     CaseInsensitiveDict,
@@ -43,101 +43,99 @@ from dispatch.signature import (
 logger = logging.getLogger(__name__)
 
 
-def configure(
-    app: fastapi.FastAPI,
-    endpoint: str | None = None,
-    verification_key: Ed25519PublicKey | None = None,
-    api_key: str | None = None,
-    api_url: str | None = None,
-) -> FunctionRegistry:
-    """Configure the FastAPI app to use Dispatch programmable endpoints.
+class Dispatch(dispatch.registry.FunctionRegistry):
+    """A Dispatch programmable endpoint, powered by FastAPI."""
 
-    It mounts a sub-app that implements the Dispatch gRPC interface.
+    def __init__(
+        self,
+        app: fastapi.FastAPI,
+        endpoint: str | None = None,
+        verification_key: Ed25519PublicKey | None = None,
+        api_key: str | None = None,
+        api_url: str | None = None,
+    ):
+        """Initialize a Dispatch endpoint, and integrate it into a FastAPI app.
 
-    Args:
-        app: The FastAPI app to configure.
+        It mounts a sub-app that implements the Dispatch gRPC interface.
 
-        endpoint: Full URL of the application the Dispatch programmable
-          endpoint will be running on. Uses the value of the
-          DISPATCH_ENDPOINT_URL environment variable by default.
+        Args:
+            app: The FastAPI app to configure.
 
-        verification_key: Key to use when verifying signed requests. Uses
-          the value of the DISPATCH_VERIFICATION_KEY environment variable
-          by default. The environment variable is expected to carry an
-          Ed25519 public key in base64 or PEM format.
+            endpoint: Full URL of the application the Dispatch programmable
+              endpoint will be running on. Uses the value of the
+              DISPATCH_ENDPOINT_URL environment variable by default.
 
-        api_key: Dispatch API key to use for authentication. Uses the value of
-          the DISPATCH_API_KEY environment variable by default.
+            verification_key: Key to use when verifying signed requests. Uses
+              the value of the DISPATCH_VERIFICATION_KEY environment variable
+              by default. The environment variable is expected to carry an
+              Ed25519 public key in base64 or PEM format.
 
-        api_url: The URL of the Dispatch API to use. Uses the value of the
-          DISPATCH_API_URL environment variable if set, otherwise
-          defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).
+            api_key: Dispatch API key to use for authentication. Uses the value of
+              the DISPATCH_API_KEY environment variable by default.
 
-    Returns:
-        FunctionRegistry: For registering functions that are accessible
-          at this programmable endpoint.
+            api_url: The URL of the Dispatch API to use. Uses the value of the
+              DISPATCH_API_URL environment variable if set, otherwise
+              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).
 
-    Raises:
-        ValueError: If any of the required arguments are missing.
-    """
-    if not app:
-        raise ValueError("app is required")
+        Raises:
+            ValueError: If any of the required arguments are missing.
+        """
+        if not app:
+            raise ValueError("app is required")
 
-    if not endpoint:
-        endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
-    if not endpoint:
-        raise ValueError("endpoint is required")
+        if not endpoint:
+            endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
+        if not endpoint:
+            raise ValueError("endpoint is required")
 
-    if not verification_key:
-        try:
-            verification_key_raw = os.environ["DISPATCH_VERIFICATION_KEY"]
-        except KeyError:
-            pass
-        else:
-            # Be forgiving when accepting keys in PEM format.
-            verification_key_raw = verification_key_raw.replace("\\n", "\n")
+        if not verification_key:
             try:
-                verification_key = public_key_from_pem(verification_key_raw)
-            except ValueError:
-                verification_key = public_key_from_bytes(
-                    base64.b64decode(verification_key_raw)
-                )
+                verification_key_raw = os.environ["DISPATCH_VERIFICATION_KEY"]
+            except KeyError:
+                pass
+            else:
+                # Be forgiving when accepting keys in PEM format.
+                verification_key_raw = verification_key_raw.replace("\\n", "\n")
+                try:
+                    verification_key = public_key_from_pem(verification_key_raw)
+                except ValueError:
+                    verification_key = public_key_from_bytes(
+                        base64.b64decode(verification_key_raw)
+                    )
 
-    logger.info("configuring function service with endpoint %s", endpoint)
+        logger.info("configuring function service with endpoint %s", endpoint)
 
-    parsed_url = _urlparse.urlparse(endpoint)
-    if not parsed_url.netloc or not parsed_url.scheme:
-        raise ValueError("endpoint must be a full URL with protocol and domain")
+        parsed_url = _urlparse.urlparse(endpoint)
+        if not parsed_url.netloc or not parsed_url.scheme:
+            raise ValueError("endpoint must be a full URL with protocol and domain")
 
-    if verification_key:
-        base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
-        logger.info("verifying requests using key %s", base64_key)
-    else:
-        logger.warning("request verification is disabled")
+        if verification_key:
+            base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
+            logger.info("verifying requests using key %s", base64_key)
+        else:
+            logger.warning("request verification is disabled")
 
-    if not api_key:
-        api_key = os.environ.get("DISPATCH_API_KEY")
-    if not api_url:
-        api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_DISPATCH_API_URL)
+        if not api_key:
+            api_key = os.environ.get("DISPATCH_API_KEY")
+        if not api_url:
+            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_DISPATCH_API_URL)
 
-    client = Client(api_key=api_key, api_url=api_url) if api_key and api_url else None
+        client = (
+            Client(api_key=api_key, api_url=api_url) if api_key and api_url else None
+        )
 
-    function_registry = FunctionRegistry(endpoint, client)
+        super().__init__(endpoint, client)
 
-    function_service = _new_app(function_registry, verification_key)
+        function_service = _new_app(self, verification_key)
 
-    app.mount("/dispatch.sdk.v1.FunctionService", function_service)
-
-    return function_registry
+        app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
 
 class _GRPCResponse(fastapi.Response):
     media_type = "application/grpc+proto"
 
 
-def _new_app(
-    function_registry: FunctionRegistry, verification_key: Ed25519PublicKey | None
-):
+def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | None):
     app = fastapi.FastAPI()
 
     @app.post(
