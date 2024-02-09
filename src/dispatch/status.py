@@ -72,5 +72,4 @@ def status_for_error(error: Exception) -> Status:
 
 def status_for_output(output: Any) -> Status:
     """Returns a Status that corresponds to the specified output value."""
-    # TODO
     return Status.OK
