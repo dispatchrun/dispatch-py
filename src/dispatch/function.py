@@ -69,7 +69,7 @@ class Function:
 
 
 class Input:
-    """The input to a function.
+    """The input to a primitive function.
 
     Functions always take a single argument of type Input. When the function is
     run for the first time, it receives the input. When the function is a coroutine
@@ -113,6 +113,13 @@ class Input:
         self._assert_first_call()
         return self._input
 
+    def arguments(self) -> tuple[list[Any], dict[str, Any]]:
+        """Returns positional and keyword arguments carried by the input."""
+        self._assert_first_call()
+        if not isinstance(self._input, _Arguments):
+            raise RuntimeError("input does not hold arguments")
+        return self._input.args, self._input.kwargs
+
     @property
     def coroutine_state(self) -> Any:
         self._assert_resume()
@@ -132,8 +139,16 @@ class Input:
             raise ValueError("This input is for a first function call")
 
 
+@dataclass
+class _Arguments:
+    """A container for positional and keyword arguments."""
+
+    args: list[Any]
+    kwargs: dict[str, Any]
+
+
 class Output:
-    """The output of a function.
+    """The output of a primitive function.
 
     This class is meant to be instantiated and returned by authors of functions
     to indicate the follow up action they need to take. Use the various class

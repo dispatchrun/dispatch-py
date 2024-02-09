@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 import dispatch.function
 from dispatch.fastapi import configure
-from dispatch.function import Error, Input, Output, Status
+from dispatch.function import Error, Function, Input, Output, Status, _Arguments
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
 
@@ -100,7 +100,7 @@ class TestCoroutine(unittest.TestCase):
         self.client = function_service.client(http_client)
 
     def execute(
-        self, func, input=None, state=None, calls=None
+        self, func: Function, input=None, state=None, calls=None
     ) -> function_pb.RunResponse:
         """Test helper to invoke coroutines on the local server."""
         req = function_pb.RunRequest(function=func.name)
@@ -120,7 +120,10 @@ class TestCoroutine(unittest.TestCase):
         self.assertIsInstance(resp, function_pb.RunResponse)
         return resp
 
-    def call(self, call: call_pb.Call) -> call_pb.CallResult:
+    def call(self, func: Function, *args, **kwargs) -> function_pb.RunResponse:
+        return self.execute(func, input=_Arguments(list(args), kwargs))
+
+    def proto_call(self, call: call_pb.Call) -> call_pb.CallResult:
         req = function_pb.RunRequest(
             function=call.function,
             input=call.input,
@@ -166,7 +169,14 @@ class TestCoroutine(unittest.TestCase):
     def test_error_on_access_state_in_first_call(self):
         @self.dispatch.primitive_function()
         def my_function(input: Input) -> Output:
-            print(input.coroutine_state)
+            try:
+                print(input.coroutine_state)
+            except ValueError:
+                return Output.error(
+                    Error.from_exception(
+                        ValueError("This input is for a first function call")
+                    )
+                )
             return Output.value("not reached")
 
         resp = self.execute(my_function, input="cool stuff")
@@ -180,12 +190,20 @@ class TestCoroutine(unittest.TestCase):
         def my_function(input: Input) -> Output:
             if input.is_first_call:
                 return Output.poll(state=42)
-            print(input.input)
+            try:
+                print(input.input)
+            except ValueError:
+                return Output.error(
+                    Error.from_exception(
+                        ValueError("This input is for a resumed coroutine")
+                    )
+                )
             return Output.value("not reached")
 
         resp = self.execute(my_function, input="cool stuff")
-        resp = self.execute(my_function, state=resp.poll.coroutine_state)
+        self.assertEqual(42, pickle.loads(resp.poll.coroutine_state))
 
+        resp = self.execute(my_function, state=resp.poll.coroutine_state)
         self.assertEqual("ValueError", resp.exit.result.error.type)
         self.assertEqual(
             "This input is for a resumed coroutine", resp.exit.result.error.message
@@ -280,7 +298,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(dispatch.function._any_unpickle(call.input), "cool stuff")
 
         # make the requested compute_len
-        resp2 = self.call(call)
+        resp2 = self.proto_call(call)
         # check the result is the terminal expected response
         len_resp = dispatch.function._any_unpickle(resp2.output)
         self.assertEqual(10, len_resp)
@@ -318,7 +336,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(dispatch.function._any_unpickle(call.input), "cool stuff")
 
         # make the requested compute_len
-        resp2 = self.call(call)
+        resp2 = self.proto_call(call)
 
         # resume main with the result
         resp = self.execute(coroutine_main, state=state, calls=[resp2])
@@ -351,12 +369,12 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
 
     def test_coroutine_unexpected_exception(self):
-        @self.dispatch.primitive_function()
-        def mycoro(input: Input) -> Output:
+        @self.dispatch.function()
+        def mycoro():
             1 / 0
             self.fail("should not reach here")
 
-        resp = self.execute(mycoro)
+        resp = self.call(mycoro)
         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
         self.assertEqual("division by zero", resp.exit.result.error.message)
         self.assertEqual(Status.TEMPORARY_ERROR, resp.status)

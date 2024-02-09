@@ -1,11 +1,19 @@
 import logging
 from types import FunctionType
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, TypeAlias
 
-import dispatch.function
 from dispatch import Client, DispatchID
+from dispatch.function import Error, Function, Input, Output, Status
+from dispatch.status import status_for_error
 
 logger = logging.getLogger(__name__)
+
+
+PrimitiveFunctionType: TypeAlias = Callable[[Input], Output]
+"""A primitive function is a function that accepts a dispatch.function.Input
+and unconditionally returns a dispatch.function.Output. It must not raise
+exceptions.
+"""
 
 
 class FunctionRegistry:
@@ -19,39 +27,78 @@ class FunctionRegistry:
             client: Optional client for the Dispatch API. If provided, calls
               to local functions can be dispatched directly.
         """
-        self._functions: Dict[str, dispatch.function.Function] = {}
+        self._functions: Dict[str, Function] = {}
         self._endpoint = endpoint
         self._client = client
 
-    def primitive_function(self):
-        """Returns a decorator that registers primitive functions (functions
-        that accept a dispatch.function.Input and return a dispatch.function.Output,
-        and must not raise exceptions)."""
+    def function(self) -> Callable[[FunctionType], Function]:
+        """Returns a decorator that registers functions."""
 
-        def register(
-            func: Callable[[dispatch.function.Input], dispatch.function.Output]
-        ):
-            """Register a primitive function with the Dispatch programmable endpoints.
+        # Note: the indirection here means that we can add parameters
+        # to the decorator later without breaking existing apps.
+        return self._register
 
-            Args:
-                func: The function to register.
+    def primitive_function(self) -> Callable[[PrimitiveFunctionType], Function]:
+        """Returns a decorator that registers primitive functions."""
 
-            Raises:
-                ValueError: If the function is already registered.
-            """
-            name = func.__qualname__
-            logger.info("registering function '%s'", name)
-            if name in self._functions:
-                raise ValueError(f"Function {name} already registered")
-            wrapped_func = dispatch.function.Function(self._endpoint, name, func)
-            self._functions[name] = wrapped_func
-            return wrapped_func
+        # Note: the indirection here means that we can add parameters
+        # to the decorator later without breaking existing apps.
+        return self._primitive_register
 
-        return register
+    def _register(self, func: FunctionType) -> Function:
+        """Register a function with the Dispatch programmable endpoints.
 
-    def call(
-        self, fn: FunctionType | dispatch.function.Function | str, input: Any = None
-    ) -> DispatchID:
+        Args:
+            func: The function to register.
+
+        Returns:
+            Function: A registered Dispatch Function.
+
+        Raises:
+            ValueError: If the function is already registered.
+        """
+
+        def primitive_func(input: Input) -> Output:
+            try:
+                args, kwargs = input.arguments()
+            except ValueError:
+                return Output.error(
+                    Error(
+                        Status.INVALID_ARGUMENT,
+                        "ValueError",
+                        "incorrect input for function",
+                    )
+                )
+            try:
+                raw_output = func(*args, **kwargs)
+            except Exception as e:
+                return Output.error(Error.from_exception(e))
+            else:
+                return Output.value(raw_output)
+
+        return self._primitive_register(primitive_func)
+
+    def _primitive_register(self, func: PrimitiveFunctionType) -> Function:
+        """Register a primitive function with the Dispatch programmable endpoints.
+
+        Args:
+            func: The function to register.
+
+        Returns:
+            Function: A registered Dispatch Function.
+
+        Raises:
+            ValueError: If the function is already registered.
+        """
+        name = func.__qualname__
+        logger.info("registering function '%s'", name)
+        if name in self._functions:
+            raise ValueError(f"Function {name} already registered")
+        wrapped_func = Function(self._endpoint, name, func)
+        self._functions[name] = wrapped_func
+        return wrapped_func
+
+    def call(self, fn: Function | str, input: Any = None) -> DispatchID:
         """Dispatch a call to a local function.
 
         The registry must be initialize with a client for this call facility
@@ -73,9 +120,7 @@ class FunctionRegistry:
                 "Dispatch client has not been configured (api_key not provided)"
             )
 
-        if isinstance(fn, FunctionType):
-            fn = fn.__name__
-        elif isinstance(fn, dispatch.function.Function):
+        if isinstance(fn, Function):
             fn = fn.name
 
         try:
