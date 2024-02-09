@@ -200,14 +200,43 @@ def _new_app(
             err = dispatch.function.Error.from_exception(ex)
             output = dispatch.function.Output.error(err)
         else:
-            logger.debug("function '%s' ran successfully", req.function)
+            response = output._message
+            status = dispatch.function.Status(response.status)
 
-        resp = output._message
-        logger.debug(
-            "finished handling run request with status %s",
-            dispatch.function.Status(resp.status).name,
-        )
+            if response.HasField("poll"):
+                logger.debug(
+                    "function '%s' polling with %d call(s)",
+                    req.function,
+                    len(response.poll.calls),
+                )
+            elif response.HasField("exit"):
+                exit = response.exit
+                if not exit.HasField("result"):
+                    logger.debug("function '%s' exiting with no result", req.function)
+                else:
+                    result = exit.result
+                    if result.HasField("output"):
+                        logger.debug(
+                            "function '%s' exiting with value: %s",
+                            req.function,
+                            result.output.value,
+                        )
+                    elif result.HasField("error"):
+                        err = result.error
+                        logger.debug(
+                            "function '%s' exiting with error: %s (%s)",
+                            req.function,
+                            err.message,
+                            err.type,
+                        )
+                if exit.HasField("tail_call"):
+                    logger.debug(
+                        "function '%s' tail calling function '%s'",
+                        exit.tail_call.function,
+                    )
 
-        return fastapi.Response(content=resp.SerializeToString())
+        logger.debug("finished handling run request with status %s", status.name)
+
+        return fastapi.Response(content=response.SerializeToString())
 
     return app
