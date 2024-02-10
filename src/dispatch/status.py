@@ -1,5 +1,5 @@
 import enum
-from typing import Any
+from typing import Any, Callable, Type, TypeVar
 
 from dispatch.sdk.v1 import status_pb2 as status_pb
 
@@ -52,10 +52,19 @@ Status.INCOMPATIBLE_STATE.__doc__ = (
 Status.INCOMPATIBLE_STATE._proto = status_pb.STATUS_INCOMPATIBLE_STATE
 
 
+_ERROR_TYPES: dict[Type[Exception], Callable[[Exception], Status]] = {}
+_OUTPUT_TYPES: dict[Type[Any], Callable[[Any], Status]] = {}
+
+
 def status_for_error(error: Exception) -> Status:
     """Returns a Status that corresponds to the specified error."""
-    status = Status.TEMPORARY_ERROR
+    # See if the error matches one of the registered types.
+    handler = _find_handler(error, _ERROR_TYPES)
+    if handler is not None:
+        return handler(error)
 
+    # If not, resort to standard error categorization.
+    status = Status.TEMPORARY_ERROR
     try:
         # Raise the exception and catch it so that the interpreter deals
         # with exception groups and chaining for us.
@@ -72,4 +81,33 @@ def status_for_error(error: Exception) -> Status:
 
 def status_for_output(output: Any) -> Status:
     """Returns a Status that corresponds to the specified output value."""
+    # See if the output value matches one of the registered types.
+    handler = _find_handler(output, _OUTPUT_TYPES)
+    if handler is not None:
+        return handler(output)
+
     return Status.OK
+
+
+def register_error_type(
+    error_type: Type[Exception], handler: Callable[[Exception], Status]
+):
+    """Register an error type, and a handler which derives a Status from
+    errors of this type."""
+    _ERROR_TYPES[error_type] = handler
+
+
+def register_output_type(output_type: Type[Any], handler: Callable[[Any], Status]):
+    """Register an output type, and a handler which derives a Status from
+    outputs of this type."""
+    _OUTPUT_TYPES[output_type] = handler
+
+
+def _find_handler(obj, types):
+    for cls in type(obj).__mro__:
+        try:
+            return types[cls]
+        except KeyError:
+            pass
+
+    return None  # not found
