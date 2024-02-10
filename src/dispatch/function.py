@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import logging
 import pickle
 from types import FunctionType
@@ -220,6 +221,13 @@ class Registry:
         Raises:
             ValueError: If the function is already registered.
         """
+
+        # FIXME: this is a funny issue that occurs where the compiled function
+        #  below has the same decorator and is thus registered again
+        for frame_info in inspect.stack():
+            if frame_info.function == compile_function.__name__:
+                return func
+
         compiled_func = compile_function(func, decorator=durable, cache_key="dispatch")
 
         @functools.wraps(func)
