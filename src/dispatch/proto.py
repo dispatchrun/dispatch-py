@@ -152,6 +152,7 @@ class Output:
         state_bytes = pickle.dumps(state)
         poll = poll_pb.Poll(
             coroutine_state=state_bytes,
+            # FIXME: make this configurable
             max_results=1,
             max_wait=duration_pb2.Duration(seconds=5),
         )
