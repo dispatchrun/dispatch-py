@@ -302,6 +302,8 @@ class CallTransformer(ast.NodeTransformer):
             else:
                 _multicolor_result = None
                 try:
+                    if isinstance(__fn__, type):
+                        raise _multicolor_no_source_error # FIXME: this bypasses compilation for calls that are actually class instantiations
                     __compiled_fn__, _multicolor_color = _multicolor_compile(__fn__, _multicolor_decorator, _multicolor_cache_key)
                 except _multicolor_no_source_error:
                     _multicolor_result = __fn_call__
