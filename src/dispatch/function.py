@@ -235,7 +235,7 @@ class Registry:
         @functools.wraps(func)
         def primitive_coro_func(input: Input) -> Output:
             try:
-                # Rehydrate the coroutine.
+                # (Re)hydrate the coroutine.
                 if input.is_first_call:
                     logger.debug("starting coroutine")
                     try:
@@ -266,7 +266,7 @@ class Registry:
                 match directive:
                     case CustomYield(type=Directive.EXIT):
                         result = directive.kwarg("result", 0)
-                        tail_call = directive.kwarg("tail_call", 0)
+                        tail_call = directive.kwarg("tail_call", 1)
                         status = status_for_output(result)
                         return Output.exit(
                             result=CallResult.from_value(result),
@@ -283,7 +283,7 @@ class Registry:
                         if isinstance(directive, GeneratorYield):
                             directive = directive.value
                         raise RuntimeError(
-                            f"coroutine unexpected yielded '{directive}'"
+                            f"coroutine unexpectedly yielded '{directive}'"
                         )
 
             except Exception as e:
