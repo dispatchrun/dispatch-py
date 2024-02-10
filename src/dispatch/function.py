@@ -237,6 +237,7 @@ class Registry:
             try:
                 # Rehydrate the coroutine.
                 if input.is_first_call:
+                    logger.debug("starting coroutine")
                     try:
                         args, kwargs = input.input_arguments()
                     except ValueError:
@@ -245,6 +246,7 @@ class Registry:
                     gen = compiled_func(*args, **kwargs)
                     send = None
                 else:
+                    logger.debug("resuming coroutine with %d bytes of state and %d call result(s)", len(input.coroutine_state), len(input.call_results))
                     gen = pickle.loads(input.coroutine_state)
                     send = input.call_results
 
@@ -252,9 +254,11 @@ class Registry:
                 try:
                     directive = gen.send(send)
                 except StopIteration as e:
+                    logger.debug("coroutine returned")
                     return Output.value(e.value)  # Return value.
 
                 # Handle directives that it yields.
+                logger.debug("handling coroutine directive: %s", directive)
                 match directive:
                     case CustomYield(type=Directive.EXIT):
                         result = directive.kwargs["result"]
