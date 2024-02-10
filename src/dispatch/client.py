@@ -45,9 +45,23 @@ class Client:
         if not api_url:
             raise ValueError("api_url is required")
 
-        logger.debug("initializing client for Dispatch API at URL %s", api_url)
+        self.api_url = api_url
+        self.api_key = api_key
 
-        result = urlparse(api_url)
+        self._init_stub()
+
+    def __getstate__(self):
+        return {"api_url": self.api_url, "api_key": self.api_key}
+
+    def __setstate__(self, state):
+        self.api_url = state["api_url"]
+        self.api_key = state["api_key"]
+        self._init_stub()
+
+    def _init_stub(self):
+        logger.debug("initializing client for Dispatch API at URL %s", self.api_url)
+
+        result = urlparse(self.api_url)
         match result.scheme:
             case "http":
                 creds = grpc.local_channel_credentials()
@@ -56,7 +70,7 @@ class Client:
             case _:
                 raise ValueError(f"Invalid API scheme: '{result.scheme}'")
 
-        call_creds = grpc.access_token_call_credentials(api_key)
+        call_creds = grpc.access_token_call_credentials(self.api_key)
         creds = grpc.composite_channel_credentials(creds, call_creds)
         channel = grpc.secure_channel(result.netloc, creds)
 
