@@ -17,7 +17,7 @@ def yields(type: Any):
     return decorator
 
 
-def no_yields(fn: FunctionType) -> FunctionType:
+def no_yields(fn):
     """Decorator that hints that a function (and anything called
     recursively) does not yield."""
     fn._multicolor_no_yields = True  # type: ignore[attr-defined]
@@ -41,6 +41,14 @@ class CustomYield(YieldType):
     type: Any
     args: list[Any]
     kwargs: dict[str, Any] | None = None
+
+    def kwarg(self, name, pos) -> Any:
+        if self.kwargs is None:
+            return self.args[pos]
+        try:
+            return self.kwargs[name]
+        except KeyError:
+            return self.args[pos]
 
 
 @dataclass

@@ -9,10 +9,11 @@ import httpx
 from fastapi.testclient import TestClient
 
 from dispatch.fastapi import Dispatch
-from dispatch.function import Error, Function, Input, Output, Status, _Arguments
+from dispatch.function import Error, Function, Input, Output, _Arguments
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
+from dispatch.status import Status
 
 from . import function_service
 
@@ -329,9 +330,11 @@ class TestCoroutine(unittest.TestCase):
                 return Output.poll(
                     state=text, calls=[coro_compute_len.primitive_call_with(text)]
                 )
-            msg = input.call_results[0].error.message
-            type = input.call_results[0].error.type
-            return Output.value(f"msg={msg} type='{type}'")
+            error = input.call_results[0].error
+            if error is not None:
+                return Output.value(f"msg={error.message} type='{error.type}'")
+            else:
+                raise RuntimeError(f"unexpected call results: {input.call_results}")
 
         resp = self.execute(coroutine_main, input="cool stuff")
 

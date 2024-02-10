@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def compile_function(
-    fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
+    fn: FunctionType, decorator=None, cache_key: str = "default"
 ) -> FunctionType | MethodType:
     """Compile a regular function into a generator that yields data passed
     to functions marked with the @multicolor.yields decorator. Decorated yield

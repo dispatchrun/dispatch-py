@@ -162,7 +162,7 @@ class Registry:
         # to the decorator later without breaking existing apps.
         return self._register_function
 
-    def coroutine(self) -> Callable[[FunctionType], Function]:
+    def coroutine(self) -> Callable[[FunctionType], Function | FunctionType]:
         """Returns a decorator that registers coroutine functions."""
 
         # Note: the indirection here means that we can add parameters
@@ -205,7 +205,7 @@ class Registry:
 
         return self._register_primitive_function(primitive_func)
 
-    def _register_coroutine(self, func: FunctionType) -> Function:
+    def _register_coroutine(self, func: FunctionType) -> Function | FunctionType:
         """(EXPERIMENTAL) Register a coroutine function with the Dispatch
         programmable endpoints.
 
@@ -265,8 +265,8 @@ class Registry:
                 logger.debug("handling coroutine directive: %s", directive)
                 match directive:
                     case CustomYield(type=Directive.EXIT):
-                        result = directive.kwargs["result"]
-                        tail_call = directive.kwargs["tail_call"]
+                        result = directive.kwarg("result", 0)
+                        tail_call = directive.kwarg("tail_call", 0)
                         status = status_for_output(result)
                         return Output.exit(
                             result=CallResult.from_value(result),
@@ -276,7 +276,7 @@ class Registry:
 
                     case CustomYield(type=Directive.POLL):
                         state = pickle.dumps(gen)
-                        calls = directive.kwargs["calls"]
+                        calls = directive.kwarg("calls", 0)
                         return Output.poll(state=state, calls=calls)
 
                     case _:
