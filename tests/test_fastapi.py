@@ -95,9 +95,14 @@ def response_output(resp: function_pb.RunResponse) -> Any:
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
+
+        @self.app.get("/")
+        def root():
+            return "OK"
+
         self.dispatch = Dispatch(self.app, endpoint="https://127.0.0.1:9999")
-        http_client = TestClient(self.app)
-        self.client = function_service.client(http_client)
+        self.http_client = TestClient(self.app)
+        self.client = function_service.client(self.http_client)
 
     def execute(
         self, func: Function, input=None, state=None, calls=None
@@ -405,6 +410,35 @@ class TestCoroutine(unittest.TestCase):
         resp = self.call(mycoro)
         self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)
         self.assertEqual(42, any_unpickle(resp.exit.tail_call.input))
+
+    def test_library_error_categorization(self):
+        @self.dispatch.function()
+        def get(path: str) -> httpx.Response:
+            http_response = self.http_client.get(path)
+            http_response.raise_for_status()
+            return http_response
+
+        resp = self.call(get, "/")
+        self.assertEqual(Status.OK, Status(resp.status))
+        http_response: httpx.Response = any_unpickle(resp.exit.result.output)
+        self.assertEqual("application/json", http_response.headers["content-type"])
+        self.assertEqual('"OK"', http_response.text)
+
+        resp = self.call(get, "/missing")
+        self.assertEqual(Status.PERMANENT_ERROR, Status(resp.status))
+
+    def test_library_output_categorization(self):
+        @self.dispatch.function()
+        def get(path: str) -> httpx.Response:
+            http_response = self.http_client.get(path)
+            http_response.status_code = 429
+            return http_response
+
+        resp = self.call(get, "/")
+        self.assertEqual(Status.THROTTLED, Status(resp.status))
+        http_response: httpx.Response = any_unpickle(resp.exit.result.output)
+        self.assertEqual("application/json", http_response.headers["content-type"])
+        self.assertEqual('"OK"', http_response.text)
 
 
 class TestError(unittest.TestCase):
