@@ -75,7 +75,7 @@ class Input:
         return self._coroutine_state
 
     @property
-    def call_results(self) -> Any:
+    def call_results(self) -> list[CallResult]:
         self._assert_resume()
         return self._call_results
 

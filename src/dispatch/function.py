@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import functools
 import logging
+import pickle
 from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
 from dispatch.client import Client
+from dispatch.directive import Directive
+from dispatch.experimental.durable import durable
+from dispatch.experimental.multicolor import (
+    CustomYield,
+    GeneratorYield,
+    compile_function,
+)
 from dispatch.id import DispatchID
-from dispatch.proto import Call, Error, Input, Output, _Arguments
-from dispatch.status import Status
+from dispatch.proto import Call, CallResult, Error, Input, Output, _Arguments
+from dispatch.status import status_for_output
 
 logger = logging.getLogger(__name__)
 
@@ -149,16 +157,23 @@ class Registry:
 
         # Note: the indirection here means that we can add parameters
         # to the decorator later without breaking existing apps.
-        return self._register
+        return self._register_function
+
+    def coroutine(self) -> Callable[[FunctionType], Function]:
+        """Returns a decorator that registers coroutine functions."""
+
+        # Note: the indirection here means that we can add parameters
+        # to the decorator later without breaking existing apps.
+        return self._register_coroutine
 
     def primitive_function(self) -> Callable[[PrimitiveFunctionType], Function]:
         """Returns a decorator that registers primitive functions."""
 
         # Note: the indirection here means that we can add parameters
         # to the decorator later without breaking existing apps.
-        return self._primitive_register
+        return self._register_primitive_function
 
-    def _register(self, func: FunctionType) -> Function:
+    def _register_function(self, func: FunctionType) -> Function:
         """Register a function with the Dispatch programmable endpoints.
 
         Args:
@@ -174,25 +189,91 @@ class Registry:
         @functools.wraps(func)
         def primitive_func(input: Input) -> Output:
             try:
-                args, kwargs = input.input_arguments()
-            except ValueError:
-                return Output.error(
-                    Error(
-                        Status.INVALID_ARGUMENT,
-                        "ValueError",
-                        "incorrect input for function",
-                    )
-                )
-            try:
+                try:
+                    args, kwargs = input.input_arguments()
+                except ValueError:
+                    raise ValueError("incorrect input for function")
+
                 raw_output = func(*args, **kwargs)
             except Exception as e:
                 return Output.error(Error.from_exception(e))
             else:
                 return Output.value(raw_output)
 
-        return self._primitive_register(primitive_func)
+        return self._register_primitive_function(primitive_func)
 
-    def _primitive_register(self, func: PrimitiveFunctionType) -> Function:
+    def _register_coroutine(self, func: FunctionType) -> Function:
+        """(EXPERIMENTAL) Register a coroutine function with the Dispatch
+        programmable endpoints.
+
+        The coroutine is able to use directives such as poll() partway through
+        execution. The coroutine will be suspended at these yield points, and
+        will resume execution from the same point when results are available.
+        The state of the coroutine is stored durably across yield points.
+
+        Args:
+            func: The coroutine to register.
+
+        Returns:
+            Function: A registered Dispatch Function.
+
+        Raises:
+            ValueError: If the function is already registered.
+        """
+        compiled_func = compile_function(func, decorator=durable, cache_key="dispatch")
+
+        @functools.wraps(func)
+        def primitive_coro_func(input: Input) -> Output:
+            try:
+                # Rehydrate the coroutine.
+                if input.is_first_call:
+                    try:
+                        args, kwargs = input.input_arguments()
+                    except ValueError:
+                        raise ValueError("incorrect input for function")
+
+                    gen = compiled_func(*args, **kwargs)
+                    send = None
+                else:
+                    gen = pickle.loads(input.coroutine_state)
+                    send = input.call_results
+
+                # Run the coroutine until its next yield or return.
+                try:
+                    directive = gen.send(send)
+                except StopIteration as e:
+                    return Output.value(e.value)  # Return value.
+
+                # Handle directives that it yields.
+                match directive:
+                    case CustomYield(type=Directive.EXIT):
+                        result = directive.kwargs["result"]
+                        tail_call = directive.kwargs["tail_call"]
+                        status = status_for_output(result)
+                        return Output.exit(
+                            result=CallResult.from_value(result),
+                            tail_call=tail_call,
+                            status=status,
+                        )
+
+                    case CustomYield(type=Directive.POLL):
+                        state = pickle.dumps(gen)
+                        calls = directive.kwargs["calls"]
+                        return Output.poll(state=state, calls=calls)
+
+                    case _:
+                        if isinstance(directive, GeneratorYield):
+                            directive = directive.value
+                        raise RuntimeError(
+                            f"coroutine unexpected yielded '{directive}'"
+                        )
+
+            except Exception as e:
+                return Output.error(Error.from_exception(e))
+
+        return self._register_primitive_function(primitive_coro_func)
+
+    def _register_primitive_function(self, func: PrimitiveFunctionType) -> Function:
         """Register a primitive function with the Dispatch programmable endpoints.
 
         Args:
