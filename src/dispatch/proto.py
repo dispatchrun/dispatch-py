@@ -150,7 +150,11 @@ class Output:
         orchestrator to resume the function with the provided state when
         call results are ready."""
         state_bytes = pickle.dumps(state)
-        poll = poll_pb.Poll(coroutine_state=state_bytes, max_results=1, max_wait=duration_pb2.Duration(seconds=5))
+        poll = poll_pb.Poll(
+            coroutine_state=state_bytes,
+            max_results=1,
+            max_wait=duration_pb2.Duration(seconds=5),
+        )
 
         if calls is not None:
             for c in calls:

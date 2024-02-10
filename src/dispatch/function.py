@@ -246,7 +246,11 @@ class Registry:
                     gen = compiled_func(*args, **kwargs)
                     send = None
                 else:
-                    logger.debug("resuming coroutine with %d bytes of state and %d call result(s)", len(input.coroutine_state), len(input.call_results))
+                    logger.debug(
+                        "resuming coroutine with %d bytes of state and %d call result(s)",
+                        len(input.coroutine_state),
+                        len(input.call_results),
+                    )
                     gen = pickle.loads(input.coroutine_state)
                     send = input.call_results
 

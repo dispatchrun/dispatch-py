@@ -1,5 +1,5 @@
 from .compile import NoSourceError, compile_function
-from .yields import CustomYield, GeneratorYield, yields, no_yields
+from .yields import CustomYield, GeneratorYield, no_yields, yields
 
 __all__ = [
     "compile_function",
