@@ -277,6 +277,8 @@ class Registry:
                         )
 
             except Exception as e:
+                # TODO: remove this temporary logging
+                logger.error("coroutine raised exception", exc_info=True)
                 return Output.error(Error.from_exception(e))
 
         return self._register_primitive_function(primitive_coro_func)

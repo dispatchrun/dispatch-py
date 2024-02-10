@@ -25,6 +25,10 @@ class DurableFunction:
             )
         return DurableGenerator(result, self.key, args, kwargs)
 
+    @property
+    def __name__(self):
+        return self.fn.__name__
+
 
 def durable(fn) -> DurableFunction:
     """Returns a "durable" function that creates serializable generators.
