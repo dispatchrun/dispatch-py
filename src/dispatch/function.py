@@ -14,6 +14,7 @@ from dispatch.experimental.multicolor import (
     CustomYield,
     GeneratorYield,
     compile_function,
+    no_yields,
 )
 from dispatch.id import DispatchID
 from dispatch.proto import Call, CallResult, Error, Input, Output, _Arguments
@@ -91,6 +92,7 @@ class Function:
         [dispatch_id] = self._client.dispatch([self.primitive_call_with(input)])
         return dispatch_id
 
+    @no_yields
     def call_with(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
         """Create a Call for this function with the provided input. Useful to
         generate calls when polling.

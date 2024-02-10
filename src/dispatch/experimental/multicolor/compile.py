@@ -299,6 +299,9 @@ class CallTransformer(ast.NodeTransformer):
             if hasattr(__fn__, "_multicolor_yield_type"):
                 _multicolor_result = yield _multicolor_custom_yield(type=__fn__._multicolor_yield_type, args=__args__, kwargs=__kwargs__)
                 __assign_result__
+            elif hasattr(__fn__, "_multicolor_no_yields"):
+                _multicolor_result = __fn_call__
+                __assign_result__
             else:
                 _multicolor_result = None
                 try:

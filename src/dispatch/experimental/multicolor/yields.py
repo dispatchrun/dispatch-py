@@ -17,6 +17,13 @@ def yields(type: Any):
     return decorator
 
 
+def no_yields(fn: FunctionType) -> FunctionType:
+    """Decorator that hints that a function (and anything called
+    recursively) does not yield."""
+    fn._multicolor_no_yields = True  # type: ignore[attr-defined]
+    return fn
+
+
 class YieldType:
     """Base class for yield types."""
 
