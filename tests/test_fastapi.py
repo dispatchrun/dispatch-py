@@ -420,7 +420,7 @@ class TestCoroutine(unittest.TestCase):
 
         resp = self.call(get, "/")
         self.assertEqual(Status.OK, Status(resp.status))
-        http_response: httpx.Response = any_unpickle(resp.exit.result.output)
+        http_response = any_unpickle(resp.exit.result.output)
         self.assertEqual("application/json", http_response.headers["content-type"])
         self.assertEqual('"OK"', http_response.text)
 
@@ -436,7 +436,7 @@ class TestCoroutine(unittest.TestCase):
 
         resp = self.call(get, "/")
         self.assertEqual(Status.THROTTLED, Status(resp.status))
-        http_response: httpx.Response = any_unpickle(resp.exit.result.output)
+        http_response = any_unpickle(resp.exit.result.output)
         self.assertEqual("application/json", http_response.headers["content-type"])
         self.assertEqual('"OK"', http_response.text)
 
