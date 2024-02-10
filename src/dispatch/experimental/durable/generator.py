@@ -1,3 +1,4 @@
+import os
 from types import CodeType, FrameType, GeneratorType, TracebackType
 from typing import Any, Generator, TypeVar
 
@@ -7,6 +8,8 @@ from .registry import lookup_function
 _YieldT = TypeVar("_YieldT", covariant=True)
 _SendT = TypeVar("_SendT", contravariant=True)
 _ReturnT = TypeVar("_ReturnT", covariant=True)
+
+TRACE = os.getenv("DURABLE_TRACE", False)
 
 
 class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
@@ -75,6 +78,25 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
     def __getstate__(self):
         # Capture the details necessary to recreate the generator.
         g = self.generator
+        ip = ext.get_frame_ip(g)
+        sp = ext.get_frame_sp(g)
+        frame_state = ext.get_generator_frame_state(g)
+        stack = [ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))]
+
+        if TRACE:
+            print(f"\n[DURABLE] GENERATOR STATE ({self.key}):")
+            print(f"args = {self.args}")
+            print(f"kwargs = {self.kwargs}")
+            print(f"IP = {ip}")
+            print(f"SP = {sp}")
+            print(f"frame state = {frame_state}")
+            for i, (is_null, value) in enumerate(stack):
+                if is_null:
+                    print(f"stack[{i}] = NULL")
+                else:
+                    print(f"stack[{i}] = {value}")
+            print()
+
         state = {
             "function": {
                 "key": self.key,
@@ -82,14 +104,12 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
                 "kwargs": self.kwargs,
             },
             "generator": {
-                "frame_state": ext.get_generator_frame_state(g),
+                "frame_state": frame_state,
             },
             "frame": {
-                "ip": ext.get_frame_ip(g),
-                "sp": ext.get_frame_sp(g),
-                "stack": [
-                    ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))
-                ],
+                "ip": ip,
+                "sp": sp,
+                "stack": stack,
             },
         }
         return state
