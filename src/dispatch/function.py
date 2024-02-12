@@ -8,7 +8,7 @@ from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
 from dispatch.client import Client
-from dispatch.directive import Directive
+from dispatch.coroutine import Directive
 from dispatch.experimental.durable import durable
 from dispatch.experimental.multicolor import (
     CustomYield,
