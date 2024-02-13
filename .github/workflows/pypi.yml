@@ -28,26 +28,53 @@ jobs:
         path: dist/*.tar.gz
 
   build:
-    name: build wheels on ${{ matrix.os }}
+    name: build ${{ matrix.build }} wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     strategy:
       matrix:
+        build:
+        - cp311
+        - cp312
         os:
-        - ubuntu-latest
         - windows-latest
+        - ubuntu-latest
         - macos-13
         - macos-14
     steps:
     - uses: actions/checkout@v4
+    - uses: pypa/cibuildwheel@v2.16.5
+      env:
+        CIBW_BUILD: ${{ matrix.build }}-*
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-wheels-${{ matrix.os }}
+        path: wheelhouse/*.whl
+
+  build-linux-qemu:
+    name: build ${{ matrix.build }} wheels on qemu for linux/${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        arch:
+        - aarch64
+        - ppc64le
+        - s390x
+        build:
+        - cp311
+        - cp312
+    steps:
+    - uses: actions/checkout@v4
     - uses: docker/setup-qemu-action@v3
-      if: ${{ runner.os == 'Linux' }}
       with:
         platforms: all
     - uses: pypa/cibuildwheel@v2.16.5
       env:
-        CIBW_ARCHS_LINUX: auto aarch64 ppc64le s390x
+        CIBW_BUILD: ${{ matrix.build }}-*
+        CIBW_ARCHS: ${{ matrix.arch }}
     - uses: actions/upload-artifact@v4
       with:
         name: cibw-wheels-${{ matrix.os }}
@@ -57,6 +84,7 @@ jobs:
     needs:
     - archive
     - build
+    - build-linux-qemu
     runs-on: ubuntu-latest
     environment:
       name: pypi
