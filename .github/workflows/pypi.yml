@@ -11,6 +11,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
     - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -33,7 +36,6 @@ jobs:
       name: pypi
       url: https://pypi.org/p/dispatch-functions
     permissions:
-      contents: read
       id-token: write
     steps:
     - uses: actions/download-artifact@v4
@@ -53,7 +55,6 @@ jobs:
       name: testpypi
       url: https://pypi.org/p/dispatch-functions
     permissions:
-      contents: read
       id-token: write
     steps:
     - uses: actions/download-artifact@v4
