@@ -47,7 +47,7 @@ class Serializable:
 
         if TRACE:
             typ = "GENERATOR" if isinstance(g, GeneratorType) else "COROUTINE"
-            print(f"\n[DURABLE] {typ} STATE ({self.rfn.key}):")
+            print(f"\n[DURABLE] {typ} STATE ({rfn.key}):")
             print(f"function = {rfn.fn.__qualname__} ({rfn.filename}:{rfn.lineno})")
             print(f"code hash = {rfn.hash}")
             print(f"args = {self.args}")

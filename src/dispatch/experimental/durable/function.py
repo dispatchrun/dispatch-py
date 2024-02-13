@@ -119,8 +119,8 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
         self,
         coroutine: CoroutineType,
         registered_fn: RegisteredFunction,
-        args: list[Any],
-        kwargs: dict[str, Any],
+        *args: Any,
+        **kwargs: Any,
     ):
         self.coroutine = coroutine
         Serializable.__init__(self, coroutine, registered_fn, *args, **kwargs)
