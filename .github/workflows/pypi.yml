@@ -35,7 +35,7 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         path: dist
-        pattern: *.whl
+        pattern: '*.whl'
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
@@ -54,5 +54,5 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         path: dist
-        pattern: *.whl
+        pattern: '*.whl'
     - uses: pypa/gh-action-pypi-publish@release/v1
