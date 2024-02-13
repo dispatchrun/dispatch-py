@@ -5,12 +5,11 @@ from .registry import register_function
 
 
 class DurableFunction:
-    """A wrapper for a generator function that wraps its generator
-    instances with a DurableGenerator. These wrapped generator instances
-    are serializable.
+    """A wrapper for a generator functions and async functions that make
+    their generator and coroutine instances serializable.
 
     Attributes:
-        fn: A generator function to wrap.
+        fn: A generator function or async function to wrap.
     """
 
     def __init__(self, fn: FunctionType):
@@ -22,7 +21,7 @@ class DurableFunction:
             raise NotImplementedError(
                 "only synchronous generator functions are supported"
             )
-        return DurableGenerator(result, self.fn, args, kwargs)
+        return DurableGenerator(result, self.fn, list(args), kwargs)
 
     @property
     def __name__(self):

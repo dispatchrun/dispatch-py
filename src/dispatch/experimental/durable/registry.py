@@ -5,7 +5,7 @@ from types import FunctionType
 
 @dataclass
 class Function:
-    """A registered function that can be referenced to durable state."""
+    """A function that can be referenced in durable state."""
 
     key: str
     fn: FunctionType
@@ -35,12 +35,6 @@ def register_function(fn: FunctionType) -> Function:
     Raises:
         ValueError: The function conflicts with another registered function.
     """
-    # We need to be able to refer to the function in the serialized
-    # representation, and the key needs to be stable across interpreter
-    # invocations. Use the code object's fully-qualified name for now.
-    # If there are name clashes, the location of the function
-    # (co_filename + co_firstlineno) and/or a hash of the bytecode
-    # (co_code) could be used as well or instead.
     code = fn.__code__
     key = code.co_qualname
     if key in _REGISTRY:
@@ -63,6 +57,7 @@ def lookup_function(key: str) -> Function:
         key: Unique identifier for the function.
 
     Returns:
+        Function: the function that was registered with the specified key.
 
     Raises:
         KeyError: A function has not been registered with this key.

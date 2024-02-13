@@ -128,7 +128,7 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
 
         # Recreate the generator by looking up the constructor
         # and calling it with the same args/kwargs.
-        key, filename, lineno, hash, self.args, self.kwargs = (
+        key, filename, lineno, code_hash, self.args, self.kwargs = (
             function_state["key"],
             function_state["filename"],
             function_state["lineno"],
@@ -142,9 +142,9 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
             raise ValueError(
                 f"location mismatch for function {key}: {filename}:{lineno} vs. expected {fn.filename}:{fn.lineno}"
             )
-        elif hash != fn.hash:
+        elif code_hash != fn.hash:
             raise ValueError(
-                f"hash mismatch for function {key}: {hash} vs. expected {fn.hash}"
+                f"hash mismatch for function {key}: {code_hash} vs. expected {fn.hash}"
             )
 
         self.fn = fn
