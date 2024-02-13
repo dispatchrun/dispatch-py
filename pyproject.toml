@@ -28,8 +28,8 @@ dev = [
     "types-requests >= 2.31.0.20240125"
 ]
 
-[tool.setuptools.dynamic]
-version = {attr = "dispatch.__version__"}
+[tool.setuptools-git-versioning]
+enabled = true
 
 [tool.isort]
 profile = "black"
