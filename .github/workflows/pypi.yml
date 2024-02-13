@@ -3,7 +3,7 @@ name: PyPI
 on:
   push:
     tags:
-    - v*
+    - '*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
