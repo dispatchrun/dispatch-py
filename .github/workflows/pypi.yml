@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    if: {{ github.ref_name != 'main' }}
+    if: ${{ github.ref_name != 'main' }}
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -24,7 +24,7 @@ jobs:
         repository-url: https://test.pypi.org/legacy/
 
   release:
-    if: {{ github.ref_name == 'main' }}
+    if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     environment:
       name: pypi
