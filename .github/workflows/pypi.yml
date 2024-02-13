@@ -4,7 +4,7 @@ on:
 - push
 
 jobs:
-  build:
+  build-linux-amd64:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,13 +21,34 @@ jobs:
     - run: sudo find dist -name '*linux_x86_64.whl' -delete
     - uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: dist-linux-amd64
+        path: dist
+
+  build-linux-aarch64:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: pip
+    - uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_aarch64
+      with:
+        python-versions: 'cp311-cp311 cp312-cp312'
+    - run: sudo find dist -name '*linux_aarch64.whl' -delete
+    - uses: actions/upload-artifact@v4
+      with:
+        name: dist-linux-aarch64
         path: dist
 
   test:
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     needs:
-    - build
+    - build-linux-amd64
+    - build-linux-aarch64
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -37,8 +58,11 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        name: dist
-        path: dist
+        pattern: dist-*
+    - run: |
+        mkdir dist
+        mv dist-*/*.whl dist/
+        mv dist-linux-amd64/*.tar.gz dist/
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
@@ -46,7 +70,8 @@ jobs:
   release:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs:
-    - build
+    - build-linux-amd64
+    - build-linux-aarch64
     runs-on: ubuntu-latest
     environment:
       name: testpypi
@@ -56,6 +81,9 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        name: dist
-        path: dist
+        pattern: dist-*
+    - run: |
+        mkdir dist
+        mv dist-*/*.whl dist/
+        mv dist-linux-amd64/*.tar.gz dist/
     - uses: pypa/gh-action-pypi-publish@release/v1
