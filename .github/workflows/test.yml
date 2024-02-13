@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.11", "3.12"]
+        python: ['3.11', '3.12']
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python }}
-        cache: 'pip'
+        cache: pip
     - run: make dev
     - run: make test
 
@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.12"]
+        python: ['3.12']
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python }}
-        cache: 'pip'
+        cache: pip
     - run: make dev
     - run: make fmt-check
