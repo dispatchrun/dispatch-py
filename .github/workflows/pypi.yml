@@ -1,9 +1,9 @@
 name: PyPI
 
 on:
-- push:
+  push:
     tags:
-    - 'v*'
+    - v*
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
