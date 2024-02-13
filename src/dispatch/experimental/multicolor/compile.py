@@ -119,7 +119,7 @@ def _compile_internal(
     logger.debug("compiling function %s", fn.__name__)
 
     # Give the function a unique name.
-    fn_name = fn.__name__ + "__multicolor_" + cache_key
+    fn_name = f"{fn.__name__}_{cache_key}"
 
     # Check if the function has already been compiled.
     cache_holder = fn
@@ -142,7 +142,7 @@ def _compile_internal(
         try:
             # This can occur when compiling a nested function definition
             # that was created by the desugaring pass.
-            if inspect.getsourcefile(fn) == "<multicolor>":
+            if inspect.getsourcefile(fn) == "<dispatch>":
                 return fn, FunctionColor.GENERATOR_FUNCTION
         except TypeError:
             raise e
@@ -205,7 +205,7 @@ def _compile_internal(
     namespace["_multicolor_generator_color"] = FunctionColor.GENERATOR_FUNCTION
 
     # Re-compile.
-    code = compile(root, filename="<multicolor>", mode="exec")
+    code = compile(root, filename="<dispatch>", mode="exec")
     exec(code, namespace)
     compiled_fn = namespace[fn_name]
 

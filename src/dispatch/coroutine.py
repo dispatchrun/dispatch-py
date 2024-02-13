@@ -1,6 +1,8 @@
 import enum
+from dataclasses import dataclass
 from typing import Any
 
+from dispatch.experimental.durable.generator import DurableGenerator
 from dispatch.experimental.multicolor import yields
 from dispatch.proto import Call, CallResult
 
@@ -24,3 +26,9 @@ def poll(calls: list[Call] | None = None) -> list[CallResult]:
 
 class InvalidContextError(RuntimeError):
     """A directive was used outside of a @dispatch.coroutine."""
+
+
+@dataclass
+class CoroutineState:
+    generator: DurableGenerator
+    version: str

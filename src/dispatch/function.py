@@ -4,11 +4,12 @@ import functools
 import inspect
 import logging
 import pickle
+import sys
 from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
 from dispatch.client import Client
-from dispatch.coroutine import Directive
+from dispatch.coroutine import CoroutineState, Directive
 from dispatch.experimental.durable import durable
 from dispatch.experimental.multicolor import (
     CustomYield,
@@ -18,7 +19,7 @@ from dispatch.experimental.multicolor import (
 )
 from dispatch.id import DispatchID
 from dispatch.proto import Call, CallResult, Error, Input, Output, _Arguments
-from dispatch.status import status_for_output
+from dispatch.status import Status, status_for_output
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +197,6 @@ class Registry:
                     args, kwargs = input.input_arguments()
                 except ValueError:
                     raise ValueError("incorrect input for function")
-
                 raw_output = func(*args, **kwargs)
             except Exception as e:
                 return Output.error(Error.from_exception(e))
@@ -209,10 +209,13 @@ class Registry:
         """(EXPERIMENTAL) Register a coroutine function with the Dispatch
         programmable endpoints.
 
-        The coroutine is able to use directives such as poll() partway through
-        execution. The coroutine will be suspended at these yield points, and
-        will resume execution from the same point when results are available.
-        The state of the coroutine is stored durably across yield points.
+        The function is compiled into a durable coroutine.
+
+        The coroutine can use directives such as poll() partway through
+        execution. The coroutine will be suspended at these yield points,
+        and will resume execution from the same point when results are
+        available. The state of the coroutine is stored durably across
+        yield points.
 
         Args:
             func: The coroutine to register.
@@ -251,7 +254,20 @@ class Registry:
                         len(input.coroutine_state),
                         len(input.call_results),
                     )
-                    gen = pickle.loads(input.coroutine_state)
+                    try:
+                        coroutine_state = pickle.loads(input.coroutine_state)
+                        if not isinstance(coroutine_state, CoroutineState):
+                            raise ValueError("invalid coroutine state")
+                        if coroutine_state.version != sys.version:
+                            raise ValueError(
+                                f"coroutine state version mismatch: '{coroutine_state.version}' vs. current '{sys.version}'"
+                            )
+                    except (pickle.PickleError, ValueError) as e:
+                        logger.warning("coroutine state is incompatible", exc_info=True)
+                        return Output.error(
+                            Error.from_exception(e, status=Status.INCOMPATIBLE_STATE)
+                        )
+                    gen = coroutine_state.generator
                     send = input.call_results
 
                 # Run the coroutine until its next yield or return.
@@ -275,9 +291,19 @@ class Registry:
                         )
 
                     case CustomYield(type=Directive.POLL):
-                        state = pickle.dumps(gen)
+                        try:
+                            coroutine_state = pickle.dumps(
+                                CoroutineState(generator=gen, version=sys.version)
+                            )
+                        except pickle.PickleError as e:
+                            logger.error(
+                                "coroutine could not be serialized", exc_info=True
+                            )
+                            return Output.error(
+                                Error.from_exception(e, status=Status.PERMANENT_ERROR)
+                            )
                         calls = directive.kwarg("calls", 0)
-                        return Output.poll(state=state, calls=calls)
+                        return Output.poll(state=coroutine_state, calls=calls)
 
                     case _:
                         if isinstance(directive, GeneratorYield):
@@ -287,7 +313,6 @@ class Registry:
                         )
 
             except Exception as e:
-                # TODO: remove this temporary logging
                 logger.error("coroutine raised exception", exc_info=True)
                 return Output.error(Error.from_exception(e))
 
