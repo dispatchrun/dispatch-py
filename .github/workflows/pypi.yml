@@ -4,51 +4,27 @@ on:
 - push
 
 jobs:
-  build-linux-amd64:
-    runs-on: ubuntu-latest
+  build:
+    name: build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v3
+    - run: python -m pip install cibuildwheel==2.16.5
+    - run: python -m cibuildwheel --output-dir wheelhouse
       with:
-        python-version: '3.11'
-        cache: pip
-    - uses: RalfG/python-wheels-manylinux-build@v0.7.1
-      with:
-        python-versions: 'cp311-cp311 cp312-cp312'
-    - run: sudo find dist -name '*linux_x86_64.whl' -delete
-    - uses: actions/upload-artifact@v4
-      with:
-        name: dist-linux-amd64
-        path: dist
-
-  build-linux-aarch64:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        cache: pip
-    - uses: RalfG/python-wheels-manylinux-build@v0.7.1-manylinux2014_aarch64
-      with:
-        python-versions: 'cp311-cp311 cp312-cp312'
-    - run: sudo find dist -name '*linux_aarch64.whl' -delete
-    - uses: actions/upload-artifact@v4
-      with:
-        name: dist-linux-aarch64
-        path: dist
+        name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+        path: wheelhouse/*.whl
 
   test:
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     needs:
-    - build-linux-amd64
-    - build-linux-aarch64
+    - build
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -58,11 +34,8 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        pattern: dist-*
-    - run: |
-        mkdir dist
-        mv dist-*/*.whl dist/
-        mv dist-linux-amd64/*.tar.gz dist/
+        path: dist
+        pattern: *.whl
     - uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
@@ -70,8 +43,7 @@ jobs:
   release:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs:
-    - build-linux-amd64
-    - build-linux-aarch64
+    - build
     runs-on: ubuntu-latest
     environment:
       name: testpypi
@@ -81,9 +53,6 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        pattern: dist-*
-    - run: |
-        mkdir dist
-        mv dist-*/*.whl dist/
-        mv dist-linux-amd64/*.tar.gz dist/
+        path: dist
+        pattern: *.whl
     - uses: pypa/gh-action-pypi-publish@release/v1
