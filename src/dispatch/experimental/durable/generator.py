@@ -1,12 +1,15 @@
+import os
 from types import CodeType, FrameType, GeneratorType, TracebackType
 from typing import Any, Generator, TypeVar
 
 from . import frame as ext
-from .registry import lookup_function
+from .registry import Function, lookup_function
 
 _YieldT = TypeVar("_YieldT", covariant=True)
 _SendT = TypeVar("_SendT", contravariant=True)
 _ReturnT = TypeVar("_ReturnT", covariant=True)
+
+TRACE = os.getenv("DURABLE_TRACE", False)
 
 
 class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
@@ -28,12 +31,12 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
     def __init__(
         self,
         generator: GeneratorType,
-        key: str,
+        fn: Function,
         args: list[Any],
         kwargs: dict[str, Any],
     ):
         self.generator = generator
-        self.key = key
+        self.fn = fn
         self.args = args
         self.kwargs = kwargs
 
@@ -75,21 +78,45 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
     def __getstate__(self):
         # Capture the details necessary to recreate the generator.
         g = self.generator
+        ip = ext.get_frame_ip(g)
+        sp = ext.get_frame_sp(g)
+        frame_state = ext.get_generator_frame_state(g)
+        stack = [ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))]
+
+        if TRACE:
+            print(f"\n[DURABLE] GENERATOR STATE ({self.fn.key}):")
+            print(
+                f"function = {self.fn.fn.__qualname__} ({self.fn.filename}:{self.fn.lineno})"
+            )
+            print(f"code hash = {self.fn.hash}")
+            print(f"args = {self.args}")
+            print(f"kwargs = {self.kwargs}")
+            print(f"IP = {ip}")
+            print(f"SP = {sp}")
+            print(f"frame state = {frame_state}")
+            for i, (is_null, value) in enumerate(stack):
+                if is_null:
+                    print(f"stack[{i}] = NULL")
+                else:
+                    print(f"stack[{i}] = {value}")
+            print()
+
         state = {
             "function": {
-                "key": self.key,
+                "key": self.fn.key,
+                "filename": self.fn.filename,
+                "lineno": self.fn.lineno,
+                "hash": self.fn.hash,
                 "args": self.args,
                 "kwargs": self.kwargs,
             },
             "generator": {
-                "frame_state": ext.get_generator_frame_state(g),
+                "frame_state": frame_state,
             },
             "frame": {
-                "ip": ext.get_frame_ip(g),
-                "sp": ext.get_frame_sp(g),
-                "stack": [
-                    ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))
-                ],
+                "ip": ip,
+                "sp": sp,
+                "stack": stack,
             },
         }
         return state
@@ -101,13 +128,27 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
 
         # Recreate the generator by looking up the constructor
         # and calling it with the same args/kwargs.
-        self.key, self.args, self.kwargs = (
+        key, filename, lineno, hash, self.args, self.kwargs = (
             function_state["key"],
+            function_state["filename"],
+            function_state["lineno"],
+            function_state["hash"],
             function_state["args"],
             function_state["kwargs"],
         )
-        generator_fn = lookup_function(self.key)
-        self.generator = generator_fn(*self.args, **self.kwargs)
+        # First, check the function is the same.
+        fn = lookup_function(key)
+        if filename != fn.filename or lineno != fn.lineno:
+            raise ValueError(
+                f"location mismatch for function {key}: {filename}:{lineno} vs. expected {fn.filename}:{fn.lineno}"
+            )
+        elif hash != fn.hash:
+            raise ValueError(
+                f"hash mismatch for function {key}: {hash} vs. expected {fn.hash}"
+            )
+
+        self.fn = fn
+        self.generator = self.fn.fn(*self.args, **self.kwargs)
 
         # Restore the frame state (stack + stack pointer + instruction pointer).
         frame = self.generator.gi_frame

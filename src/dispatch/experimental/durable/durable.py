@@ -5,25 +5,28 @@ from .registry import register_function
 
 
 class DurableFunction:
-    """A wrapper for a generator function that wraps its generator instances
-    with a DurableGenerator.
+    """A wrapper for a generator function that wraps its generator
+    instances with a DurableGenerator. These wrapped generator instances
+    are serializable.
 
     Attributes:
-        fn: A generator function.
-        key: A key that uniquely identifies the function.
+        fn: A generator function to wrap.
     """
 
     def __init__(self, fn: FunctionType):
-        self.fn = fn
-        self.key = register_function(fn)
+        self.fn = register_function(fn)
 
     def __call__(self, *args, **kwargs):
-        result = self.fn(*args, **kwargs)
+        result = self.fn.fn(*args, **kwargs)
         if not isinstance(result, GeneratorType):
             raise NotImplementedError(
                 "only synchronous generator functions are supported"
             )
-        return DurableGenerator(result, self.key, args, kwargs)
+        return DurableGenerator(result, self.fn, args, kwargs)
+
+    @property
+    def __name__(self):
+        return self.fn.fn.__name__
 
 
 def durable(fn) -> DurableFunction:

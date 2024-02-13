@@ -7,6 +7,7 @@ from typing import Any
 import google.protobuf.any_pb2
 import google.protobuf.message
 import google.protobuf.wrappers_pb2
+from google.protobuf import duration_pb2
 
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import error_pb2 as error_pb
@@ -75,7 +76,7 @@ class Input:
         return self._coroutine_state
 
     @property
-    def call_results(self) -> Any:
+    def call_results(self) -> list[CallResult]:
         self._assert_resume()
         return self._call_results
 
@@ -149,7 +150,12 @@ class Output:
         orchestrator to resume the function with the provided state when
         call results are ready."""
         state_bytes = pickle.dumps(state)
-        poll = poll_pb.Poll(coroutine_state=state_bytes)
+        poll = poll_pb.Poll(
+            coroutine_state=state_bytes,
+            # FIXME: make this configurable
+            max_results=1,
+            max_wait=duration_pb2.Duration(seconds=5),
+        )
 
         if calls is not None:
             for c in calls:

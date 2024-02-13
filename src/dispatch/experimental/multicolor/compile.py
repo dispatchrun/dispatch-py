@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def compile_function(
-    fn: FunctionType, decorator: FunctionType | None = None, cache_key: str = "default"
+    fn: FunctionType, decorator=None, cache_key: str = "default"
 ) -> FunctionType | MethodType:
     """Compile a regular function into a generator that yields data passed
     to functions marked with the @multicolor.yields decorator. Decorated yield
@@ -119,7 +119,7 @@ def _compile_internal(
     logger.debug("compiling function %s", fn.__name__)
 
     # Give the function a unique name.
-    fn_name = fn.__name__ + "__multicolor_" + cache_key
+    fn_name = f"{fn.__name__}_{cache_key}"
 
     # Check if the function has already been compiled.
     cache_holder = fn
@@ -142,7 +142,7 @@ def _compile_internal(
         try:
             # This can occur when compiling a nested function definition
             # that was created by the desugaring pass.
-            if inspect.getsourcefile(fn) == "<multicolor>":
+            if inspect.getsourcefile(fn) == "<dispatch>":
                 return fn, FunctionColor.GENERATOR_FUNCTION
         except TypeError:
             raise e
@@ -205,7 +205,7 @@ def _compile_internal(
     namespace["_multicolor_generator_color"] = FunctionColor.GENERATOR_FUNCTION
 
     # Re-compile.
-    code = compile(root, filename="<multicolor>", mode="exec")
+    code = compile(root, filename="<dispatch>", mode="exec")
     exec(code, namespace)
     compiled_fn = namespace[fn_name]
 
@@ -299,9 +299,14 @@ class CallTransformer(ast.NodeTransformer):
             if hasattr(__fn__, "_multicolor_yield_type"):
                 _multicolor_result = yield _multicolor_custom_yield(type=__fn__._multicolor_yield_type, args=__args__, kwargs=__kwargs__)
                 __assign_result__
+            elif hasattr(__fn__, "_multicolor_no_yields"):
+                _multicolor_result = __fn_call__
+                __assign_result__
             else:
                 _multicolor_result = None
                 try:
+                    if isinstance(__fn__, type):
+                        raise _multicolor_no_source_error # FIXME: this bypasses compilation for calls that are actually class instantiations
                     __compiled_fn__, _multicolor_color = _multicolor_compile(__fn__, _multicolor_decorator, _multicolor_cache_key)
                 except _multicolor_no_source_error:
                     _multicolor_result = __fn_call__

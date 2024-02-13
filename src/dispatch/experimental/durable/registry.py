@@ -1,10 +1,30 @@
+import hashlib
+from dataclasses import dataclass
 from types import FunctionType
 
-_REGISTRY: dict[str, FunctionType] = {}
+
+@dataclass
+class Function:
+    """A registered function that can be referenced to durable state."""
+
+    key: str
+    fn: FunctionType
+    filename: str
+    lineno: int
+    hash: str
 
 
-def register_function(fn: FunctionType) -> str:
-    """Register a generator function.
+_REGISTRY: dict[str, Function] = {}
+
+
+def register_function(fn: FunctionType) -> Function:
+    """Register a function in the in-memory function registry.
+
+    When serializing a registered function, a reference to the function
+    is stored along with details about its location and contents. When
+    deserializing the function, the registry is consulted in order to
+    find the function associated with the reference (and in order to
+    check whether the function is the same).
 
     Args:
         fn: The function to register.
@@ -21,22 +41,28 @@ def register_function(fn: FunctionType) -> str:
     # If there are name clashes, the location of the function
     # (co_filename + co_firstlineno) and/or a hash of the bytecode
     # (co_code) could be used as well or instead.
-    key = fn.__code__.co_qualname
+    code = fn.__code__
+    key = code.co_qualname
     if key in _REGISTRY:
         raise ValueError(f"durable function already registered with key {key}")
 
-    _REGISTRY[key] = fn
-    return key
+    filename = code.co_filename
+    lineno = code.co_firstlineno
+    code_hash = "sha256:" + hashlib.sha256(code.co_code).hexdigest()
+
+    wrapper = Function(key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash)
+
+    _REGISTRY[key] = wrapper
+    return wrapper
 
 
-def lookup_function(key: str) -> FunctionType:
-    """Lookup a previously registered function.
+def lookup_function(key: str) -> Function:
+    """Lookup a registered function by key.
 
     Args:
         key: Unique identifier for the function.
 
     Returns:
-        FunctionType: The associated function.
 
     Raises:
         KeyError: A function has not been registered with this key.
