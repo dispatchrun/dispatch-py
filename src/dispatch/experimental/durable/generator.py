@@ -80,7 +80,7 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
         g = self.generator
         ip = ext.get_frame_ip(g)
         sp = ext.get_frame_sp(g)
-        frame_state = ext.get_generator_frame_state(g)
+        frame_state = ext.get_frame_state(g)
         stack = [ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))]
 
         if TRACE:
@@ -159,4 +159,4 @@ class DurableGenerator(Generator[_YieldT, _SendT, _ReturnT]):
 
         # Restore the generator state (the frame state field tracks whether the
         # frame is newly created, or whether it was previously suspended).
-        ext.set_generator_frame_state(self.generator, generator_state["frame_state"])
+        ext.set_frame_state(self.generator, generator_state["frame_state"])

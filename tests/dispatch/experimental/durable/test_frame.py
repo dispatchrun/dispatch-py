@@ -12,14 +12,14 @@ def generator(a):
 
 
 class TestFrame(unittest.TestCase):
-    def test_copy(self):
+    def test_generator_copy(self):
         # Create an instance and run it to the first yield point.
         g = generator(1)
         assert next(g) == 1
 
         # Copy the generator.
         g2 = generator(1)
-        ext.set_generator_frame_state(g2, ext.get_generator_frame_state(g))
+        ext.set_frame_state(g2, ext.get_frame_state(g))
         ext.set_frame_ip(g2, ext.get_frame_ip(g))
         ext.set_frame_sp(g2, ext.get_frame_sp(g))
         for i in range(ext.get_frame_sp(g)):
