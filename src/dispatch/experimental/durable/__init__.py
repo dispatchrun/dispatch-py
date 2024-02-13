@@ -29,6 +29,6 @@ Example usage:
     print(next(g))  # 2
 """
 
-from .durable import durable
+from .function import durable
 
 __all__ = ["durable"]

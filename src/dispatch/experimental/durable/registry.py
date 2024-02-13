@@ -4,7 +4,7 @@ from types import FunctionType
 
 
 @dataclass
-class Function:
+class RegisteredFunction:
     """A function that can be referenced in durable state."""
 
     key: str
@@ -14,10 +14,10 @@ class Function:
     hash: str
 
 
-_REGISTRY: dict[str, Function] = {}
+_REGISTRY: dict[str, RegisteredFunction] = {}
 
 
-def register_function(fn: FunctionType) -> Function:
+def register_function(fn: FunctionType) -> RegisteredFunction:
     """Register a function in the in-memory function registry.
 
     When serializing a registered function, a reference to the function
@@ -44,20 +44,22 @@ def register_function(fn: FunctionType) -> Function:
     lineno = code.co_firstlineno
     code_hash = "sha256:" + hashlib.sha256(code.co_code).hexdigest()
 
-    wrapper = Function(key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash)
+    wrapper = RegisteredFunction(
+        key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash
+    )
 
     _REGISTRY[key] = wrapper
     return wrapper
 
 
-def lookup_function(key: str) -> Function:
+def lookup_function(key: str) -> RegisteredFunction:
     """Lookup a registered function by key.
 
     Args:
         key: Unique identifier for the function.
 
     Returns:
-        Function: the function that was registered with the specified key.
+        RegisteredFunction: the function that was registered with the specified key.
 
     Raises:
         KeyError: A function has not been registered with this key.

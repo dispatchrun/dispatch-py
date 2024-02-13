@@ -2,7 +2,7 @@ import enum
 from dataclasses import dataclass
 from typing import Any
 
-from dispatch.experimental.durable.generator import DurableGenerator
+from dispatch.experimental.durable.function import DurableGenerator
 from dispatch.experimental.multicolor import yields
 from dispatch.proto import Call, CallResult
 
