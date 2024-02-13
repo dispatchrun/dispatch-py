@@ -1,4 +1,4 @@
-.PHONY: install test typecheck unittest dev fmt fmt-check generate clean update-proto coverage
+.PHONY: install test typecheck unittest dev fmt fmt-check generate clean update-proto coverage build check push push-test
 
 PYTHON := python
 
@@ -50,8 +50,18 @@ generate: .proto/dispatch-sdk
 	$(MAKE) fmt
 
 clean:
-	rm -rf .proto
-	rm -rf .coverage
-	rm -rf .coverage-html
+	$(RM) -rf dist .proto .coverage .coverage-html
 	find . -type f -name '*.pyc' -exec rm {} \;
 	find . -type d -name '__pycache__' -exec rm -r {} \;
+
+build:
+	$(PYTHON) -m build
+
+check:
+	twine check dist/*
+
+push:
+	twine upload dist/*
+
+push-test:
+	twine upload -r testpypi dist/*

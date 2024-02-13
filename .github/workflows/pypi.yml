@@ -1,0 +1,36 @@
+name: PyPI
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+    tags:
+    - 'v*'
+
+jobs:
+  test:
+    if: {{ github.ref_name != 'main' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/dispatch-functions
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+  release:
+    if: {{ github.ref_name == 'main' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/dispatch-functions
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pypa/gh-action-pypi-publish@release/v1
