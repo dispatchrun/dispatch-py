@@ -14,7 +14,7 @@ from .serializable import Serializable
 
 
 class DurableFunction:
-    """A wrapper for a generator functions and async functions that make
+    """A wrapper for generator functions and async functions that make
     their generator and coroutine instances serializable."""
 
     def __init__(self, fn: FunctionType):
@@ -58,8 +58,7 @@ _ReturnT = TypeVar("_ReturnT", covariant=True)
 
 class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
     """A wrapper for a generator that makes it serializable (can be pickled).
-    Instances behave like the generators they wrap.
-    """
+    Instances behave like the generators they wrap."""
 
     def __init__(
         self,
