@@ -1,12 +1,7 @@
 name: PyPI
 
 on:
-  pull_request:
-  push:
-    branches:
-    - main
-    tags:
-    - v*
+- push
 
 jobs:
   build:
@@ -23,7 +18,7 @@ jobs:
     - uses: RalfG/python-wheels-manylinux-build@v0.7.1
       with:
         python-versions: 'cp311-cp311 cp312-cp312'
-    - run: find dist -name '*linux_x86_64.whl' -delete
+    - run: sudo find dist -name '*linux_x86_64.whl' -delete
     - uses: actions/upload-artifact@v4
       with:
         name: dist
