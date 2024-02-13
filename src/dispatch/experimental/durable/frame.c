@@ -58,8 +58,6 @@ typedef struct FrameObject {
 
 // This is a redefinition of frame state constants:
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L34
-// The definition is the same for Python 3.11 and 3.12.
-// XXX: note that these constants change in 3.13!
 typedef enum _framestate {
 #if PY_MINOR_VERSION == 13
     FRAME_CREATED = -3,
@@ -250,8 +248,8 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
 
 static PyObject *set_frame_state(PyObject *self, PyObject *args) {
     PyObject *arg;
-    int ip;
-    if (!PyArg_ParseTuple(args, "Oi", &arg, &ip)) {
+    int fs;
+    if (!PyArg_ParseTuple(args, "Oi", &arg, &fs)) {
         return NULL;
     }
     PyGenObject *gen = get_generator_like_object(arg);
@@ -266,8 +264,18 @@ static PyObject *set_frame_state(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot set frame state if generator/coroutine is complete");
         return NULL;
     }
-    // TODO: check the value is one of the known constants?
-    gen->gi_frame_state = (int8_t)ip; // aka. cr_frame_state / ag_frame_state
+#if PY_MINOR_VERSION == 13
+    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_SUSPENDED_YIELD_FROM && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED && fs != FRAME_CLEARED) {
+        PyErr_SetString(PyExc_ValueError, "Invalid frame state");
+        return NULL;
+    }
+#else
+    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED && fs != FRAME_CLEARED) {
+        PyErr_SetString(PyExc_ValueError, "Invalid frame state");
+        return NULL;
+    }
+#endif
+    gen->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
     Py_RETURN_NONE;
 }
 
