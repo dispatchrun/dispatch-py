@@ -1,7 +1,8 @@
-""""A decorator that makes generators serializable.
+"""A decorator that makes generators and coroutines serializable.
 
 This module defines a @durable decorator that can be applied to generator
-functions. The resulting generators can be pickled.
+functions and async functions. The generator and coroutine instances
+they create can be pickled.
 
 Example usage:
 
@@ -28,6 +29,6 @@ Example usage:
     print(next(g))  # 2
 """
 
-from .durable import durable
+from .function import durable
 
 __all__ = ["durable"]

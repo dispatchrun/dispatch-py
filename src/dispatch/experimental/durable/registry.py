@@ -4,8 +4,8 @@ from types import FunctionType
 
 
 @dataclass
-class Function:
-    """A registered function that can be referenced to durable state."""
+class RegisteredFunction:
+    """A function that can be referenced in durable state."""
 
     key: str
     fn: FunctionType
@@ -14,10 +14,10 @@ class Function:
     hash: str
 
 
-_REGISTRY: dict[str, Function] = {}
+_REGISTRY: dict[str, RegisteredFunction] = {}
 
 
-def register_function(fn: FunctionType) -> Function:
+def register_function(fn: FunctionType) -> RegisteredFunction:
     """Register a function in the in-memory function registry.
 
     When serializing a registered function, a reference to the function
@@ -35,12 +35,6 @@ def register_function(fn: FunctionType) -> Function:
     Raises:
         ValueError: The function conflicts with another registered function.
     """
-    # We need to be able to refer to the function in the serialized
-    # representation, and the key needs to be stable across interpreter
-    # invocations. Use the code object's fully-qualified name for now.
-    # If there are name clashes, the location of the function
-    # (co_filename + co_firstlineno) and/or a hash of the bytecode
-    # (co_code) could be used as well or instead.
     code = fn.__code__
     key = code.co_qualname
     if key in _REGISTRY:
@@ -50,19 +44,22 @@ def register_function(fn: FunctionType) -> Function:
     lineno = code.co_firstlineno
     code_hash = "sha256:" + hashlib.sha256(code.co_code).hexdigest()
 
-    wrapper = Function(key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash)
+    wrapper = RegisteredFunction(
+        key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash
+    )
 
     _REGISTRY[key] = wrapper
     return wrapper
 
 
-def lookup_function(key: str) -> Function:
+def lookup_function(key: str) -> RegisteredFunction:
     """Lookup a registered function by key.
 
     Args:
         key: Unique identifier for the function.
 
     Returns:
+        RegisteredFunction: the function that was registered with the specified key.
 
     Raises:
         KeyError: A function has not been registered with this key.

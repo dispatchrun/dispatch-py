@@ -163,15 +163,15 @@ class TestGenerator(unittest.TestCase):
 
     def test_not_a_synchronous_generator(self):
         @durable
-        def regular():
+        def regular_function():
             pass
 
         @durable
         async def async_generator():
             yield
 
-        with self.assertRaises(NotImplementedError):
-            regular()
+        with self.assertRaises(ValueError):
+            regular_function()
 
         with self.assertRaises(NotImplementedError):
             async_generator()

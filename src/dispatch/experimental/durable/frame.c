@@ -58,8 +58,6 @@ typedef struct FrameObject {
 
 // This is a redefinition of frame state constants:
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L34
-// The definition is the same for Python 3.11 and 3.12.
-// XXX: note that these constants change in 3.13!
 typedef enum _framestate {
 #if PY_MINOR_VERSION == 13
     FRAME_CREATED = -3,
@@ -74,8 +72,17 @@ typedef enum _framestate {
     FRAME_CLEARED = 4
 } FrameState;
 
+// This is a redefinition of the private PyCoroWrapper:
+typedef struct {
+    PyObject_HEAD
+    PyCoroObject *cw_coroutine;
+} PyCoroWrapper;
+
 // For reference, PyGenObject is defined as follows after expanding top-most macro:
 // https://github.com/python/cpython/blob/3.12/Include/cpython/genobject.h
+// Note that PyCoroObject and PyAsyncGenObject have the same layout in
+// Python 3.11-3.13, however the struct fields have a cr_ and ag_ prefix
+// (respectively) instead of a gi_ prefix.
 /*
 typedef struct {
     PyObject_HEAD
@@ -95,18 +102,48 @@ typedef struct {
 } PyGenObject;
 */
 
-static InterpreterFrame *get_interpreter_frame(PyObject *obj) {
-    struct _PyInterpreterFrame *frame = NULL;
-    if (PyGen_Check(obj)) {
-        PyGenObject *gen_obj = (PyGenObject *)obj;
-        frame = (struct _PyInterpreterFrame *)(gen_obj->gi_iframe);
-    } else if (PyFrame_Check(obj)) {
-        PyFrameObject *frame_obj = (PyFrameObject *)obj;
-        frame = ((FrameObject *)frame_obj)->f_frame;
-    } else {
-        PyErr_SetString(PyExc_TypeError, "Object is not a generator or frame");
+static const char *get_type_name(PyObject *obj) {
+    PyObject* type = PyObject_Type(obj);
+    if (!type) {
         return NULL;
     }
+    PyObject* name = PyObject_GetAttrString(type, "__name__");
+    Py_DECREF(type);
+    if (!name) {
+        return NULL;
+    }
+    const char* name_str = PyUnicode_AsUTF8(name);
+    Py_DECREF(name);
+    return name_str;
+}
+
+static PyGenObject *get_generator_like_object(PyObject *obj) {
+    if (PyGen_Check(obj) || PyCoro_CheckExact(obj) || PyAsyncGen_CheckExact(obj)) {
+        // Note: In Python 3.11-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
+        // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
+        return (PyGenObject *)obj;
+    }
+    // CPython unfortunately does not export any functions that
+    // check whether an object is a coroutine_wrapper.
+    // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
+    const char *type_name = get_type_name(obj);
+    if (!type_name) {
+        return NULL;
+    }
+    if (strcmp(type_name, "coroutine_wrapper") == 0) {
+        PyCoroWrapper *wrapper = (PyCoroWrapper *)obj;
+        return (PyGenObject *)wrapper->cw_coroutine;
+    }
+    PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
+    return NULL;
+}
+
+static InterpreterFrame *get_interpreter_frame(PyObject *obj) {
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    struct _PyInterpreterFrame *frame = (struct _PyInterpreterFrame *)(gen_like->gi_iframe);
     assert(frame);
     return (InterpreterFrame *)frame;
 }
@@ -119,28 +156,19 @@ static InterpreterFrame *get_interpreter_frame_from_args(PyObject *args) {
     return get_interpreter_frame(obj);
 }
 
-static PyGenObject *get_generator_from_args(PyObject *args) {
-    PyObject *gen_arg;
-    if (!PyArg_ParseTuple(args, "O", &gen_arg)) {
+static PyObject *get_frame_state(PyObject *self, PyObject *args) {
+    PyObject *arg;
+    if (!PyArg_ParseTuple(args, "O", &arg)) {
         return NULL;
     }
-    if (!PyGen_Check(gen_arg)) {
-        PyErr_SetString(PyExc_TypeError, "Input object is not a generator");
-        return NULL;
-    }
-    return (PyGenObject *)gen_arg;
-}
-
-static PyObject *get_generator_frame_state(PyObject *self, PyObject *args) {
-    PyGenObject *gen = get_generator_from_args(args);
+    PyGenObject *gen = get_generator_like_object(arg);
     if (!gen) {
         return NULL;
     }
-    return PyLong_FromLong((long)gen->gi_frame_state);
+    return PyLong_FromLong((long)gen->gi_frame_state); // aka. cr_frame_state / ag_frame_state
 }
 
 static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
-    // Note that this method is redundant. You can access the instruction pointer via g.gi_frame.f_lasti.
     InterpreterFrame *frame = get_interpreter_frame_from_args(args);
     if (!frame) {
         return NULL;
@@ -238,27 +266,36 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *set_generator_frame_state(PyObject *self, PyObject *args) {
-    PyObject *gen_arg;
-    int ip;
-    if (!PyArg_ParseTuple(args, "Oi", &gen_arg, &ip)) {
+static PyObject *set_frame_state(PyObject *self, PyObject *args) {
+    PyObject *arg;
+    int fs;
+    if (!PyArg_ParseTuple(args, "Oi", &arg, &fs)) {
         return NULL;
     }
-    if (!PyGen_Check(gen_arg)) {
-        PyErr_SetString(PyExc_TypeError, "Input object is not a generator");
+    PyGenObject *gen = get_generator_like_object(arg);
+    if (!gen) {
         return NULL;
     }
-    PyGenObject *gen = (PyGenObject *)gen_arg;
-    // Disallow changing the frame state if the generator is complete
-    // or has been closed, with the assumption that various parts
-    // have now been torn down. The generator should be recreated before
-    // the frame state is changed.
+    // Disallow changing the frame state if the generator/coroutine is
+    // complete or has been closed, with the assumption that its components
+    // have now been torn down. The generator/coroutine should be recreated
+    // before the frame state is changed.
     if (gen->gi_frame_state >= FRAME_COMPLETED) {
-        PyErr_SetString(PyExc_RuntimeError, "Cannot set frame state if generator is complete");
+        PyErr_SetString(PyExc_RuntimeError, "Cannot set frame state if generator/coroutine is complete");
         return NULL;
     }
-    // TODO: check the value is one of the known constants?
-    gen->gi_frame_state = (int8_t)ip;
+#if PY_MINOR_VERSION == 13
+    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_SUSPENDED_YIELD_FROM && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED && fs != FRAME_CLEARED) {
+        PyErr_SetString(PyExc_ValueError, "Invalid frame state");
+        return NULL;
+    }
+#else
+    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED && fs != FRAME_CLEARED) {
+        PyErr_SetString(PyExc_ValueError, "Invalid frame state");
+        return NULL;
+    }
+#endif
+    gen->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
     Py_RETURN_NONE;
 }
 
@@ -302,14 +339,14 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef methods[] = {
-        {"get_frame_ip",  get_frame_ip, METH_VARARGS, "Get instruction pointer from a frame or generator."},
-        {"set_frame_ip",  set_frame_ip, METH_VARARGS, "Set instruction pointer in a frame or generator."},
-        {"get_frame_sp",  get_frame_sp, METH_VARARGS, "Get stack pointer from a frame or generator."},
-        {"set_frame_sp",  set_frame_sp, METH_VARARGS, "Set stack pointer in a frame or generator."},
-        {"get_frame_stack_at",  get_frame_stack_at, METH_VARARGS, "Get an object from a frame or generator's stack, as an (is_null, obj) tuple."},
-        {"set_frame_stack_at",  set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a frame or generator."},
-        {"get_generator_frame_state",  get_generator_frame_state, METH_VARARGS, "Get frame state from a generator."},
-        {"set_generator_frame_state",  set_generator_frame_state, METH_VARARGS, "Set frame state of a generator."},
+        {"get_frame_ip",  get_frame_ip, METH_VARARGS, "Get instruction pointer of a generator or coroutine."},
+        {"set_frame_ip",  set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
+        {"get_frame_sp",  get_frame_sp, METH_VARARGS, "Get stack pointer of a generator or coroutine."},
+        {"set_frame_sp",  set_frame_sp, METH_VARARGS, "Set stack pointer of a generator or coroutine."},
+        {"get_frame_stack_at",  get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
+        {"set_frame_stack_at",  set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
+        {"get_frame_state",  get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
+        {"set_frame_state",  set_frame_state, METH_VARARGS, "Set frame state of a generator or coroutine."},
         {NULL, NULL, 0, NULL}
 };
 
