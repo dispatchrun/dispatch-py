@@ -66,10 +66,13 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
         generator: GeneratorType,
         registered_fn: RegisteredFunction,
         *args: Any,
+        coro_await: bool = False,
         **kwargs: Any,
     ):
         self.generator = generator
-        Serializable.__init__(self, generator, registered_fn, *args, **kwargs)
+        Serializable.__init__(
+            self, generator, registered_fn, *args, coro_await=coro_await, **kwargs
+        )
 
     def __iter__(self) -> Generator[_YieldT, _SendT, _ReturnT]:
         return self
@@ -126,7 +129,12 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
         Serializable.__init__(self, coroutine, registered_fn, *args, **kwargs)
 
     def __await__(self) -> Generator[Any, None, _ReturnT]:
-        return self.coroutine.__await__()
+        coroutine_wrapper = self.coroutine.__await__()
+        generator = cast(GeneratorType, coroutine_wrapper)
+        durable_coroutine_wrapper: Generator[Any, None, _ReturnT] = DurableGenerator(
+            generator, self.registered_fn, *self.args, coro_await=True, **self.kwargs
+        )
+        return durable_coroutine_wrapper
 
     def send(self, send: _SendT) -> _YieldT:
         return self.coroutine.send(send)

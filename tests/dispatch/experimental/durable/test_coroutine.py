@@ -48,8 +48,6 @@ class TestCoroutine(unittest.TestCase):
         assert next(g) == 3
 
     def test_nested(self):
-        self.skipTest("nested coroutines are not working")
-
         expect = [1, 2, 3, 4, 5, 6]
         c = nested_coroutines(1)
         g = c.__await__()

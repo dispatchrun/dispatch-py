@@ -9,17 +9,11 @@ TRACE = os.getenv("DURABLE_TRACE", False)
 
 
 class Serializable:
-    """A wrapper for a generator or coroutine that makes it serializable.
-
-    Attributes:
-        g: The wrapped generator or coroutine instance.
-        key: A unique identifier for the function that created the instance.
-        args: Positional arguments to the function that created the instance.
-        kwargs: Keyword arguments to the function that created the instance.
-    """
+    """A wrapper for a generator or coroutine that makes it serializable."""
 
     g: GeneratorType | CoroutineType
-    key: str
+    registered_fn: RegisteredFunction
+    coro_await: bool
     args: list[Any]
     kwargs: dict[str, Any]
 
@@ -28,10 +22,12 @@ class Serializable:
         g: GeneratorType | CoroutineType,
         registered_fn: RegisteredFunction,
         *args: Any,
+        coro_await: bool = False,
         **kwargs: Any,
     ):
         self.g = g
         self.registered_fn = registered_fn
+        self.coro_await = coro_await
         self.args = list(args)
         self.kwargs = kwargs
 
@@ -52,6 +48,7 @@ class Serializable:
             print(f"code hash = {rfn.hash}")
             print(f"args = {self.args}")
             print(f"kwargs = {self.kwargs}")
+            print(f"coro await = {self.coro_await}")
             print(f"IP = {ip}")
             print(f"SP = {sp}")
             print(f"frame state = {frame_state}")
@@ -68,6 +65,7 @@ class Serializable:
                 "filename": rfn.filename,
                 "lineno": rfn.lineno,
                 "hash": rfn.hash,
+                "coro_await": self.coro_await,
                 "args": self.args,
                 "kwargs": self.kwargs,
             },
@@ -86,13 +84,14 @@ class Serializable:
 
         # Recreate the generator/coroutine by looking up the constructor
         # and calling it with the same args/kwargs.
-        key, filename, lineno, code_hash, args, kwargs = (
+        key, filename, lineno, code_hash, args, kwargs, coro_await = (
             function_state["key"],
             function_state["filename"],
             function_state["lineno"],
             function_state["hash"],
             function_state["args"],
             function_state["kwargs"],
+            function_state["coro_await"],
         )
 
         rfn = lookup_function(key)
@@ -107,6 +106,9 @@ class Serializable:
 
         g = rfn.fn(*args, **kwargs)
 
+        if coro_await:
+            g = g.__await__()
+
         # Restore the frame state (stack + stack pointer + instruction pointer).
         ext.set_frame_ip(g, frame_state["ip"])
         ext.set_frame_sp(g, frame_state["sp"])
@@ -116,5 +118,6 @@ class Serializable:
 
         self.g = g
         self.registered_fn = rfn
+        self.coro_await = coro_await
         self.args = args
         self.kwargs = kwargs

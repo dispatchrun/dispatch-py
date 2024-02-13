@@ -72,6 +72,12 @@ typedef enum _framestate {
     FRAME_CLEARED = 4
 } FrameState;
 
+// This is a redefinition of the private PyCoroWrapper:
+typedef struct {
+    PyObject_HEAD
+    PyCoroObject *cw_coroutine;
+} PyCoroWrapper;
+
 // For reference, PyGenObject is defined as follows after expanding top-most macro:
 // https://github.com/python/cpython/blob/3.12/Include/cpython/genobject.h
 // Note that PyCoroObject and PyAsyncGenObject have the same layout in
@@ -96,24 +102,48 @@ typedef struct {
 } PyGenObject;
 */
 
-static InterpreterFrame *get_interpreter_frame(PyObject *obj) {
-    struct _PyInterpreterFrame *frame = NULL;
-    if (PyGen_Check(obj)) {
-        PyGenObject *gen_obj = (PyGenObject *)obj;
-        frame = (struct _PyInterpreterFrame *)(gen_obj->gi_iframe);
-    } else if (PyCoro_CheckExact(obj)) {
-        PyCoroObject *gen_obj = (PyCoroObject *)obj;
-        frame = (struct _PyInterpreterFrame *)(gen_obj->cr_iframe);
-    } else if (PyAsyncGen_CheckExact(obj)) {
-        PyAsyncGenObject *gen_obj = (PyAsyncGenObject *)obj;
-        frame = (struct _PyInterpreterFrame *)(gen_obj->ag_iframe);
-    } else if (PyFrame_Check(obj)) {
-        PyFrameObject *frame_obj = (PyFrameObject *)obj;
-        frame = ((FrameObject *)frame_obj)->f_frame;
-    } else {
-        PyErr_SetString(PyExc_TypeError, "Object is not a generator or frame");
+static const char *get_type_name(PyObject *obj) {
+    PyObject* type = PyObject_Type(obj);
+    if (!type) {
         return NULL;
     }
+    PyObject* name = PyObject_GetAttrString(type, "__name__");
+    Py_DECREF(type);
+    if (!name) {
+        return NULL;
+    }
+    const char* name_str = PyUnicode_AsUTF8(name);
+    Py_DECREF(name);
+    return name_str;
+}
+
+static PyGenObject *get_generator_like_object(PyObject *obj) {
+    if (PyGen_Check(obj) || PyCoro_CheckExact(obj) || PyAsyncGen_CheckExact(obj)) {
+        // Note: In Python 3.11-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
+        // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
+        return (PyGenObject *)obj;
+    }
+    // CPython unfortunately does not export any functions that
+    // check whether an object is a coroutine_wrapper.
+    // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
+    const char *type_name = get_type_name(obj);
+    if (!type_name) {
+        return NULL;
+    }
+    if (strcmp(type_name, "coroutine_wrapper") == 0) {
+        PyCoroWrapper *wrapper = (PyCoroWrapper *)obj;
+        return (PyGenObject *)wrapper->cw_coroutine;
+    }
+    PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
+    return NULL;
+}
+
+static InterpreterFrame *get_interpreter_frame(PyObject *obj) {
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    struct _PyInterpreterFrame *frame = (struct _PyInterpreterFrame *)(gen_like->gi_iframe);
     assert(frame);
     return (InterpreterFrame *)frame;
 }
@@ -124,16 +154,6 @@ static InterpreterFrame *get_interpreter_frame_from_args(PyObject *args) {
         return NULL;
     }
     return get_interpreter_frame(obj);
-}
-
-static PyGenObject *get_generator_like_object(PyObject *arg) {
-    if (!PyGen_Check(arg) && !PyCoro_CheckExact(arg) && !PyAsyncGen_CheckExact(arg)) {
-        PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
-        return NULL;
-    }
-    // Note: In Python 3.11-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
-    // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
-    return (PyGenObject *)arg;
 }
 
 static PyObject *get_frame_state(PyObject *self, PyObject *args) {
