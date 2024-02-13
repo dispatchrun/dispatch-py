@@ -30,6 +30,8 @@ dev = [
 
 [tool.setuptools-git-versioning]
 enabled = true
+dev_template = "{tag}"
+dirty_template = "{tag}"
 
 [tool.isort]
 profile = "black"
