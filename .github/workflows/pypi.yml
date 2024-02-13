@@ -43,7 +43,7 @@ jobs:
     - run: python -m cibuildwheel --output-dir wheelhouse
     - uses: actions/upload-artifact@v4
       with:
-        name: cibw-wheels-${{ matrix.python }}-${{ matrix.os }}
+        name: cibw-wheels-${{ matrix.os }}
         path: wheelhouse/*.whl
 
   test:
