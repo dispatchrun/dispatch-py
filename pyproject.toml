@@ -3,32 +3,33 @@ requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dispatch-sdk"
+name = "dispatch-functions"
+description = "Python SDK for Dispatch Stateful Functions"
+readme = "README.md"
 dynamic = ["version"]
 requires-python = ">= 3.11"
-# TODO: relax dependency versions
 dependencies = [
-    "grpcio==1.60.0",
-    "protobuf==4.24.0",
-    "types-protobuf==4.24.0.20240129",
-    "grpc-stubs",
-    "http_message_signatures==0.4.4"
+    "grpcio >= 1.60.0",
+    "protobuf >= 4.24.0",
+    "types-protobuf >= 4.24.0.20240129",
+    "grpc-stubs >= 1.53.0.5",
+    "http-message-signatures >= 0.4.4"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "black==24.1.0",
-    "isort==5.13.2",
-    "mypy==1.8.0",
-    "fastapi==0.109.0",
-    "httpx==0.26.0",
-    "coverage==7.4.1",
-    "requests==2.31.0",
-    "types-requests==2.31.0.20240125"
+    "black >= 24.1.0",
+    "isort >= 5.13.2",
+    "mypy >= 1.8.0",
+    "fastapi >= 0.109.0",
+    "httpx >= 0.26.0",
+    "coverage >= 7.4.1",
+    "requests >= 2.31.0",
+    "types-requests >= 2.31.0.20240125"
 ]
 
-[tool.setuptools.dynamic]
-version = {attr = "dispatch.__version__"}
+[tool.setuptools-git-versioning]
+enabled = true
 
 [tool.isort]
 profile = "black"

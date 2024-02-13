@@ -5,3 +5,4 @@ __pycache__
 .proto
 .coverage
 .coverage-html
+dist/
