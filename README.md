@@ -48,7 +48,7 @@ def action(msg):
     ...
 ```
 The **@dispatch.function** decorator declares a function that can be run by
-the Dispatch scheduler. The call has durable execution semantics, if the
+the Dispatch scheduler. The call has durable execution semantics; if the
 function fails with a temporary error, it is automatically retried, even if
 the program is restarted, or if multiple instances are deployed.
 
