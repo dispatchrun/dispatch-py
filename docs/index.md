@@ -8,11 +8,11 @@ hide:
 This is the API reference for the Python SDK of Dispatch.
 
 - Tutorials and guides: [docs.stealthrocket.cloud][docs].
-- Source: [stealthrocket/dispatch-sdk][github].
+- Source: [stealthrocket/dispatch-sdk-python][github].
 
 
 [docs]: https://docs.stealthrocket.cloud
-[github]: https://github.com/stealthrocket/dispatch-sdk
+[github]: https://github.com/stealthrocket/dispatch-sdk-python
 
 ## API Reference
 
