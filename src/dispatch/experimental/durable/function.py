@@ -1,3 +1,4 @@
+import typing
 from types import (
     AsyncGeneratorType,
     CodeType,
@@ -5,9 +6,10 @@ from types import (
     FrameType,
     FunctionType,
     GeneratorType,
+    MethodType,
     TracebackType,
 )
-from typing import Any, Coroutine, Generator, TypeVar, cast
+from typing import Any, Callable, Coroutine, Generator, TypeVar, cast, overload
 
 from .registry import RegisteredFunction, register_function
 from .serializable import Serializable
@@ -41,14 +43,15 @@ class DurableFunction:
         return self.registered_fn.fn.__name__
 
 
-def durable(fn) -> DurableFunction:
+def durable(fn: Callable) -> Callable:
     """Returns a "durable" function that creates serializable
-    generators or coroutines.
-
-    Args:
-        fn: A generator function or async function.
-    """
-    return DurableFunction(fn)
+    generators or coroutines."""
+    if isinstance(fn, MethodType):
+        return MethodType(DurableFunction(fn.__func__), fn.__self__)
+    elif isinstance(fn, FunctionType):
+        return DurableFunction(fn)
+    else:
+        raise TypeError("unsupported callable")
 
 
 _YieldT = TypeVar("_YieldT", covariant=True)

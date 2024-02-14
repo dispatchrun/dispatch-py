@@ -36,20 +36,25 @@ def register_function(fn: FunctionType) -> RegisteredFunction:
         ValueError: The function conflicts with another registered function.
     """
     code = fn.__code__
-    key = code.co_qualname
-    if key in _REGISTRY:
-        raise ValueError(f"durable function already registered with key {key}")
-
-    filename = code.co_filename
-    lineno = code.co_firstlineno
-    code_hash = "sha256:" + hashlib.sha256(code.co_code).hexdigest()
-
-    wrapper = RegisteredFunction(
-        key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash
+    rfn = RegisteredFunction(
+        key=code.co_qualname,
+        fn=fn,
+        filename=code.co_filename,
+        lineno=code.co_firstlineno,
+        hash="sha256:" + hashlib.sha256(code.co_code).hexdigest(),
     )
 
-    _REGISTRY[key] = wrapper
-    return wrapper
+    try:
+        existing = _REGISTRY[rfn.key]
+    except KeyError:
+        pass
+    else:
+        if existing == rfn:
+            return existing
+        raise ValueError(f"durable function already registered with key {rfn.key}")
+
+    _REGISTRY[rfn.key] = rfn
+    return rfn
 
 
 def lookup_function(key: str) -> RegisteredFunction:
