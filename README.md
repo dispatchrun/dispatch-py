@@ -113,7 +113,7 @@ functions.
 
 ### Local testing with ngrok
 
-To enable local testing, a common approach consist in using [ngrok][ngrok] to
+To enable local testing, a common approach consists of using [ngrok][ngrok] to
 setup a public endpoint that forwards to the server running on localhost.
 
 For example, assuming the server is running on port 8000 (which is the default
