@@ -482,6 +482,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dispatch.poll" class="md-nav__link">
+    <span class="md-ellipsis">
+      poll
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dispatch.client" class="md-nav__link">
     <span class="md-ellipsis">
       client
@@ -540,18 +549,36 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dispatch.coroutine.Directive" class="md-nav__link">
+  <a href="#dispatch.coroutine.CoroutineState" class="md-nav__link">
     <span class="md-ellipsis">
-      Directive
+      CoroutineState
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.coroutine.InvalidContextError" class="md-nav__link">
+  <a href="#dispatch.coroutine.exit" class="md-nav__link">
     <span class="md-ellipsis">
-      InvalidContextError
+      exit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dispatch.coroutine.poll" class="md-nav__link">
+    <span class="md-ellipsis">
+      poll
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dispatch.coroutine.schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      schedule
     </span>
   </a>
   
@@ -2264,6 +2291,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dispatch.poll" class="md-nav__link">
+    <span class="md-ellipsis">
+      poll
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dispatch.client" class="md-nav__link">
     <span class="md-ellipsis">
       client
@@ -2322,18 +2358,36 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dispatch.coroutine.Directive" class="md-nav__link">
+  <a href="#dispatch.coroutine.CoroutineState" class="md-nav__link">
     <span class="md-ellipsis">
-      Directive
+      CoroutineState
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.coroutine.InvalidContextError" class="md-nav__link">
+  <a href="#dispatch.coroutine.exit" class="md-nav__link">
     <span class="md-ellipsis">
-      InvalidContextError
+      exit
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dispatch.coroutine.poll" class="md-nav__link">
+    <span class="md-ellipsis">
+      poll
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dispatch.coroutine.schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      schedule
     </span>
   </a>
   
@@ -3988,85 +4042,89 @@ with_call method of a Function instead.</p>
 
             <details class="quote">
               <summary>Source code in <code>dispatch/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span>
-<span class="normal">98</span>
-<span class="normal">99</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Client</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Client</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Client for the Dispatch API.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -4078,24 +4136,28 @@ with_call method of a Function instead.</p>
 
 <span class="sd">            api_url: The URL of the Dispatch API to use. Uses the value of the</span>
 <span class="sd">              DISPATCH_API_URL environment variable if set, otherwise</span>
-<span class="sd">              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</span>
+<span class="sd">              defaults to the public Dispatch API (DEFAULT_API_URL).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: if the API key is missing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
             <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_KEY&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_key is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;missing API key: set it with the DISPATCH_API_KEY environment variable&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
             <span class="n">api_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_URL&quot;</span><span class="p">,</span> <span class="n">DEFAULT_API_URL</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_url is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;missing API URL: set it with the DISPATCH_API_URL environment variable&quot;</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="n">api_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stub</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -4212,7 +4274,7 @@ the DISPATCH_API_KEY environment variable by default.</p>
             <div class="doc-md-description">
               <p>The URL of the Dispatch API to use. Uses the value of the
 DISPATCH_API_URL environment variable if set, otherwise
-defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
+defaults to the public Dispatch API (DEFAULT_API_URL).</p>
             </div>
           </td>
           <td>
@@ -4275,7 +4337,11 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 <span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
-<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new Dispatch client.</span>
 
 <span class="sd">    Args:</span>
@@ -4284,24 +4350,28 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
 <span class="sd">        api_url: The URL of the Dispatch API to use. Uses the value of the</span>
 <span class="sd">          DISPATCH_API_URL environment variable if set, otherwise</span>
-<span class="sd">          defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</span>
+<span class="sd">          defaults to the public Dispatch API (DEFAULT_API_URL).</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: if the API key is missing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
         <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_KEY&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_key is required&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;missing API key: set it with the DISPATCH_API_KEY environment variable&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
         <span class="n">api_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_URL&quot;</span><span class="p">,</span> <span class="n">DEFAULT_API_URL</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_url is required&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;missing API URL: set it with the DISPATCH_API_URL environment variable&quot;</span>
+        <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="n">api_url</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
-
     <span class="bp">self</span><span class="o">.</span><span class="n">_init_stub</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -4380,27 +4450,27 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/client.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span>
-<span class="normal">98</span>
-<span class="normal">99</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calls</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Call</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DispatchID</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calls</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Call</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DispatchID</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch function calls.</span>
 
 <span class="sd">    Args:</span>
@@ -4536,7 +4606,7 @@ Output.</p>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Error from a Python exception, using its class qualified</span>
 <span class="sd">        named as type.</span>
 
-<span class="sd">        The status tries to be inferred, but can be overriden. If it is not</span>
+<span class="sd">        The status tries to be inferred, but can be overridden. If it is not</span>
 <span class="sd">        provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -4730,7 +4800,7 @@ invalid.</p>
   
       <p>Create an Error from a Python exception, using its class qualified
 named as type.</p>
-<p>The status tries to be inferred, but can be overriden. If it is not
+<p>The status tries to be inferred, but can be overridden. If it is not
 provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</p>
 
           <details class="quote">
@@ -4752,7 +4822,7 @@ provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an Error from a Python exception, using its class qualified</span>
 <span class="sd">    named as type.</span>
 
-<span class="sd">    The status tries to be inferred, but can be overriden. If it is not</span>
+<span class="sd">    The status tries to be inferred, but can be overridden. If it is not</span>
 <span class="sd">    provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -5494,6 +5564,41 @@ of functions.</p>
 
 
 
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="dispatch.poll" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">poll</span><span class="p">(</span><span class="n">calls</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Suspend the function with a set of Calls, instructing the
+orchestrator to resume the coroutine when call results are ready.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>dispatch/coroutine.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@coroutine</span>
+<span class="nd">@durable</span>
+<span class="k">def</span> <span class="nf">poll</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Call</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">CallResult</span><span class="p">]:</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Suspend the function with a set of Calls, instructing the</span>
+<span class="sd">    orchestrator to resume the coroutine when call results are ready.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="k">yield</span> <span class="n">Poll</span><span class="p">(</span><span class="n">calls</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
 <div class="doc doc-object doc-module">
 
 
@@ -5535,85 +5640,89 @@ of functions.</p>
 
             <details class="quote">
               <summary>Source code in <code>dispatch/client.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span>
-<span class="normal">98</span>
-<span class="normal">99</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Client</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Client</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Client for the Dispatch API.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -5625,24 +5734,28 @@ of functions.</p>
 
 <span class="sd">            api_url: The URL of the Dispatch API to use. Uses the value of the</span>
 <span class="sd">              DISPATCH_API_URL environment variable if set, otherwise</span>
-<span class="sd">              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</span>
+<span class="sd">              defaults to the public Dispatch API (DEFAULT_API_URL).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: if the API key is missing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
             <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_KEY&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_key is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;missing API key: set it with the DISPATCH_API_KEY environment variable&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
             <span class="n">api_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_URL&quot;</span><span class="p">,</span> <span class="n">DEFAULT_API_URL</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_url is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;missing API URL: set it with the DISPATCH_API_URL environment variable&quot;</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="n">api_url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_stub</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -5759,7 +5872,7 @@ the DISPATCH_API_KEY environment variable by default.</p>
             <div class="doc-md-description">
               <p>The URL of the Dispatch API to use. Uses the value of the
 DISPATCH_API_URL environment variable if set, otherwise
-defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
+defaults to the public Dispatch API (DEFAULT_API_URL).</p>
             </div>
           </td>
           <td>
@@ -5822,7 +5935,11 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 <span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
-<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new Dispatch client.</span>
 
 <span class="sd">    Args:</span>
@@ -5831,24 +5948,28 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
 <span class="sd">        api_url: The URL of the Dispatch API to use. Uses the value of the</span>
 <span class="sd">          DISPATCH_API_URL environment variable if set, otherwise</span>
-<span class="sd">          defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</span>
+<span class="sd">          defaults to the public Dispatch API (DEFAULT_API_URL).</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: if the API key is missing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
         <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_KEY&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_key is required&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;missing API key: set it with the DISPATCH_API_KEY environment variable&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
         <span class="n">api_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_URL&quot;</span><span class="p">,</span> <span class="n">DEFAULT_API_URL</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;api_url is required&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;missing API URL: set it with the DISPATCH_API_URL environment variable&quot;</span>
+        <span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="n">api_url</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
-
     <span class="bp">self</span><span class="o">.</span><span class="n">_init_stub</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -5927,27 +6048,27 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/client.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span>
-<span class="normal">98</span>
-<span class="normal">99</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calls</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Call</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DispatchID</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calls</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Call</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DispatchID</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch function calls.</span>
 
 <span class="sd">    Args:</span>
@@ -6019,31 +6140,35 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
 
 
-<h3 id="dispatch.coroutine.Directive" class="doc doc-heading">
-          <code>Directive</code>
+<h3 id="dispatch.coroutine.CoroutineState" class="doc doc-heading">
+          <code>CoroutineState</code>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 </h3>
 
 
   <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="enum.Enum">Enum</span></code></p>
 
   
-      <p>Directives instruct the Dispatch orchestrator.</p>
+      <p>Serialized representation of a coroutine.</p>
 
             <details class="quote">
               <summary>Source code in <code>dispatch/coroutine.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Directive</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Directives instruct the Dispatch orchestrator.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">CoroutineState</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialized representation of a coroutine.&quot;&quot;&quot;</span>
 
-    <span class="n">EXIT</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">POLL</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">coroutine</span><span class="p">:</span> <span class="n">DurableCoroutine</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span>
 </code></pre></div></td></tr></table></div>
             </details>
 
@@ -6068,37 +6193,238 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
 </div>
 
-<div class="doc doc-object doc-class">
+
+
+<div class="doc doc-object doc-function">
 
 
 
-<h3 id="dispatch.coroutine.InvalidContextError" class="doc doc-heading">
-          <code>InvalidContextError</code>
-
+<h3 id="dispatch.coroutine.exit" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">exit</span><span class="p">(</span><span class="n">result</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tail_call</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 </h3>
 
 
   <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code>RuntimeError</code></p>
-
   
-      <p>A directive was used outside a @dispatch.coroutine.</p>
+      <p>Exit exits a coroutine, with an optional result and
+optional tail call.</p>
 
-            <details class="quote">
-              <summary>Source code in <code>dispatch/coroutine.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">InvalidContextError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A directive was used outside a @dispatch.coroutine.&quot;&quot;&quot;</span>
+          <details class="quote">
+            <summary>Source code in <code>dispatch/coroutine.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@coroutine</span>
+<span class="nd">@durable</span>
+<span class="k">def</span> <span class="nf">exit</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tail_call</span><span class="p">:</span> <span class="n">Call</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exit exits a coroutine, with an optional result and</span>
+<span class="sd">    optional tail call.&quot;&quot;&quot;</span>
+    <span class="k">yield</span> <span class="n">Exit</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">tail_call</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-            </details>
-
+          </details>
   </div>
-
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="dispatch.coroutine.poll" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">poll</span><span class="p">(</span><span class="n">calls</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Suspend the function with a set of Calls, instructing the
+orchestrator to resume the coroutine when call results are ready.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>dispatch/coroutine.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@coroutine</span>
+<span class="nd">@durable</span>
+<span class="k">def</span> <span class="nf">poll</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Call</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">CallResult</span><span class="p">]:</span>  <span class="c1"># type: ignore[misc]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Suspend the function with a set of Calls, instructing the</span>
+<span class="sd">    orchestrator to resume the coroutine when call results are ready.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="k">yield</span> <span class="n">Poll</span><span class="p">(</span><span class="n">calls</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="dispatch.coroutine.schedule" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">schedule</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="nb">input</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Schedule schedules a coroutine with the provided input.</p>
+
+          <details class="quote">
+            <summary>Source code in <code>dispatch/coroutine.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">DurableFunction</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Input</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Output</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Schedule schedules a coroutine with the provided input.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># (Re)hydrate the coroutine.</span>
+        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">is_first_call</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;starting coroutine&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">input_arguments</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incorrect input for function&quot;</span><span class="p">)</span>
+
+            <span class="n">coro</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">send</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;resuming coroutine with </span><span class="si">%d</span><span class="s2"> bytes of state and </span><span class="si">%d</span><span class="s2"> call result(s)&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">coroutine_state</span><span class="p">),</span>
+                <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">call_results</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">coroutine_state</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">coroutine_state</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coroutine_state</span><span class="p">,</span> <span class="n">CoroutineState</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid coroutine state&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">coroutine_state</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;coroutine state version mismatch: &#39;</span><span class="si">{</span><span class="n">coroutine_state</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&#39; vs. current &#39;</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">PickleError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;coroutine state is incompatible&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="o">.</span><span class="n">INCOMPATIBLE_STATE</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">coro</span> <span class="o">=</span> <span class="n">coroutine_state</span><span class="o">.</span><span class="n">coroutine</span>
+            <span class="n">send</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">call_results</span>
+
+        <span class="c1"># Run the coroutine until its next yield or return.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">directive</span> <span class="o">=</span> <span class="n">coro</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">send</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;coroutine returned&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Handle directives that it yields.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;handling coroutine directive: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">directive</span><span class="p">)</span>
+        <span class="k">match</span> <span class="n">directive</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">Exit</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span>
+                    <span class="n">result</span><span class="o">=</span><span class="n">CallResult</span><span class="o">.</span><span class="n">from_value</span><span class="p">(</span><span class="n">directive</span><span class="o">.</span><span class="n">result</span><span class="p">),</span>
+                    <span class="n">tail_call</span><span class="o">=</span><span class="n">directive</span><span class="o">.</span><span class="n">tail_call</span><span class="p">,</span>
+                    <span class="n">status</span><span class="o">=</span><span class="n">status_for_output</span><span class="p">(</span><span class="n">directive</span><span class="o">.</span><span class="n">result</span><span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="k">case</span> <span class="n">Poll</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">coroutine_state</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                        <span class="n">CoroutineState</span><span class="p">(</span><span class="n">coroutine</span><span class="o">=</span><span class="n">coro</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">pickle</span><span class="o">.</span><span class="n">PickleError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;coroutine could not be serialized&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="o">.</span><span class="n">PERMANENT_ERROR</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">coroutine_state</span><span class="p">,</span> <span class="n">calls</span><span class="o">=</span><span class="n">directive</span><span class="o">.</span><span class="n">calls</span><span class="p">)</span>
+
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;coroutine unexpectedly yielded &#39;</span><span class="si">{</span><span class="n">directive</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;@dispatch.coroutine: &#39;</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; raised an exception&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
+
+</div>
 
 
 
@@ -11742,7 +12068,10 @@ def read_root():
 <span class="normal">129</span>
 <span class="normal">130</span>
 <span class="normal">131</span>
-<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Dispatch</span><span class="p">(</span><span class="n">Registry</span><span class="p">):</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Dispatch</span><span class="p">(</span><span class="n">Registry</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A Dispatch programmable endpoint, powered by FastAPI.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -11768,24 +12097,32 @@ def read_root():
 <span class="sd">              the value of the DISPATCH_VERIFICATION_KEY environment variable</span>
 <span class="sd">              by default. The environment variable is expected to carry an</span>
 <span class="sd">              Ed25519 public key in base64 or PEM format.</span>
+<span class="sd">              If not set, request signature verification is disabled (a warning</span>
+<span class="sd">              will be logged by the constructor).</span>
 
 <span class="sd">            api_key: Dispatch API key to use for authentication. Uses the value of</span>
 <span class="sd">              the DISPATCH_API_KEY environment variable by default.</span>
 
 <span class="sd">            api_url: The URL of the Dispatch API to use. Uses the value of the</span>
 <span class="sd">              DISPATCH_API_URL environment variable if set, otherwise</span>
-<span class="sd">              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</span>
+<span class="sd">              defaults to the public Dispatch API (DEFAULT_API_URL).</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If any of the required arguments are missing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">app</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;app is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;missing FastAPI app as first argument of the Dispatch constructor&quot;</span>
+            <span class="p">)</span>
 
+        <span class="n">endpoint_from</span> <span class="o">=</span> <span class="s2">&quot;endpoint argument&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">endpoint</span><span class="p">:</span>
             <span class="n">endpoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DISPATCH_ENDPOINT_URL&quot;</span><span class="p">)</span>
+            <span class="n">endpoint_from</span> <span class="o">=</span> <span class="s2">&quot;DISPATCH_ENDPOINT_URL&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">endpoint</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;endpoint is required&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">verification_key</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -11806,27 +12143,22 @@ def read_root():
 
         <span class="n">parsed_url</span> <span class="o">=</span> <span class="n">_urlparse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">netloc</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">scheme</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;endpoint must be a full URL with protocol and domain&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">endpoint_from</span><span class="si">}</span><span class="s2"> must be a full URL with protocol and domain (e.g., https://example.com)&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">verification_key</span><span class="p">:</span>
             <span class="n">base64_key</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">verification_key</span><span class="o">.</span><span class="n">public_bytes_raw</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;verifying request signatures using key </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">base64_key</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;request verification is disabled&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;request verification is disabled because DISPATCH_VERIFICATION_KEY is not set&quot;</span>
+            <span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
-            <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_KEY&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
-            <span class="n">api_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_URL&quot;</span><span class="p">,</span> <span class="n">DEFAULT_API_URL</span><span class="p">)</span>
-
-        <span class="n">client</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span> <span class="n">api_url</span><span class="o">=</span><span class="n">api_url</span><span class="p">)</span> <span class="k">if</span> <span class="n">api_key</span> <span class="ow">and</span> <span class="n">api_url</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">)</span>
-
+        <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span> <span class="n">api_url</span><span class="o">=</span><span class="n">api_url</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">client</span><span class="p">)</span>
 
         <span class="n">function_service</span> <span class="o">=</span> <span class="n">_new_app</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verification_key</span><span class="p">)</span>
-
         <span class="n">app</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/dispatch.sdk.v1.FunctionService&quot;</span><span class="p">,</span> <span class="n">function_service</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -11912,7 +12244,9 @@ DISPATCH_ENDPOINT_URL environment variable by default.</p>
               <p>Key to use when verifying signed requests. Uses
 the value of the DISPATCH_VERIFICATION_KEY environment variable
 by default. The environment variable is expected to carry an
-Ed25519 public key in base64 or PEM format.</p>
+Ed25519 public key in base64 or PEM format.
+If not set, request signature verification is disabled (a warning
+will be logged by the constructor).</p>
             </div>
           </td>
           <td>
@@ -11943,7 +12277,7 @@ the DISPATCH_API_KEY environment variable by default.</p>
             <div class="doc-md-description">
               <p>The URL of the Dispatch API to use. Uses the value of the
 DISPATCH_API_URL environment variable if set, otherwise
-defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
+defaults to the public Dispatch API (DEFAULT_API_URL).</p>
             </div>
           </td>
           <td>
@@ -12061,7 +12395,10 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 <span class="normal">129</span>
 <span class="normal">130</span>
 <span class="normal">131</span>
-<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">app</span><span class="p">:</span> <span class="n">fastapi</span><span class="o">.</span><span class="n">FastAPI</span><span class="p">,</span>
     <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -12084,24 +12421,32 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 <span class="sd">          the value of the DISPATCH_VERIFICATION_KEY environment variable</span>
 <span class="sd">          by default. The environment variable is expected to carry an</span>
 <span class="sd">          Ed25519 public key in base64 or PEM format.</span>
+<span class="sd">          If not set, request signature verification is disabled (a warning</span>
+<span class="sd">          will be logged by the constructor).</span>
 
 <span class="sd">        api_key: Dispatch API key to use for authentication. Uses the value of</span>
 <span class="sd">          the DISPATCH_API_KEY environment variable by default.</span>
 
 <span class="sd">        api_url: The URL of the Dispatch API to use. Uses the value of the</span>
 <span class="sd">          DISPATCH_API_URL environment variable if set, otherwise</span>
-<span class="sd">          defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</span>
+<span class="sd">          defaults to the public Dispatch API (DEFAULT_API_URL).</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If any of the required arguments are missing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">app</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;app is required&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;missing FastAPI app as first argument of the Dispatch constructor&quot;</span>
+        <span class="p">)</span>
 
+    <span class="n">endpoint_from</span> <span class="o">=</span> <span class="s2">&quot;endpoint argument&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">endpoint</span><span class="p">:</span>
         <span class="n">endpoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DISPATCH_ENDPOINT_URL&quot;</span><span class="p">)</span>
+        <span class="n">endpoint_from</span> <span class="o">=</span> <span class="s2">&quot;DISPATCH_ENDPOINT_URL&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">endpoint</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;endpoint is required&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">verification_key</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -12122,27 +12467,22 @@ defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).</p>
 
     <span class="n">parsed_url</span> <span class="o">=</span> <span class="n">_urlparse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">netloc</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">parsed_url</span><span class="o">.</span><span class="n">scheme</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;endpoint must be a full URL with protocol and domain&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">endpoint_from</span><span class="si">}</span><span class="s2"> must be a full URL with protocol and domain (e.g., https://example.com)&quot;</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">verification_key</span><span class="p">:</span>
         <span class="n">base64_key</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">verification_key</span><span class="o">.</span><span class="n">public_bytes_raw</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;verifying request signatures using key </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">base64_key</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;request verification is disabled&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;request verification is disabled because DISPATCH_VERIFICATION_KEY is not set&quot;</span>
+        <span class="p">)</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">api_key</span><span class="p">:</span>
-        <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_KEY&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">api_url</span><span class="p">:</span>
-        <span class="n">api_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DISPATCH_API_URL&quot;</span><span class="p">,</span> <span class="n">DEFAULT_API_URL</span><span class="p">)</span>
-
-    <span class="n">client</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span> <span class="n">api_url</span><span class="o">=</span><span class="n">api_url</span><span class="p">)</span> <span class="k">if</span> <span class="n">api_key</span> <span class="ow">and</span> <span class="n">api_url</span> <span class="k">else</span> <span class="kc">None</span>
-    <span class="p">)</span>
-
+    <span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">api_key</span><span class="p">,</span> <span class="n">api_url</span><span class="o">=</span><span class="n">api_url</span><span class="p">)</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">client</span><span class="p">)</span>
 
     <span class="n">function_service</span> <span class="o">=</span> <span class="n">_new_app</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verification_key</span><span class="p">)</span>
-
     <span class="n">app</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/dispatch.sdk.v1.FunctionService&quot;</span><span class="p">,</span> <span class="n">function_service</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -12233,7 +12573,16 @@ Dispatch Python SDK.</p>
 
             <details class="quote">
               <summary>Source code in <code>dispatch/function.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 27</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
 <span class="normal"> 28</span>
 <span class="normal"> 29</span>
 <span class="normal"> 30</span>
@@ -12330,17 +12679,7 @@ Dispatch Python SDK.</p>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Function</span><span class="p">:</span>
+<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Function</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Callable wrapper around a function meant to be used throughout the</span>
 <span class="sd">    Dispatch Python SDK.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -12409,7 +12748,6 @@ Dispatch Python SDK.</p>
         <span class="p">[</span><span class="n">dispatch_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">dispatch</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">primitive_call_with</span><span class="p">(</span><span class="nb">input</span><span class="p">)])</span>
         <span class="k">return</span> <span class="n">dispatch_id</span>
 
-    <span class="nd">@no_yields</span>
     <span class="k">def</span> <span class="nf">call_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Call</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Call for this function with the provided input. Useful to</span>
 <span class="sd">        generate calls when polling.</span>
@@ -12562,24 +12900,22 @@ match this call to a call result.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 96</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@no_yields</span>
-<span class="k">def</span> <span class="nf">call_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Call</span><span class="p">:</span>
+<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">call_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Call</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Call for this function with the provided input. Useful to</span>
 <span class="sd">    generate calls when polling.</span>
 
@@ -12710,23 +13046,23 @@ with a Client / api_key for this call facility to be available.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
 <span class="normal">56</span>
 <span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span>
 <span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchID</span><span class="p">:</span>
+<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchID</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch a call to the function.</span>
 
 <span class="sd">    The Registry this function was registered with must be initialized</span>
@@ -12837,7 +13173,17 @@ match this call to a call result.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
 <span class="normal">117</span>
@@ -12847,17 +13193,7 @@ match this call to a call result.</p>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">primitive_call_with</span><span class="p">(</span>
+<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">primitive_call_with</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">correlation_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Call</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Call for this function with the provided input. Useful to</span>
@@ -12981,7 +13317,16 @@ with a Client / api_key for this call facility to be available.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">73</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
 <span class="normal">74</span>
 <span class="normal">75</span>
 <span class="normal">76</span>
@@ -12993,16 +13338,7 @@ with a Client / api_key for this call facility to be available.</p>
 <span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">primitive_dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchID</span><span class="p">:</span>
+<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">primitive_dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchID</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch a primitive call.</span>
 
 <span class="sd">    The Registry this function was registered with must be initialized</span>
@@ -13057,7 +13393,17 @@ with a Client / api_key for this call facility to be available.</p>
 
             <details class="quote">
               <summary>Source code in <code>dispatch/function.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">144</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
 <span class="normal">145</span>
 <span class="normal">146</span>
 <span class="normal">147</span>
@@ -13168,91 +13514,7 @@ with a Client / api_key for this call facility to be available.</p>
 <span class="normal">252</span>
 <span class="normal">253</span>
 <span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
-<span class="normal">339</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Registry</span><span class="p">:</span>
+<span class="normal">255</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Registry</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Registry of local functions.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">Client</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
@@ -13300,6 +13562,10 @@ with a Client / api_key for this call facility to be available.</p>
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If the function is already registered.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;async functions must be registered via @dispatch.coroutine&quot;</span>
+            <span class="p">)</span>
 
         <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="k">def</span> <span class="nf">primitive_func</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">Input</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Output</span><span class="p">:</span>
@@ -13310,13 +13576,16 @@ with a Client / api_key for this call facility to be available.</p>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incorrect input for function&quot;</span><span class="p">)</span>
                 <span class="n">raw_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;@dispatch.function: &#39;</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; raised an exception&quot;</span>
+                <span class="p">)</span>
                 <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">raw_output</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_register_primitive_function</span><span class="p">(</span><span class="n">primitive_func</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_register_coroutine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">FunctionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Function</span> <span class="o">|</span> <span class="n">FunctionType</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_register_coroutine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">FunctionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Function</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;(EXPERIMENTAL) Register a coroutine function with the Dispatch</span>
 <span class="sd">        programmable endpoints.</span>
 
@@ -13337,97 +13606,16 @@ with a Client / api_key for this call facility to be available.</p>
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If the function is already registered.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2"> must be an async function&quot;</span><span class="p">)</span>
 
-        <span class="c1"># FIXME: this is a funny issue that occurs where the compiled function</span>
-        <span class="c1">#  below has the same decorator and is thus registered again</span>
-        <span class="k">for</span> <span class="n">frame_info</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">frame_info</span><span class="o">.</span><span class="n">function</span> <span class="o">==</span> <span class="n">compile_function</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">func</span>
-
-        <span class="n">compiled_func</span> <span class="o">=</span> <span class="n">compile_function</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">decorator</span><span class="o">=</span><span class="n">durable</span><span class="p">,</span> <span class="n">cache_key</span><span class="o">=</span><span class="s2">&quot;dispatch&quot;</span><span class="p">)</span>
+        <span class="n">durable_func</span> <span class="o">=</span> <span class="n">durable</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 
         <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-        <span class="k">def</span> <span class="nf">primitive_coro_func</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">Input</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Output</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># (Re)hydrate the coroutine.</span>
-                <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">is_first_call</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;starting coroutine&quot;</span><span class="p">)</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">input_arguments</span><span class="p">()</span>
-                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;incorrect input for function&quot;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">primitive_func</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">Input</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Output</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">schedule</span><span class="p">(</span><span class="n">durable_func</span><span class="p">,</span> <span class="nb">input</span><span class="p">)</span>
 
-                    <span class="n">gen</span> <span class="o">=</span> <span class="n">compiled_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                    <span class="n">send</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="s2">&quot;resuming coroutine with </span><span class="si">%d</span><span class="s2"> bytes of state and </span><span class="si">%d</span><span class="s2"> call result(s)&quot;</span><span class="p">,</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">coroutine_state</span><span class="p">),</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">call_results</span><span class="p">),</span>
-                    <span class="p">)</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">coroutine_state</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">coroutine_state</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coroutine_state</span><span class="p">,</span> <span class="n">CoroutineState</span><span class="p">):</span>
-                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid coroutine state&quot;</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">coroutine_state</span><span class="o">.</span><span class="n">version</span> <span class="o">!=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">:</span>
-                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;coroutine state version mismatch: &#39;</span><span class="si">{</span><span class="n">coroutine_state</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&#39; vs. current &#39;</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                            <span class="p">)</span>
-                    <span class="k">except</span> <span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">PickleError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;coroutine state is incompatible&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                        <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                            <span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="o">.</span><span class="n">INCOMPATIBLE_STATE</span><span class="p">)</span>
-                        <span class="p">)</span>
-                    <span class="n">gen</span> <span class="o">=</span> <span class="n">coroutine_state</span><span class="o">.</span><span class="n">generator</span>
-                    <span class="n">send</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">call_results</span>
-
-                <span class="c1"># Run the coroutine until its next yield or return.</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">directive</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">send</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">StopIteration</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;coroutine returned&quot;</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># Return value.</span>
-
-                <span class="c1"># Handle directives that it yields.</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;handling coroutine directive: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">directive</span><span class="p">)</span>
-                <span class="k">match</span> <span class="n">directive</span><span class="p">:</span>
-                    <span class="k">case</span> <span class="n">CustomYield</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Directive</span><span class="o">.</span><span class="n">EXIT</span><span class="p">):</span>
-                        <span class="n">result</span> <span class="o">=</span> <span class="n">directive</span><span class="o">.</span><span class="n">kwarg</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                        <span class="n">tail_call</span> <span class="o">=</span> <span class="n">directive</span><span class="o">.</span><span class="n">kwarg</span><span class="p">(</span><span class="s2">&quot;tail_call&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-                        <span class="n">status</span> <span class="o">=</span> <span class="n">status_for_output</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-                        <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span>
-                            <span class="n">result</span><span class="o">=</span><span class="n">CallResult</span><span class="o">.</span><span class="n">from_value</span><span class="p">(</span><span class="n">result</span><span class="p">),</span>
-                            <span class="n">tail_call</span><span class="o">=</span><span class="n">tail_call</span><span class="p">,</span>
-                            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
-                        <span class="p">)</span>
-
-                    <span class="k">case</span> <span class="n">CustomYield</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">Directive</span><span class="o">.</span><span class="n">POLL</span><span class="p">):</span>
-                        <span class="k">try</span><span class="p">:</span>
-                            <span class="n">coroutine_state</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                                <span class="n">CoroutineState</span><span class="p">(</span><span class="n">generator</span><span class="o">=</span><span class="n">gen</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
-                            <span class="p">)</span>
-                        <span class="k">except</span> <span class="n">pickle</span><span class="o">.</span><span class="n">PickleError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                                <span class="s2">&quot;coroutine could not be serialized&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
-                            <span class="p">)</span>
-                            <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                                <span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="o">.</span><span class="n">PERMANENT_ERROR</span><span class="p">)</span>
-                            <span class="p">)</span>
-                        <span class="n">calls</span> <span class="o">=</span> <span class="n">directive</span><span class="o">.</span><span class="n">kwarg</span><span class="p">(</span><span class="s2">&quot;calls&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                        <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">coroutine_state</span><span class="p">,</span> <span class="n">calls</span><span class="o">=</span><span class="n">calls</span><span class="p">)</span>
-
-                    <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">directive</span><span class="p">,</span> <span class="n">GeneratorYield</span><span class="p">):</span>
-                            <span class="n">directive</span> <span class="o">=</span> <span class="n">directive</span><span class="o">.</span><span class="n">value</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;coroutine unexpectedly yielded &#39;</span><span class="si">{</span><span class="n">directive</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-                        <span class="p">)</span>
-
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;coroutine raised exception&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">Output</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">Error</span><span class="o">.</span><span class="n">from_exception</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_register_primitive_function</span><span class="p">(</span><span class="n">primitive_coro_func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_register_primitive_function</span><span class="p">(</span><span class="n">primitive_func</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_register_primitive_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">PrimitiveFunctionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Function</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a primitive function with the Dispatch programmable endpoints.</span>
@@ -13525,17 +13713,17 @@ to local functions can be dispatched directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">Client</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n">Client</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize a local function registry.</span>
 
 <span class="sd">    Args:</span>
@@ -13569,12 +13757,12 @@ to local functions can be dispatched directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">FunctionType</span><span class="p">],</span> <span class="n">Function</span> <span class="o">|</span> <span class="n">FunctionType</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">FunctionType</span><span class="p">],</span> <span class="n">Function</span> <span class="o">|</span> <span class="n">FunctionType</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a decorator that registers coroutine functions.&quot;&quot;&quot;</span>
 
     <span class="c1"># Note: the indirection here means that we can add parameters</span>
@@ -13603,12 +13791,12 @@ to local functions can be dispatched directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">FunctionType</span><span class="p">],</span> <span class="n">Function</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">FunctionType</span><span class="p">],</span> <span class="n">Function</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a decorator that registers functions.&quot;&quot;&quot;</span>
 
     <span class="c1"># Note: the indirection here means that we can add parameters</span>
@@ -13637,12 +13825,12 @@ to local functions can be dispatched directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/function.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">primitive_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">PrimitiveFunctionType</span><span class="p">],</span> <span class="n">Function</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">primitive_function</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">PrimitiveFunctionType</span><span class="p">],</span> <span class="n">Function</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a decorator that registers primitive functions.&quot;&quot;&quot;</span>
 
     <span class="c1"># Note: the indirection here means that we can add parameters</span>
@@ -14260,7 +14448,7 @@ Output.</p>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Error from a Python exception, using its class qualified</span>
 <span class="sd">        named as type.</span>
 
-<span class="sd">        The status tries to be inferred, but can be overriden. If it is not</span>
+<span class="sd">        The status tries to be inferred, but can be overridden. If it is not</span>
 <span class="sd">        provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -14454,7 +14642,7 @@ invalid.</p>
   
       <p>Create an Error from a Python exception, using its class qualified
 named as type.</p>
-<p>The status tries to be inferred, but can be overriden. If it is not
+<p>The status tries to be inferred, but can be overridden. If it is not
 provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</p>
 
           <details class="quote">
@@ -14476,7 +14664,7 @@ provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an Error from a Python exception, using its class qualified</span>
 <span class="sd">    named as type.</span>
 
-<span class="sd">    The status tries to be inferred, but can be overriden. If it is not</span>
+<span class="sd">    The status tries to be inferred, but can be overridden. If it is not</span>
 <span class="sd">    provided or cannot be inferred, it defaults to TEMPORARY_ERROR.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -17427,12 +17615,12 @@ errors of this type.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/status.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_error_type</span><span class="p">(</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_error_type</span><span class="p">(</span>
     <span class="n">error_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="ne">Exception</span><span class="p">],</span> <span class="n">Status</span><span class="p">]</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Register an error type, and a handler which derives a Status from</span>
@@ -17462,10 +17650,10 @@ outputs of this type.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/status.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_output_type</span><span class="p">(</span><span class="n">output_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Status</span><span class="p">]):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">register_output_type</span><span class="p">(</span><span class="n">output_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Status</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Register an output type, and a handler which derives a Status from</span>
 <span class="sd">    outputs of this type.&quot;&quot;&quot;</span>
     <span class="n">_OUTPUT_TYPES</span><span class="p">[</span><span class="n">output_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">handler</span>
@@ -17512,26 +17700,42 @@ outputs of this type.</p>
 <span class="normal">76</span>
 <span class="normal">77</span>
 <span class="normal">78</span>
-<span class="normal">79</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">status_for_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Status</span><span class="p">:</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">status_for_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Status</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a Status that corresponds to the specified error.&quot;&quot;&quot;</span>
     <span class="c1"># See if the error matches one of the registered types.</span>
     <span class="n">handler</span> <span class="o">=</span> <span class="n">_find_handler</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">_ERROR_TYPES</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-
     <span class="c1"># If not, resort to standard error categorization.</span>
-    <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">TEMPORARY_ERROR</span>
+    <span class="c1">#</span>
+    <span class="c1"># See https://docs.python.org/3/library/exceptions.html</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">PERMANENT_ERROR</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Raise the exception and catch it so that the interpreter deals</span>
         <span class="c1"># with exception groups and chaining for us.</span>
         <span class="k">raise</span> <span class="n">error</span>
     <span class="k">except</span> <span class="ne">TimeoutError</span><span class="p">:</span>
         <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">TIMEOUT</span>
-    <span class="k">except</span> <span class="ne">SyntaxError</span><span class="p">:</span>
-        <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">PERMANENT_ERROR</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">EOFError</span><span class="p">,</span> <span class="ne">InterruptedError</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">):</span>
+        <span class="c1"># For OSError, we might want to categorize the values of errno to</span>
+        <span class="c1"># determine whether the error is temporary or permanent.</span>
+        <span class="c1">#</span>
+        <span class="c1"># In general, permanent errors from the OS are rare because they tend to</span>
+        <span class="c1"># be caused by invalid use of syscalls, which are unlikely at higher</span>
+        <span class="c1"># abstraction levels.</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">TEMPORARY_ERROR</span>
     <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
         <span class="k">pass</span>
-
     <span class="k">return</span> <span class="n">status</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -17556,14 +17760,14 @@ outputs of this type.</p>
 
           <details class="quote">
             <summary>Source code in <code>dispatch/status.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">status_for_output</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Status</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span>
+<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">status_for_output</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Status</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a Status that corresponds to the specified output value.&quot;&quot;&quot;</span>
     <span class="c1"># See if the output value matches one of the registered types.</span>
     <span class="n">handler</span> <span class="o">=</span> <span class="n">_find_handler</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">_OUTPUT_TYPES</span><span class="p">)</span>
