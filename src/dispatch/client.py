@@ -30,24 +30,24 @@ class Client:
 
             api_url: The URL of the Dispatch API to use. Uses the value of the
               DISPATCH_API_URL environment variable if set, otherwise
-              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).
+              defaults to the public Dispatch API (DEFAULT_API_URL).
 
         Raises:
             ValueError: if the API key is missing.
         """
+
         if not api_key:
             api_key = os.environ.get("DISPATCH_API_KEY")
         if not api_key:
-            raise ValueError("api_key is required")
+            raise ValueError("missing API key: set it with the DISPATCH_API_KEY environment variable")
 
         if not api_url:
             api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_API_URL)
         if not api_url:
-            raise ValueError("api_url is required")
+            raise ValueError("missing API URL: set it with the DISPATCH_API_URL environment variable")
 
         self.api_url = api_url
         self.api_key = api_key
-
         self._init_stub()
 
     def __getstate__(self):

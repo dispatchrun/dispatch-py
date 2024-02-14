@@ -31,7 +31,7 @@ class TestClient(unittest.TestCase):
     def test_api_key_missing(self):
         with self.assertRaises(ValueError) as mc:
             Client()
-        self.assertEqual(str(mc.exception), "api_key is required")
+        self.assertEqual(str(mc.exception), "missing API key: set it with the DISPATCH_API_KEY environment variable")
 
     def test_url_bad_scheme(self):
         with self.assertRaises(ValueError) as mc:
