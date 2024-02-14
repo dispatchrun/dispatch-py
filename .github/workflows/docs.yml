@@ -33,6 +33,6 @@ jobs:
         run: |
           mike deploy --push main
       - name: Build tagged version
-        if: ${{ github.ref_name != mkdocs' }} # TODO: revert to main when debugged
+        if: ${{ github.ref_name != 'mkdocs' }} # TODO: revert to main when debugged
         run: |
           mike deploy --push --update-aliases ${{ github.ref_name }} latest
