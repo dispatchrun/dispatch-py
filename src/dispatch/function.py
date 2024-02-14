@@ -3,23 +3,14 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-import pickle
-import sys
 from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
 from dispatch.client import Client
-from dispatch.coroutine import CoroutineState, Directive
+from dispatch.coroutine import schedule
 from dispatch.experimental.durable import durable
-from dispatch.experimental.multicolor import (
-    CustomYield,
-    GeneratorYield,
-    compile_function,
-    no_yields,
-)
 from dispatch.id import DispatchID
-from dispatch.proto import Call, CallResult, Error, Input, Output, _Arguments
-from dispatch.status import Status, status_for_output
+from dispatch.proto import Call, Error, Input, Output, _Arguments
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +84,6 @@ class Function:
         [dispatch_id] = self._client.dispatch([self.primitive_call_with(input)])
         return dispatch_id
 
-    @no_yields
     def call_with(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
         """Create a Call for this function with the provided input. Useful to
         generate calls when polling.
@@ -189,6 +179,10 @@ class Registry:
         Raises:
             ValueError: If the function is already registered.
         """
+        if inspect.iscoroutinefunction(func):
+            raise TypeError(
+                "async functions must be registered via @dispatch.coroutine"
+            )
 
         @functools.wraps(func)
         def primitive_func(input: Input) -> Output:
@@ -205,7 +199,7 @@ class Registry:
 
         return self._register_primitive_function(primitive_func)
 
-    def _register_coroutine(self, func: FunctionType) -> Function | FunctionType:
+    def _register_coroutine(self, func: FunctionType) -> Function:
         """(EXPERIMENTAL) Register a coroutine function with the Dispatch
         programmable endpoints.
 
@@ -226,97 +220,16 @@ class Registry:
         Raises:
             ValueError: If the function is already registered.
         """
+        if not inspect.iscoroutinefunction(func):
+            raise TypeError(f"{func.__qualname__} must be an async function")
 
-        # FIXME: this is a funny issue that occurs where the compiled function
-        #  below has the same decorator and is thus registered again
-        for frame_info in inspect.stack():
-            if frame_info.function == compile_function.__name__:
-                return func
-
-        compiled_func = compile_function(func, decorator=durable, cache_key="dispatch")
+        durable_func = durable(func)
 
         @functools.wraps(func)
-        def primitive_coro_func(input: Input) -> Output:
-            try:
-                # (Re)hydrate the coroutine.
-                if input.is_first_call:
-                    logger.debug("starting coroutine")
-                    try:
-                        args, kwargs = input.input_arguments()
-                    except ValueError:
-                        raise ValueError("incorrect input for function")
+        def primitive_func(input: Input) -> Output:
+            return schedule(durable_func, input)
 
-                    gen = compiled_func(*args, **kwargs)
-                    send = None
-                else:
-                    logger.debug(
-                        "resuming coroutine with %d bytes of state and %d call result(s)",
-                        len(input.coroutine_state),
-                        len(input.call_results),
-                    )
-                    try:
-                        coroutine_state = pickle.loads(input.coroutine_state)
-                        if not isinstance(coroutine_state, CoroutineState):
-                            raise ValueError("invalid coroutine state")
-                        if coroutine_state.version != sys.version:
-                            raise ValueError(
-                                f"coroutine state version mismatch: '{coroutine_state.version}' vs. current '{sys.version}'"
-                            )
-                    except (pickle.PickleError, ValueError) as e:
-                        logger.warning("coroutine state is incompatible", exc_info=True)
-                        return Output.error(
-                            Error.from_exception(e, status=Status.INCOMPATIBLE_STATE)
-                        )
-                    gen = coroutine_state.generator
-                    send = input.call_results
-
-                # Run the coroutine until its next yield or return.
-                try:
-                    directive = gen.send(send)
-                except StopIteration as e:
-                    logger.debug("coroutine returned")
-                    return Output.value(e.value)  # Return value.
-
-                # Handle directives that it yields.
-                logger.debug("handling coroutine directive: %s", directive)
-                match directive:
-                    case CustomYield(type=Directive.EXIT):
-                        result = directive.kwarg("result", 0)
-                        tail_call = directive.kwarg("tail_call", 1)
-                        status = status_for_output(result)
-                        return Output.exit(
-                            result=CallResult.from_value(result),
-                            tail_call=tail_call,
-                            status=status,
-                        )
-
-                    case CustomYield(type=Directive.POLL):
-                        try:
-                            coroutine_state = pickle.dumps(
-                                CoroutineState(generator=gen, version=sys.version)
-                            )
-                        except pickle.PickleError as e:
-                            logger.error(
-                                "coroutine could not be serialized", exc_info=True
-                            )
-                            return Output.error(
-                                Error.from_exception(e, status=Status.PERMANENT_ERROR)
-                            )
-                        calls = directive.kwarg("calls", 0)
-                        return Output.poll(state=coroutine_state, calls=calls)
-
-                    case _:
-                        if isinstance(directive, GeneratorYield):
-                            directive = directive.value
-                        raise RuntimeError(
-                            f"coroutine unexpectedly yielded '{directive}'"
-                        )
-
-            except Exception as e:
-                logger.error("coroutine raised exception", exc_info=True)
-                return Output.error(Error.from_exception(e))
-
-        return self._register_primitive_function(primitive_coro_func)
+        return self._register_primitive_function(primitive_func)
 
     def _register_primitive_function(self, func: PrimitiveFunctionType) -> Function:
         """Register a primitive function with the Dispatch programmable endpoints.
