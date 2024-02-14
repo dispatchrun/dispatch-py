@@ -273,7 +273,7 @@ class Error:
         """Create an Error from a Python exception, using its class qualified
         named as type.
 
-        The status tries to be inferred, but can be overriden. If it is not
+        The status tries to be inferred, but can be overridden. If it is not
         provided or cannot be inferred, it defaults to TEMPORARY_ERROR.
         """
 
