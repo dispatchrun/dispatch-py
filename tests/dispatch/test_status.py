@@ -38,13 +38,17 @@ class TestErrorStatus(unittest.TestCase):
     def test_status_for_custom_error(self):
         class CustomError(Exception):
             pass
+
         self.assertEqual(status_for_error(CustomError()), Status.PERMANENT_ERROR)
 
     def test_status_for_custom_error_with_handler(self):
         class CustomError(Exception):
             pass
+
         def handler(error: Exception) -> Status:
             return Status.OK
+
         from dispatch.status import register_error_type
+
         register_error_type(CustomError, handler)
         self.assertEqual(status_for_error(CustomError()), Status.OK)
