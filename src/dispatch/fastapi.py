@@ -84,14 +84,18 @@ class Dispatch(Registry):
             ValueError: If any of the required arguments are missing.
         """
         if not app:
-            raise ValueError("missing FastAPI app as first argument of the Dispatch constructor")
+            raise ValueError(
+                "missing FastAPI app as first argument of the Dispatch constructor"
+            )
 
-        endpoint_from = 'endpoint argument'
+        endpoint_from = "endpoint argument"
         if not endpoint:
             endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
-            endpoint_from = 'DISPATCH_ENDPOINT_URL'
+            endpoint_from = "DISPATCH_ENDPOINT_URL"
         if not endpoint:
-            raise ValueError("missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable")
+            raise ValueError(
+                "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
+            )
 
         if not verification_key:
             try:
@@ -112,13 +116,17 @@ class Dispatch(Registry):
 
         parsed_url = _urlparse.urlparse(endpoint)
         if not parsed_url.netloc or not parsed_url.scheme:
-            raise ValueError(f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)")
+            raise ValueError(
+                f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
+            )
 
         if verification_key:
             base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
             logger.info("verifying request signatures using key %s", base64_key)
         else:
-            logger.warning("request verification is disabled because DISPATCH_VERIFICATION_KEY is not set")
+            logger.warning(
+                "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
+            )
 
         client = Client(api_key=api_key, api_url=api_url)
         super().__init__(endpoint, client)

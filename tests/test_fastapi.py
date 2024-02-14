@@ -22,9 +22,10 @@ def create_dispatch_instance(app, endpoint):
     return Dispatch(
         app,
         endpoint=endpoint,
-        api_key='0000000000000000',
-        api_url='http://127.0.0.1:10000',
+        api_key="0000000000000000",
+        api_url="http://127.0.0.1:10000",
     )
+
 
 class TestFastAPI(unittest.TestCase):
     def test_Dispatch(self):
@@ -108,7 +109,9 @@ class TestCoroutine(unittest.TestCase):
         def root():
             return "OK"
 
-        self.dispatch = create_dispatch_instance(self.app, endpoint="https://127.0.0.1:9999")
+        self.dispatch = create_dispatch_instance(
+            self.app, endpoint="https://127.0.0.1:9999"
+        )
         self.http_client = TestClient(self.app)
         self.client = function_service.client(self.http_client)
 

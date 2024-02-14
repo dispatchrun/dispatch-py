@@ -39,12 +39,16 @@ class Client:
         if not api_key:
             api_key = os.environ.get("DISPATCH_API_KEY")
         if not api_key:
-            raise ValueError("missing API key: set it with the DISPATCH_API_KEY environment variable")
+            raise ValueError(
+                "missing API key: set it with the DISPATCH_API_KEY environment variable"
+            )
 
         if not api_url:
             api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_API_URL)
         if not api_url:
-            raise ValueError("missing API URL: set it with the DISPATCH_API_URL environment variable")
+            raise ValueError(
+                "missing API URL: set it with the DISPATCH_API_URL environment variable"
+            )
 
         self.api_url = api_url
         self.api_key = api_key

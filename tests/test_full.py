@@ -35,8 +35,8 @@ class TestFullFastapi(unittest.TestCase):
             self.app,
             endpoint="http://function-service",
             verification_key=public_key,
-            api_key='0000000000000000',
-            api_url='http://127.0.0.1:10000',
+            api_key="0000000000000000",
+            api_url="http://127.0.0.1:10000",
         )
 
         http_client = TestClient(self.app, base_url="http://dispatch-service")
