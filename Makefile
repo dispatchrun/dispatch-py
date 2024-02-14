@@ -65,3 +65,7 @@ push:
 
 push-test:
 	twine upload -r testpypi dist/*
+
+local-docs: dev
+	$(PYTHON) -m pip install .[docs]
+	mkdocs serve

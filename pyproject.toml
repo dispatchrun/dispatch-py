@@ -28,6 +28,13 @@ dev = [
     "types-requests >= 2.31.0.20240125"
 ]
 
+docs = [
+     "mkdocs==1.5.3",
+     "mkdocstrings[python]==0.24.0",
+     "mkdocs-material==9.5.9",
+     "mike==2.0.0"
+]
+
 [tool.setuptools-git-versioning]
 enabled = true
 dev_template = "{tag}"
