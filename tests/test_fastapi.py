@@ -18,11 +18,19 @@ from dispatch.status import Status
 from . import function_service
 
 
+def create_dispatch_instance(app, endpoint):
+    return Dispatch(
+        app,
+        endpoint=endpoint,
+        api_key="0000000000000000",
+        api_url="http://127.0.0.1:10000",
+    )
+
+
 class TestFastAPI(unittest.TestCase):
     def test_Dispatch(self):
         app = fastapi.FastAPI()
-
-        Dispatch(app, endpoint="https://127.0.0.1:9999")
+        create_dispatch_instance(app, "https://127.0.0.1:9999")
 
         @app.get("/")
         def read_root():
@@ -42,21 +50,21 @@ class TestFastAPI(unittest.TestCase):
 
     def test_Dispatch_no_app(self):
         with self.assertRaises(ValueError):
-            Dispatch(None, endpoint="http://127.0.0.1:9999")
+            create_dispatch_instance(None, endpoint="http://127.0.0.1:9999")
 
     def test_Dispatch_no_endpoint(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
-            Dispatch(app, endpoint="")
+            create_dispatch_instance(app, endpoint="")
 
     def test_Dispatch_endpoint_no_scheme(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
-            Dispatch(app, endpoint="127.0.0.1:9999")
+            create_dispatch_instance(app, endpoint="127.0.0.1:9999")
 
     def test_fastapi_simple_request(self):
         app = fastapi.FastAPI()
-        dispatch = Dispatch(app, endpoint="http://127.0.0.1:9999/")
+        dispatch = create_dispatch_instance(app, endpoint="http://127.0.0.1:9999/")
 
         @dispatch.primitive_function()
         def my_function(input: Input) -> Output:
@@ -101,7 +109,9 @@ class TestCoroutine(unittest.TestCase):
         def root():
             return "OK"
 
-        self.dispatch = Dispatch(self.app, endpoint="https://127.0.0.1:9999")
+        self.dispatch = create_dispatch_instance(
+            self.app, endpoint="https://127.0.0.1:9999"
+        )
         self.http_client = TestClient(self.app)
         self.client = function_service.client(self.http_client)
 

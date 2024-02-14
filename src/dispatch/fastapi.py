@@ -27,7 +27,7 @@ import fastapi.responses
 from http_message_signatures import InvalidSignature
 from httpx import _urlparse
 
-from dispatch.client import DEFAULT_API_URL, Client
+from dispatch.client import Client
 from dispatch.function import Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -70,24 +70,32 @@ class Dispatch(Registry):
               the value of the DISPATCH_VERIFICATION_KEY environment variable
               by default. The environment variable is expected to carry an
               Ed25519 public key in base64 or PEM format.
+              If not set, request signature verification is disabled (a warning
+              will be logged by the constructor).
 
             api_key: Dispatch API key to use for authentication. Uses the value of
               the DISPATCH_API_KEY environment variable by default.
 
             api_url: The URL of the Dispatch API to use. Uses the value of the
               DISPATCH_API_URL environment variable if set, otherwise
-              defaults to the public Dispatch API (DEFAULT_DISPATCH_API_URL).
+              defaults to the public Dispatch API (DEFAULT_API_URL).
 
         Raises:
             ValueError: If any of the required arguments are missing.
         """
         if not app:
-            raise ValueError("app is required")
+            raise ValueError(
+                "missing FastAPI app as first argument of the Dispatch constructor"
+            )
 
+        endpoint_from = "endpoint argument"
         if not endpoint:
             endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
+            endpoint_from = "DISPATCH_ENDPOINT_URL"
         if not endpoint:
-            raise ValueError("endpoint is required")
+            raise ValueError(
+                "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
+            )
 
         if not verification_key:
             try:
@@ -108,27 +116,22 @@ class Dispatch(Registry):
 
         parsed_url = _urlparse.urlparse(endpoint)
         if not parsed_url.netloc or not parsed_url.scheme:
-            raise ValueError("endpoint must be a full URL with protocol and domain")
+            raise ValueError(
+                f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
+            )
 
         if verification_key:
             base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
             logger.info("verifying request signatures using key %s", base64_key)
         else:
-            logger.warning("request verification is disabled")
+            logger.warning(
+                "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
+            )
 
-        if not api_key:
-            api_key = os.environ.get("DISPATCH_API_KEY")
-        if not api_url:
-            api_url = os.environ.get("DISPATCH_API_URL", DEFAULT_API_URL)
-
-        client = (
-            Client(api_key=api_key, api_url=api_url) if api_key and api_url else None
-        )
-
+        client = Client(api_key=api_key, api_url=api_url)
         super().__init__(endpoint, client)
 
         function_service = _new_app(self, verification_key)
-
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
 

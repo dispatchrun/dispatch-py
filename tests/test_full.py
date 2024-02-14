@@ -32,7 +32,11 @@ class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
         self.dispatch = Dispatch(
-            self.app, endpoint="http://function-service", verification_key=public_key
+            self.app,
+            endpoint="http://function-service",
+            verification_key=public_key,
+            api_key="0000000000000000",
+            api_url="http://127.0.0.1:10000",
         )
 
         http_client = TestClient(self.app, base_url="http://dispatch-service")
