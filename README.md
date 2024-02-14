@@ -63,7 +63,7 @@ action.dispatch('hello')
 To interact with stateful functions, the SDK needs to be configured with the
 address at which the server can be reached. The Dispatch API Key must also be
 set, and optionally, a public signing key should be configured to verify that
-requests received by the stateful functions are originated from the Dispatch
+requests received by the stateful functions originated from the Dispatch
 scheduler. These configuration options can be passed as arguments to the
 the `Dispatch` constructor, but by default they will be loaded from environment
 variables:
