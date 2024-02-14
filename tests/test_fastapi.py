@@ -378,7 +378,7 @@ class TestCoroutine(unittest.TestCase):
         resp = self.execute(mycoro)
         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
         self.assertEqual("division by zero", resp.exit.result.error.message)
-        self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
+        self.assertEqual(Status.PERMANENT_ERROR, resp.status)
 
     def test_coroutine_unexpected_exception(self):
         @self.dispatch.function()
@@ -389,7 +389,7 @@ class TestCoroutine(unittest.TestCase):
         resp = self.call(mycoro)
         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
         self.assertEqual("division by zero", resp.exit.result.error.message)
-        self.assertEqual(Status.TEMPORARY_ERROR, resp.status)
+        self.assertEqual(Status.PERMANENT_ERROR, resp.status)
 
     def test_specific_status(self):
         @self.dispatch.primitive_function()
