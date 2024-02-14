@@ -1,0 +1,38 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+      - mkdocs
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          cache: pip
+          python-version: '3.11'
+      - run: make docs-deps
+
+      - name: Configure the git user
+        run: |
+          git config user.name "Stealth Rocket"
+          git config user.email "bot@stealthrocket.tech"
+
+      - name: Build main branch
+        if: ${{ github.ref_name == 'main' }}
+        run: |
+          mike deploy --push main
+      - name: Build tagged version
+        if: ${{ github.ref_name != 'main' }}
+        run: |
+          mike deploy --push --update-aliases ${{ github.ref_name }} latest
