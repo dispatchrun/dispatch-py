@@ -1,0 +1,23 @@
+site_name: Dispatch SDK
+
+theme:
+  name: "material"
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch mode based on system preference
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings
