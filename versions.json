@@ -1,12 +1,5 @@
 [
   {
-    "version": "mkdocs",
-    "title": "mkdocs",
-    "aliases": [
-      "latest"
-    ]
-  },
-  {
     "version": "main",
     "title": "main",
     "aliases": []
