@@ -108,7 +108,7 @@ def schedule(func: DurableFunction, input: Input) -> Output:
                 raise RuntimeError(f"coroutine unexpectedly yielded '{directive}'")
 
     except Exception as e:
-        logger.error("coroutine raised exception", exc_info=True)
+        logger.exception(f"@dispatch.coroutine: '{func.__name__}' raised an exception")
         return Output.error(Error.from_exception(e))
 
 

@@ -193,6 +193,9 @@ class Registry:
                     raise ValueError("incorrect input for function")
                 raw_output = func(*args, **kwargs)
             except Exception as e:
+                logger.exception(
+                    f"@dispatch.function: '{func.__name__}' raised an exception"
+                )
                 return Output.error(Error.from_exception(e))
             else:
                 return Output.value(raw_output)

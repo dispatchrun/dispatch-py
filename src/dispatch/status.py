@@ -62,20 +62,28 @@ def status_for_error(error: Exception) -> Status:
     handler = _find_handler(error, _ERROR_TYPES)
     if handler is not None:
         return handler(error)
-
     # If not, resort to standard error categorization.
-    status = Status.TEMPORARY_ERROR
+    #
+    # See https://docs.python.org/3/library/exceptions.html
+    status = Status.PERMANENT_ERROR
     try:
         # Raise the exception and catch it so that the interpreter deals
         # with exception groups and chaining for us.
         raise error
     except TimeoutError:
         status = Status.TIMEOUT
-    except SyntaxError:
-        status = Status.PERMANENT_ERROR
+    except (TypeError, ValueError):
+        status = Status.INVALID_ARGUMENT
+    except (EOFError, InterruptedError, KeyboardInterrupt, OSError):
+        # For OSError, we might want to categorize the values of errno to
+        # determine whether the error is temporary or permanent.
+        #
+        # In general, permanent errors from the OS are rare because they tend to
+        # be caused by invalid use of syscalls, which are unlikely at higher
+        # abstraction levels.
+        status = Status.TEMPORARY_ERROR
     except BaseException:
         pass
-
     return status
 
 
