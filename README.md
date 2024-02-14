@@ -68,11 +68,11 @@ scheduler. These configuration options can be passed as arguments to the
 the `Dispatch` constructor, but by default they will be loaded from environment
 variables:
 
-| Environment Variable       | Value Example                      |
-| :------------------------- | :--------------------------------- |
-| `DISPATCH_API_KEY`         | `d4caSl21a5wdx5AxMjdaMeWehaIyXVnN` |
-| `DISPATCH_ENDPOINT_URL`    | `https://service.domain.com`       |
-| `DISPATCH_VERFICATION_KEY` | `-----BEGIN PUBLIC KEY-----...`    |
+| Environment Variable        | Value Example                      |
+| :-------------------------- | :--------------------------------- |
+| `DISPATCH_API_KEY`          | `d4caSl21a5wdx5AxMjdaMeWehaIyXVnN` |
+| `DISPATCH_ENDPOINT_URL`     | `https://service.domain.com`       |
+| `DISPATCH_VERIFICATION_KEY` | `-----BEGIN PUBLIC KEY-----...`    |
 
 Finally, the `Dispatch` instance needs to mount a route on a HTTP server in to
 receive requests from the scheduler. At this time, the SDK integrates with

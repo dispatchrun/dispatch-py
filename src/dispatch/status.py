@@ -36,7 +36,7 @@ Status.THROTTLED.__doc__ = "Coroutine was throttled and may be retried later"
 Status.THROTTLED._proto = status_pb.STATUS_THROTTLED
 Status.INVALID_ARGUMENT.__doc__ = "Coroutine was provided an invalid type of input"
 Status.INVALID_ARGUMENT._proto = status_pb.STATUS_INVALID_ARGUMENT
-Status.INVALID_RESPONSE.__doc__ = "Coroutine was provided an unexpected reponse"
+Status.INVALID_RESPONSE.__doc__ = "Coroutine was provided an unexpected response"
 Status.INVALID_RESPONSE._proto = status_pb.STATUS_INVALID_RESPONSE
 Status.TEMPORARY_ERROR.__doc__ = (
     "Coroutine encountered a temporary error, may be retried"
