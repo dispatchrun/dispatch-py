@@ -48,8 +48,6 @@ def durable(fn) -> DurableFunction:
     Args:
         fn: A generator function or async function.
     """
-    if isinstance(fn, DurableFunction):
-        return fn
     return DurableFunction(fn)
 
 
