@@ -17,7 +17,7 @@ the durable function.
 Sign up for Dispatch and generate a new API key:
 https://docs.stealthrocket.cloud/stateful-functions/getting-started#creating-an-api-key
 
-## Create a local tunel
+## Create a local tunnel
 
 Use ngrok to create a local tunnel to your server.
 
