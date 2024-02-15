@@ -1,3 +1,4 @@
+import logging
 import pickle
 import unittest
 from typing import Any
@@ -6,6 +7,7 @@ import fastapi
 import google.protobuf.any_pb2
 import google.protobuf.wrappers_pb2
 import httpx
+import dispatch
 from fastapi.testclient import TestClient
 
 from dispatch.fastapi import Dispatch
@@ -28,6 +30,13 @@ def create_dispatch_instance(app, endpoint):
 
 
 class TestFastAPI(unittest.TestCase):
+    def setUp(self):
+        self.log_level = dispatch.function.logger.getEffectiveLevel()
+        dispatch.function.logger.setLevel(logging.CRITICAL)
+
+    def tearDown(self):
+        dispatch.function.logger.setLevel(self.log_level)
+
     def test_Dispatch(self):
         app = fastapi.FastAPI()
         create_dispatch_instance(app, "https://127.0.0.1:9999")
@@ -103,6 +112,9 @@ def response_output(resp: function_pb.RunResponse) -> Any:
 
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
+        self.log_level = dispatch.function.logger.getEffectiveLevel()
+        dispatch.function.logger.setLevel(logging.CRITICAL)
+
         self.app = fastapi.FastAPI()
 
         @self.app.get("/")
@@ -114,6 +126,9 @@ class TestCoroutine(unittest.TestCase):
         )
         self.http_client = TestClient(self.app)
         self.client = function_service.client(self.http_client)
+
+    def tearDown(self):
+        dispatch.function.logger.setLevel(self.log_level)
 
     def execute(
         self, func: Function, input=None, state=None, calls=None
