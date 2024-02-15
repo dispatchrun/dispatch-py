@@ -1,7 +1,9 @@
 import logging
+import os
 import pickle
 import unittest
 from typing import Any
+from unittest import mock
 
 import fastapi
 import google.protobuf.any_pb2
@@ -61,6 +63,7 @@ class TestFastAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             create_dispatch_instance(None, endpoint="http://127.0.0.1:9999")
 
+    @mock.patch.dict(os.environ, {"DISPATCH_ENDPOINT_URL": ""})
     def test_Dispatch_no_endpoint(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
