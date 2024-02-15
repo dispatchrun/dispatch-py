@@ -7,11 +7,44 @@ from types import FunctionType
 class RegisteredFunction:
     """A function that can be referenced in durable state."""
 
-    key: str
     fn: FunctionType
+
+    key: str
     filename: str
     lineno: int
     hash: str
+
+    def __getstate__(self):
+        return {
+            "key": self.key,
+            "filename": self.filename,
+            "lineno": self.lineno,
+            "hash": self.hash,
+        }
+
+    def __setstate__(self, state):
+        key, filename, lineno, code_hash = (
+            state["key"],
+            state["filename"],
+            state["lineno"],
+            state["hash"],
+        )
+
+        rfn = lookup_function(key)
+        if filename != rfn.filename or lineno != rfn.lineno:
+            raise ValueError(
+                f"location mismatch for function {key}: {filename}:{lineno} vs. expected {rfn.filename}:{rfn.lineno}"
+            )
+        elif code_hash != rfn.hash:
+            raise ValueError(
+                f"hash mismatch for function {key}: {code_hash} vs. expected {rfn.hash}"
+            )
+
+        self.fn = rfn.fn
+        self.key = key
+        self.filename = filename
+        self.lineno = lineno
+        self.hash = code_hash
 
 
 _REGISTRY: dict[str, RegisteredFunction] = {}
@@ -70,3 +103,8 @@ def lookup_function(key: str) -> RegisteredFunction:
         KeyError: A function has not been registered with this key.
     """
     return _REGISTRY[key]
+
+
+def clear_functions():
+    """Clear functions clears the registry."""
+    _REGISTRY.clear()

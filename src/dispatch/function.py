@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, TypeAlias
 from dispatch.client import Client
 from dispatch.coroutine import call, schedule
 from dispatch.experimental.durable import durable
+from dispatch.experimental.durable.function import DurableFunction
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output, _Arguments
 
@@ -25,7 +26,7 @@ class Function:
         endpoint: str,
         client: Client | None,
         name: str,
-        func: Callable[[Input], Output],
+        func: Callable,
     ):
         self._endpoint = endpoint
         self._client = client
@@ -207,6 +208,10 @@ class Registry:
                 return Output.error(Error.from_exception(e))
             else:
                 return Output.value(raw_output)
+
+        # Register the function with the experimental.durable package, in case
+        # it's referenced from a @dispatch.coroutine.
+        primitive_func = durable(primitive_func)
 
         logger.info("registering function: %s", func.__qualname__)
         return self._register(primitive_func)

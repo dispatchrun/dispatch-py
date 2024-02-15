@@ -11,6 +11,7 @@ import httpx
 from fastapi.testclient import TestClient
 
 import dispatch
+from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
 from dispatch.function import Error, Function, Input, Output, _Arguments
 from dispatch.proto import _any_unpickle as any_unpickle
@@ -108,6 +109,8 @@ def response_output(resp: function_pb.RunResponse) -> Any:
 
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
+        clear_functions()
+
         self.app = fastapi.FastAPI()
 
         @self.app.get("/")

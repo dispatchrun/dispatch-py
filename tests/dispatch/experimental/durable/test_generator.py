@@ -161,17 +161,17 @@ class TestGenerator(unittest.TestCase):
         g.close()
         self.assertTrue(ok)
 
-    def test_not_a_synchronous_generator(self):
+    def test_regular_function(self):
         @durable
         def regular_function():
-            pass
+            return 1
 
+        self.assertEqual(1, regular_function())
+
+    def test_asynchronous_generator(self):
         @durable
         async def async_generator():
             yield
-
-        with self.assertRaises(ValueError):
-            regular_function()
 
         with self.assertRaises(NotImplementedError):
             async_generator()

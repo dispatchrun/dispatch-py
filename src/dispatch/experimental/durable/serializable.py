@@ -63,11 +63,8 @@ class Serializable:
             print()
 
         state = {
-            "function": {
-                "key": rfn.key,
-                "filename": rfn.filename,
-                "lineno": rfn.lineno,
-                "hash": rfn.hash,
+            "function": rfn,
+            "instance": {
                 "coro_await": self.coro_await,
                 "args": self.args,
                 "kwargs": self.kwargs,
@@ -82,31 +79,18 @@ class Serializable:
         return state
 
     def __setstate__(self, state):
-        function_state = state["function"]
+        instance_state = state["instance"]
         frame_state = state["frame"]
 
         # Recreate the generator/coroutine by looking up the constructor
         # and calling it with the same args/kwargs.
-        key, filename, lineno, code_hash, args, kwargs, coro_await = (
-            function_state["key"],
-            function_state["filename"],
-            function_state["lineno"],
-            function_state["hash"],
-            function_state["args"],
-            function_state["kwargs"],
-            function_state["coro_await"],
+        args, kwargs, coro_await = (
+            instance_state["args"],
+            instance_state["kwargs"],
+            instance_state["coro_await"],
         )
 
-        rfn = lookup_function(key)
-        if filename != rfn.filename or lineno != rfn.lineno:
-            raise ValueError(
-                f"location mismatch for function {key}: {filename}:{lineno} vs. expected {rfn.filename}:{rfn.lineno}"
-            )
-        elif code_hash != rfn.hash:
-            raise ValueError(
-                f"hash mismatch for function {key}: {code_hash} vs. expected {rfn.hash}"
-            )
-
+        rfn = state["function"]
         g = rfn.fn(*args, **kwargs)
 
         if coro_await:

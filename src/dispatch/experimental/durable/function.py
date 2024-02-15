@@ -1,4 +1,3 @@
-import typing
 from types import (
     AsyncGeneratorType,
     CodeType,
@@ -9,7 +8,7 @@ from types import (
     MethodType,
     TracebackType,
 )
-from typing import Any, Callable, Coroutine, Generator, TypeVar, cast, overload
+from typing import Any, Callable, Coroutine, Generator, TypeVar, cast
 
 from .registry import RegisteredFunction, register_function
 from .serializable import Serializable
@@ -36,9 +35,7 @@ class DurableFunction:
                 "only synchronous generator functions are supported at this time"
             )
         else:
-            raise ValueError(
-                "@durable function did not return a generator or coroutine"
-            )
+            return result
 
 
 def durable(fn: Callable) -> Callable:
