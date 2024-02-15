@@ -1,8 +1,3 @@
----
-hide:
-  - navigation
----
-
 # Dispatch Python SDK
 
 This is the API reference for the Python SDK of Dispatch.
@@ -13,11 +8,3 @@ This is the API reference for the Python SDK of Dispatch.
 
 [docs]: https://docs.stealthrocket.cloud
 [github]: https://github.com/stealthrocket/dispatch-sdk-python
-
-## API Reference
-
----
-
-::: dispatch
-	options:
-	  show_submodules: true

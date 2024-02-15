@@ -1,5 +1,9 @@
 site_name: Dispatch SDK
 
+nav:
+- API Reference:
+    - Dispatch: reference/
+
 theme:
   name: "material"
   palette:
@@ -20,7 +24,19 @@ theme:
 
 plugins:
   - search
-  - mkdocstrings
+  - gen-files:
+      scripts:
+        - docs/gen-api.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            members_order: source
+            merge_init_into_class: true
+            show_if_no_docstring: false
+            show_source: no
   - mike
 
 extra:
