@@ -360,7 +360,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
             state=serialized_state,
             calls=pending_calls,
             # FIXME: use min_results + max_results + max_wait to balance latency/throughput
-            max_results=len(pending_calls),
+            max_results=1,
         )
 
     except Exception as e:
