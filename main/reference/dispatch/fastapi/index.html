@@ -1396,7 +1396,7 @@ def my_function():
 
 @app.get("/")
 def read_root():
-    dispatch.call(my_function)
+    my_function.dispatch()
 </code></pre>
 
   
