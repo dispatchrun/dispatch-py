@@ -21,6 +21,8 @@ class DurableFunction:
 
     def __init__(self, fn: FunctionType):
         self.registered_fn = register_function(fn)
+        self.__name__ = fn.__name__
+        self.__qualname__ = fn.__qualname__
 
     def __call__(self, *args, **kwargs):
         result = self.registered_fn.fn(*args, **kwargs)
@@ -37,10 +39,6 @@ class DurableFunction:
             raise ValueError(
                 "@durable function did not return a generator or coroutine"
             )
-
-    @property
-    def __name__(self):
-        return self.registered_fn.fn.__name__
 
 
 def durable(fn: Callable) -> Callable:

@@ -31,6 +31,9 @@ class Serializable:
         self.args = list(args)
         self.kwargs = kwargs
 
+        self.__name__ = registered_fn.fn.__name__
+        self.__qualname__ = registered_fn.fn.__qualname__
+
     def __getstate__(self):
         g = self.g
         rfn = self.registered_fn
@@ -121,3 +124,6 @@ class Serializable:
         self.coro_await = coro_await
         self.args = args
         self.kwargs = kwargs
+
+        self.__name__ = rfn.fn.__name__
+        self.__qualname__ = rfn.fn.__qualname__
