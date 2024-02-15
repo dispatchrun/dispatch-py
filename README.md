@@ -12,7 +12,7 @@ This package implements the Dispatch SDK for Python.
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
 [ngrok]:   https://ngrok.com/
 [pypi]:    https://pypi.org/project/dispatch-functions/
-[signup]:  https://docs.stealthrocket.cloud/dispatch/getting-started
+[signup]:  https://docs.stealthrocket.cloud/stateful-functions/getting-started
 
 - [What is Dispatch?](#what-is-dispatch)
 - [Installation](#installation)
@@ -24,7 +24,7 @@ This package implements the Dispatch SDK for Python.
 
 ## What is Dispatch?
 
-Dispatch is a platform to develop reliable distributed systems. Dispatch
+Dispatch is a platform for developing reliable distributed systems. Dispatch
 provides a simple programming model based on durable coroutines to manage the
 scheduling of function calls across a fleet of service instances. Orchestration
 of function calls is managed by Dispatch, providing **fair scheduling**,
