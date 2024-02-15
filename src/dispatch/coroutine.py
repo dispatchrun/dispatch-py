@@ -62,7 +62,7 @@ class RunningCoro:
     id: CoroID
     coro: DurableCoroutine
 
-    waiting_on: list[ResultID] | None = None
+    waiting_on: list[ResultID] | ResultID | None = None
 
     waiting_calls: set[CallID] | None = None
     ready_calls: dict[CallID, CallResult] | None = None
@@ -212,7 +212,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
 
                 # Determine what to send or throw to the coroutine.
                 throw = None
-                send = None
+                send: list[Any] | Any = None
                 if coro.throw is not None:
                     throw = coro.throw
                     logger.debug(
@@ -222,25 +222,38 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                         coro.name,
                     )
                 elif coro.waiting_on is not None:
-                    send = []
                     ready_calls = (
                         coro.ready_calls if coro.ready_calls is not None else {}
                     )
                     ready_coros = (
                         coro.ready_coros if coro.ready_coros is not None else {}
                     )
-                    for result_id in coro.waiting_on:
+                    if isinstance(coro.waiting_on, list):
+                        send = []
+                        for result_id in coro.waiting_on:
+                            match result_id.result_type:
+                                case ResultType.CALL:
+                                    send.append(ready_calls[result_id.call_id].output)
+                                case ResultType.CORO:
+                                    send.append(ready_coros[result_id.coro_id].output)
+                        logger.debug(
+                            "sending %d result(s) to coroutine %d (%s)",
+                            len(send),
+                            coro.id,
+                            coro.name,
+                        )
+                    else:
+                        result_id = coro.waiting_on
                         match result_id.result_type:
                             case ResultType.CALL:
-                                send.append(ready_calls[result_id.call_id].output)
+                                send = ready_calls[result_id.call_id].output
                             case ResultType.CORO:
-                                send.append(ready_coros[result_id.coro_id].output)
-                    logger.debug(
-                        "sending %d result(s) to coroutine %d (%s)",
-                        len(send),
-                        coro.id,
-                        coro.name,
-                    )
+                                send = ready_coros[result_id.coro_id].output
+                        logger.debug(
+                            "sending result to coroutine %d (%s)",
+                            coro.id,
+                            coro.name,
+                        )
                 else:
                     logger.debug("running coroutine %d (%s)", coro.id, coro.name)
 
@@ -294,9 +307,9 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                     case Call():
                         call_id = state.next_call_id
                         state.next_call_id += 1
-                        coro.waiting_on = [
-                            ResultID(result_type=ResultType.CALL, call_id=call_id)
-                        ]
+                        coro.waiting_on = ResultID(
+                            result_type=ResultType.CALL, call_id=call_id
+                        )
                         coro.waiting_calls = {call_id}
                         directive.correlation_id = call_id
                         pending_calls.append(directive)
