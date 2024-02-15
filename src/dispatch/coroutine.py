@@ -349,6 +349,8 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
             logger.exception("state could not be serialized")
             return Output.error(Error.from_exception(e, status=Status.PERMANENT_ERROR))
 
+        logger.debug("yielding to Dispatch with %d call(s) and %d bytes of state", len(pending_calls), len(serialized_state))
+
         return Output.poll(state=serialized_state, calls=pending_calls)
 
     except Exception as e:
