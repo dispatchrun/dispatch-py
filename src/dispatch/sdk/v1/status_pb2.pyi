@@ -16,6 +16,13 @@ class Status(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     STATUS_TEMPORARY_ERROR: _ClassVar[Status]
     STATUS_PERMANENT_ERROR: _ClassVar[Status]
     STATUS_INCOMPATIBLE_STATE: _ClassVar[Status]
+    STATUS_DNS_ERROR: _ClassVar[Status]
+    STATUS_TCP_ERROR: _ClassVar[Status]
+    STATUS_TLS_ERROR: _ClassVar[Status]
+    STATUS_HTTP_ERROR: _ClassVar[Status]
+    STATUS_UNAUTHENTICATED: _ClassVar[Status]
+    STATUS_PERMISSION_DENIED: _ClassVar[Status]
+    STATUS_NOT_FOUND: _ClassVar[Status]
 
 STATUS_UNSPECIFIED: Status
 STATUS_OK: Status
@@ -26,3 +33,10 @@ STATUS_INVALID_RESPONSE: Status
 STATUS_TEMPORARY_ERROR: Status
 STATUS_PERMANENT_ERROR: Status
 STATUS_INCOMPATIBLE_STATE: Status
+STATUS_DNS_ERROR: Status
+STATUS_TCP_ERROR: Status
+STATUS_TLS_ERROR: Status
+STATUS_HTTP_ERROR: Status
+STATUS_UNAUTHENTICATED: Status
+STATUS_PERMISSION_DENIED: Status
+STATUS_NOT_FOUND: Status

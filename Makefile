@@ -52,7 +52,7 @@ generate: .proto/dispatch-sdk
 clean:
 	$(RM) -rf dist .proto .coverage .coverage-html
 	find . -type f -name '*.pyc' -exec rm {} \;
-	find . -type d -name '__pycache__' -exec rm -r {} \;
+	find . -type d -name '__pycache__' -exec rm -rf {} \;
 
 build:
 	$(PYTHON) -m build
