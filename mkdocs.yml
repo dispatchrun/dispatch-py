@@ -37,8 +37,28 @@ plugins:
             merge_init_into_class: true
             show_if_no_docstring: false
             show_source: no
+            docstring_options:
+              ignore_init_summary: true
+            heading_level: 1
+            inherited_members: true
+            merge_init_into_class: true
+            separate_signature: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
+            show_signature_annotations: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary: true
   - mike
 
 extra:
   version:
     provider: mike
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - toc:
+      permalink: "¤"
