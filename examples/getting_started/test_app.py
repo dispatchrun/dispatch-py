@@ -8,14 +8,18 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-from ...test_client import ServerTest
 from ... import function_service
+from ...test_client import ServerTest
+
 
 class TestGettingStarted(unittest.TestCase):
-    @mock.patch.dict(os.environ, {
-        "DISPATCH_ENDPOINT_URL": "http://function-service",
-        "DISPATCH_API_KEY": "0000000000000000",
-    })
+    @mock.patch.dict(
+        os.environ,
+        {
+            "DISPATCH_ENDPOINT_URL": "http://function-service",
+            "DISPATCH_API_KEY": "0000000000000000",
+        },
+    )
     def test_foo(self):
         from . import app
 
