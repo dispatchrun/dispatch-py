@@ -27,6 +27,7 @@ from dispatch.fastapi import Dispatch
 # Create the FastAPI app like you normally would.
 app = FastAPI()
 
+# chosen by fair dice roll. guaranteed to be random.
 rng = random.Random(2)
 
 # Create a Dispatch instance and pass the FastAPI app to it. It automatically
