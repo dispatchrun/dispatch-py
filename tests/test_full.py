@@ -55,38 +55,16 @@ class TestFullFastapi(unittest.TestCase):
 
     def test_simple_end_to_end(self):
         # The FastAPI server.
-        @self.dispatch.primitive_function()
-        def my_function(input: Input) -> Output:
-            return Output.value(f"Hello world: {input.input}")
+        @self.dispatch.function()
+        def my_function(name: str) -> str:
+            return f"Hello world: {name}"
 
         # The client.
-        [dispatch_id] = self.client.dispatch(
-            [Call(function=my_function.name, input=52)]
-        )
+        [dispatch_id] = self.client.dispatch([my_function.build_call(52)])
 
         # Simulate execution for testing purposes.
         self.execute()
 
         # Validate results.
-        resp = self.servicer.responses[dispatch_id]
-        self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
-
-    def test_call_with(self):
-        @self.dispatch.function()
-        def my_function(name: str) -> str:
-            return f"Hello world: {name}"
-
-        [dispatch_id] = self.client.dispatch([my_function.call_with(52)])
-        self.execute()
-        resp = self.servicer.responses[dispatch_id]
-        self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
-
-    def test_primitive_call_with(self):
-        @self.dispatch.primitive_function()
-        def my_function(input: Input) -> Output:
-            return Output.value(f"Hello world: {input.input}")
-
-        [dispatch_id] = self.client.dispatch([my_function.primitive_call_with(52)])
-        self.execute()
         resp = self.servicer.responses[dispatch_id]
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")

@@ -306,7 +306,7 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
-                    state=text, calls=[coro_compute_len.primitive_call_with(text)]
+                    state=text, calls=[coro_compute_len._build_primitive_call(text)]
                 )
             text = input.coroutine_state
             length = input.call_results[0].output
@@ -346,7 +346,7 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
-                    state=text, calls=[coro_compute_len.primitive_call_with(text)]
+                    state=text, calls=[coro_compute_len._build_primitive_call(text)]
                 )
             error = input.call_results[0].error
             if error is not None:
@@ -426,7 +426,7 @@ class TestCoroutine(unittest.TestCase):
 
         @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
-            return Output.tail_call(other_coroutine.primitive_call_with(42))
+            return Output.tail_call(other_coroutine._build_primitive_call(42))
 
         resp = self.call(mycoro)
         self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)

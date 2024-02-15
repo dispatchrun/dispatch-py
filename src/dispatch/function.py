@@ -3,13 +3,12 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-from types import FunctionType, coroutine
+from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
+import dispatch.coroutine
 from dispatch.client import Client
-from dispatch.coroutine import call, schedule
 from dispatch.experimental.durable import durable
-from dispatch.experimental.durable.function import DurableFunction
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output, _Arguments
 
@@ -35,7 +34,7 @@ class Function:
 
         # FIXME: is there a way to decorate the function at the definition
         #  without making it a class method?
-        self.call = durable(self._call)
+        self.call = durable(self._call_async)
 
     def __call__(self, *args, **kwargs):
         return self._func(*args, **kwargs)
@@ -64,38 +63,26 @@ class Function:
         Raises:
             RuntimeError: if a Dispatch client has not been configured.
         """
-        return self.primitive_dispatch(_Arguments(list(args), kwargs))
+        return self._primitive_dispatch(_Arguments(list(args), kwargs))
 
-    def primitive_dispatch(self, input: Any = None) -> DispatchID:
-        """Dispatch a primitive call.
-
-        The Registry this function was registered with must be initialized
-        with a Client / api_key for this call facility to be available.
-
-        Args:
-            input: Input to the function.
-
-        Returns:
-            DispatchID: ID of the dispatched call.
-
-        Raises:
-            RuntimeError: if a Dispatch client has not been configured.
-        """
+    def _primitive_dispatch(self, input: Any = None) -> DispatchID:
         if self._client is None:
             raise RuntimeError(
                 "Dispatch Client has not been configured (api_key not provided)"
             )
 
-        [dispatch_id] = self._client.dispatch([self.primitive_call_with(input)])
+        [dispatch_id] = self._client.dispatch([self._build_primitive_call(input)])
         return dispatch_id
 
-    async def _call(self, *args, **kwargs) -> Any:
+    async def _call_async(self, *args, **kwargs) -> Any:
         """Asynchronously call the function from a @dispatch.coroutine."""
-        return await call(self.call_with(*args, **kwargs, correlation_id=None))
+        return await dispatch.coroutine.call(
+            self.build_call(*args, **kwargs, correlation_id=None)
+        )
 
-    def call_with(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
+    def build_call(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
         """Create a Call for this function with the provided input. Useful to
-        generate calls when polling.
+        generate calls when using the Client.
 
         Args:
             *args: Positional arguments for the function.
@@ -104,27 +91,15 @@ class Function:
             **kwargs: Keyword arguments for the function.
 
         Returns:
-            Call: can be passed to Output.poll().
+            Call: can be passed to Client.dispatch.
         """
-        return self.primitive_call_with(
+        return self._build_primitive_call(
             _Arguments(list(args), kwargs), correlation_id=correlation_id
         )
 
-    def primitive_call_with(
+    def _build_primitive_call(
         self, input: Any, correlation_id: int | None = None
     ) -> Call:
-        """Create a Call for this function with the provided input. Useful to
-        generate calls when polling.
-
-        Args:
-            input: any pickle-able Python value that will be passed as input to
-              this function.
-            correlation_id: optional arbitrary integer the caller can use to
-              match this call to a call result.
-
-        Returns:
-            Call: can be passed to Output.poll().
-        """
         return Call(
             correlation_id=correlation_id,
             endpoint=self.endpoint,
@@ -134,8 +109,8 @@ class Function:
 
 
 PrimitiveFunctionType: TypeAlias = Callable[[Input], Output]
-"""A primitive function is a function that accepts a dispatch.function.Input
-and unconditionally returns a dispatch.function.Output. It must not raise
+"""A primitive function is a function that accepts a dispatch.proto.Input
+and unconditionally returns a dispatch.proto.Output. It must not raise
 exceptions.
 """
 
@@ -163,7 +138,7 @@ class Registry:
         return self._register_function
 
     def coroutine(self) -> Callable[[FunctionType], Function | FunctionType]:
-        """Returns a decorator that registers coroutine functions."""
+        """Returns a decorator that registers coroutines."""
 
         # Note: the indirection here means that we can add parameters
         # to the decorator later without breaking existing apps.
@@ -176,18 +151,7 @@ class Registry:
         # to the decorator later without breaking existing apps.
         return self._register_primitive_function
 
-    def _register_function(self, func: FunctionType) -> Function:
-        """Register a function with the Dispatch programmable endpoints.
-
-        Args:
-            func: The function to register.
-
-        Returns:
-            Function: A registered Dispatch Function.
-
-        Raises:
-            ValueError: If the function is already registered.
-        """
+    def _register_function(self, func: Callable) -> Function:
         if inspect.iscoroutinefunction(func):
             raise TypeError(
                 "async functions must be registered via @dispatch.coroutine"
@@ -216,35 +180,15 @@ class Registry:
         logger.info("registering function: %s", func.__qualname__)
         return self._register(primitive_func)
 
-    def _register_coroutine(self, func: FunctionType) -> Function:
-        """(EXPERIMENTAL) Register a coroutine function with the Dispatch
-        programmable endpoints.
-
-        The function is compiled into a durable coroutine.
-
-        The coroutine can use directives such as poll() partway through
-        execution. The coroutine will be suspended at these yield points,
-        and will resume execution from the same point when results are
-        available. The state of the coroutine is stored durably across
-        yield points.
-
-        Args:
-            func: The coroutine to register.
-
-        Returns:
-            Function: A registered Dispatch Function.
-
-        Raises:
-            ValueError: If the function is already registered.
-        """
+    def _register_coroutine(self, func: Callable) -> Function:
         if not inspect.iscoroutinefunction(func):
             raise TypeError(f"{func.__qualname__} must be an async function")
 
-        durable_func = durable(func)
+        func = durable(func)
 
         @functools.wraps(func)
         def primitive_func(input: Input) -> Output:
-            return schedule(durable_func, input)
+            return dispatch.coroutine.schedule(func, input)
 
         logger.info("registering coroutine: %s", func.__qualname__)
         return self._register(primitive_func)
@@ -252,17 +196,6 @@ class Registry:
     def _register_primitive_function(
         self, primitive_func: PrimitiveFunctionType
     ) -> Function:
-        """Register a primitive function with the Dispatch programmable endpoints.
-
-        Args:
-            func: The function to register.
-
-        Returns:
-            Function: A registered Dispatch Function.
-
-        Raises:
-            ValueError: If the function is already registered.
-        """
         logger.info("registering primitive function: %s", primitive_func.__qualname__)
         return self._register(primitive_func)
 
