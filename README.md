@@ -144,6 +144,11 @@ different value, but in this example it would be:
 export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app"
 ```
 
+### Examples
+
+Check out the [examples](examples/) directory for code samples to help you get
+started with the SDK.
+
 ## Contributing
 
 Contributions are always welcome! Would you spot a typo or anything that needs

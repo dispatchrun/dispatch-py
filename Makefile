@@ -23,7 +23,7 @@ typecheck:
 	$(PYTHON) -m mypy src tests
 
 unittest:
-	$(PYTHON) -m unittest discover
+	$(PYTHON) -m pytest
 
 coverage: typecheck
 	coverage run -m unittest discover

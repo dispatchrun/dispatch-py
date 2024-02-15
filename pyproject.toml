@@ -17,10 +17,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+fastapi = [
+    "fastapi",
+    "httpx"
+]
+
 dev = [
     "black >= 24.1.0",
     "isort >= 5.13.2",
     "mypy >= 1.8.0",
+    "pytest==8.0.0",
     "fastapi >= 0.109.0",
     "httpx >= 0.26.0",
     "coverage >= 7.4.1",
@@ -51,8 +57,13 @@ omit = [
     "*_pb2_grpc.py",
     "*_pb2.py",
     "tests/*",
+    "examples/*",
     "src/buf/*"
 ]
 
 [tool.mypy]
 exclude= '^src/buf'
+
+
+[tool.pytest.ini_options]
+testpaths = ['tests']
