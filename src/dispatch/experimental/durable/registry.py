@@ -68,13 +68,12 @@ def register_function(fn: FunctionType) -> RegisteredFunction:
     Raises:
         ValueError: The function conflicts with another registered function.
     """
-    code = fn.__code__
     rfn = RegisteredFunction(
-        key=code.co_qualname,
+        key=fn.__qualname__,
         fn=fn,
-        filename=code.co_filename,
-        lineno=code.co_firstlineno,
-        hash="sha256:" + hashlib.sha256(code.co_code).hexdigest(),
+        filename=fn.__code__.co_filename,
+        lineno=fn.__code__.co_firstlineno,
+        hash="sha256:" + hashlib.sha256(fn.__code__.co_code).hexdigest(),
     )
 
     try:

@@ -15,6 +15,13 @@ from dispatch.proto import Call, Error, Input, Output, _Arguments
 logger = logging.getLogger(__name__)
 
 
+PrimitiveFunctionType: TypeAlias = Callable[[Input], Output]
+"""A primitive function is a function that accepts a dispatch.proto.Input
+and unconditionally returns a dispatch.proto.Output. It must not raise
+exceptions.
+"""
+
+
 class Function:
     """Callable wrapper around a function meant to be used throughout the
     Dispatch Python SDK.
@@ -25,11 +32,13 @@ class Function:
         endpoint: str,
         client: Client | None,
         name: str,
+        primitive_func: PrimitiveFunctionType,
         func: Callable,
     ):
         self._endpoint = endpoint
         self._client = client
         self._name = name
+        self._primitive_func = primitive_func
         self._func = func
 
         # FIXME: is there a way to decorate the function at the definition
@@ -38,6 +47,9 @@ class Function:
 
     def __call__(self, *args, **kwargs):
         return self._func(*args, **kwargs)
+
+    def _primitive_call(self, input: Input) -> Output:
+        return self._primitive_func(input)
 
     @property
     def endpoint(self) -> str:
@@ -108,13 +120,6 @@ class Function:
         )
 
 
-PrimitiveFunctionType: TypeAlias = Callable[[Input], Output]
-"""A primitive function is a function that accepts a dispatch.proto.Input
-and unconditionally returns a dispatch.proto.Output. It must not raise
-exceptions.
-"""
-
-
 class Registry:
     """Registry of local functions."""
 
@@ -157,7 +162,12 @@ class Registry:
                 "async functions must be registered via @dispatch.coroutine"
             )
 
-        @functools.wraps(func)
+        logger.info("registering function: %s", func.__qualname__)
+
+        # Register the function with the experimental.durable package, in case
+        # it's referenced from a @dispatch.coroutine.
+        func = durable(func)
+
         def primitive_func(input: Input) -> Output:
             try:
                 try:
@@ -173,16 +183,16 @@ class Registry:
             else:
                 return Output.value(raw_output)
 
-        # Register the function with the experimental.durable package, in case
-        # it's referenced from a @dispatch.coroutine.
+        primitive_func.__qualname__ = f"{func.__qualname__}_primitive"
         primitive_func = durable(primitive_func)
 
-        logger.info("registering function: %s", func.__qualname__)
-        return self._register(primitive_func)
+        return self._register(func, primitive_func)
 
     def _register_coroutine(self, func: Callable) -> Function:
         if not inspect.iscoroutinefunction(func):
             raise TypeError(f"{func.__qualname__} must be an async function")
+
+        logger.info("registering coroutine: %s", func.__qualname__)
 
         func = durable(func)
 
@@ -190,21 +200,25 @@ class Registry:
         def primitive_func(input: Input) -> Output:
             return dispatch.coroutine.schedule(func, input)
 
-        logger.info("registering coroutine: %s", func.__qualname__)
-        return self._register(primitive_func)
+        primitive_func.__qualname__ = f"{func.__qualname__}_primitive"
+        primitive_func = durable(primitive_func)
 
-    def _register_primitive_function(
-        self, primitive_func: PrimitiveFunctionType
+        return self._register(func, primitive_func)
+
+    def _register_primitive_function(self, func: PrimitiveFunctionType) -> Function:
+        logger.info("registering primitive function: %s", func.__qualname__)
+        return self._register(func, func)
+
+    def _register(
+        self, func: Callable, primitive_func: PrimitiveFunctionType
     ) -> Function:
-        logger.info("registering primitive function: %s", primitive_func.__qualname__)
-        return self._register(primitive_func)
-
-    def _register(self, func: PrimitiveFunctionType) -> Function:
         name = func.__qualname__
         if name in self._functions:
             raise ValueError(
                 f"function or coroutine already registered with name '{name}'"
             )
-        wrapped_func = Function(self._endpoint, self._client, name, func)
+        wrapped_func = Function(
+            self._endpoint, self._client, name, primitive_func, func
+        )
         self._functions[name] = wrapped_func
         return wrapped_func
