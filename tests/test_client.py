@@ -28,6 +28,7 @@ class TestClient(unittest.TestCase):
             client.dispatch([Call(function="my-function", input=42)])
         self.assertTrue("got 'Bearer WHATEVER'" in str(mc.exception))
 
+    @mock.patch.dict(os.environ, {"DISPATCH_API_KEY": ''})
     def test_api_key_missing(self):
         with self.assertRaises(ValueError) as mc:
             Client()

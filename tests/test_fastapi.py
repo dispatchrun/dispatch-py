@@ -1,6 +1,8 @@
 import logging
+import os
 import pickle
 import unittest
+from unittest import mock
 from typing import Any
 
 import fastapi
@@ -18,7 +20,6 @@ from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.status import Status
 
 from . import function_service
-
 
 def create_dispatch_instance(app, endpoint):
     return Dispatch(
@@ -61,6 +62,7 @@ class TestFastAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             create_dispatch_instance(None, endpoint="http://127.0.0.1:9999")
 
+    @mock.patch.dict(os.environ, {"DISPATCH_ENDPOINT_URL": ''})
     def test_Dispatch_no_endpoint(self):
         app = fastapi.FastAPI()
         with self.assertRaises(ValueError):
