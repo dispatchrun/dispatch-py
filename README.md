@@ -141,7 +141,7 @@ To configure the Dispatch SDK, set the endpoint URL to the endpoint for the
 **Forwarding** parameter; each ngrok instance is unique, so you would have a
 different value, but in this example it would be:
 ```sh
-export DISPATCH_ENDPOINT_URL=https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app
+export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app"
 ```
 
 ## Contributing
