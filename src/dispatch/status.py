@@ -19,6 +19,13 @@ class Status(int, enum.Enum):
     TEMPORARY_ERROR = status_pb.STATUS_TEMPORARY_ERROR
     PERMANENT_ERROR = status_pb.STATUS_PERMANENT_ERROR
     INCOMPATIBLE_STATE = status_pb.STATUS_INCOMPATIBLE_STATE
+    DNS_ERROR = status_pb.STATUS_DNS_ERROR
+    TCP_ERROR = status_pb.STATUS_TCP_ERROR
+    TLS_ERROR = status_pb.STATUS_TLS_ERROR
+    HTTP_ERROR = status_pb.STATUS_HTTP_ERROR
+    UNAUTHENTICATED = status_pb.STATUS_UNAUTHENTICATED
+    PERMISSION_DENIED = status_pb.STATUS_PERMISSION_DENIED
+    NOT_FOUND = status_pb.STATUS_NOT_FOUND
 
     _proto: status_pb.Status
 
@@ -50,7 +57,20 @@ Status.INCOMPATIBLE_STATE.__doc__ = (
     "Coroutine was provided an incompatible state. May be restarted from scratch"
 )
 Status.INCOMPATIBLE_STATE._proto = status_pb.STATUS_INCOMPATIBLE_STATE
-
+Status.DNS_ERROR.__doc__ = "Coroutine encountered a DNS error"
+Status.DNS_ERROR._proto = status_pb.STATUS_DNS_ERROR
+Status.TCP_ERROR.__doc__ = "Coroutine encountered a TCP error"
+Status.TCP_ERROR._proto = status_pb.STATUS_TCP_ERROR
+Status.TLS_ERROR.__doc__ = "Coroutine encountered a TLS error"
+Status.TLS_ERROR._proto = status_pb.STATUS_TLS_ERROR
+Status.HTTP_ERROR.__doc__ = "Coroutine encountered an HTTP error"
+Status.HTTP_ERROR._proto = status_pb.STATUS_HTTP_ERROR
+Status.UNAUTHENTICATED.__doc__ = "An operation was performed without authentication"
+Status.UNAUTHENTICATED._proto = status_pb.STATUS_UNAUTHENTICATED
+Status.PERMISSION_DENIED.__doc__ = "An operation was performed without permission"
+Status.PERMISSION_DENIED._proto = status_pb.STATUS_PERMISSION_DENIED
+Status.NOT_FOUND.__doc__ = "An operation was performed on a non-existent resource"
+Status.NOT_FOUND._proto = status_pb.STATUS_NOT_FOUND
 
 _ERROR_TYPES: dict[Type[Exception], Callable[[Exception], Status]] = {}
 _OUTPUT_TYPES: dict[Type[Any], Callable[[Any], Status]] = {}
@@ -74,6 +94,12 @@ def status_for_error(error: Exception) -> Status:
         status = Status.TIMEOUT
     except (TypeError, ValueError):
         status = Status.INVALID_ARGUMENT
+    except ConnectionError:
+        status = Status.TCP_ERROR
+    except PermissionError:
+        status = Status.PERMISSION_DENIED
+    except FileNotFoundError:
+        status = Status.NOT_FOUND
     except (EOFError, InterruptedError, KeyboardInterrupt, OSError):
         # For OSError, we might want to categorize the values of errno to
         # determine whether the error is temporary or permanent.

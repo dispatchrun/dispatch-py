@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b"\n\x1c\x64ispatch/sdk/v1/status.proto\x12\x0f\x64ispatch.sdk.v1*\xea\x01\n\x06Status\x12\x16\n\x12STATUS_UNSPECIFIED\x10\x00\x12\r\n\tSTATUS_OK\x10\x01\x12\x12\n\x0eSTATUS_TIMEOUT\x10\x02\x12\x14\n\x10STATUS_THROTTLED\x10\x03\x12\x1b\n\x17STATUS_INVALID_ARGUMENT\x10\x04\x12\x1b\n\x17STATUS_INVALID_RESPONSE\x10\x05\x12\x1a\n\x16STATUS_TEMPORARY_ERROR\x10\x06\x12\x1a\n\x16STATUS_PERMANENT_ERROR\x10\x07\x12\x1d\n\x19STATUS_INCOMPATIBLE_STATE\x10\x08\x42\x80\x01\n\x13\x63om.dispatch.sdk.v1B\x0bStatusProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3"
+    b"\n\x1c\x64ispatch/sdk/v1/status.proto\x12\x0f\x64ispatch.sdk.v1*\x93\x03\n\x06Status\x12\x16\n\x12STATUS_UNSPECIFIED\x10\x00\x12\r\n\tSTATUS_OK\x10\x01\x12\x12\n\x0eSTATUS_TIMEOUT\x10\x02\x12\x14\n\x10STATUS_THROTTLED\x10\x03\x12\x1b\n\x17STATUS_INVALID_ARGUMENT\x10\x04\x12\x1b\n\x17STATUS_INVALID_RESPONSE\x10\x05\x12\x1a\n\x16STATUS_TEMPORARY_ERROR\x10\x06\x12\x1a\n\x16STATUS_PERMANENT_ERROR\x10\x07\x12\x1d\n\x19STATUS_INCOMPATIBLE_STATE\x10\x08\x12\x14\n\x10STATUS_DNS_ERROR\x10\t\x12\x14\n\x10STATUS_TCP_ERROR\x10\n\x12\x14\n\x10STATUS_TLS_ERROR\x10\x0b\x12\x15\n\x11STATUS_HTTP_ERROR\x10\x0c\x12\x1a\n\x16STATUS_UNAUTHENTICATED\x10\r\x12\x1c\n\x18STATUS_PERMISSION_DENIED\x10\x0e\x12\x14\n\x10STATUS_NOT_FOUND\x10\x0f\x42\x80\x01\n\x13\x63om.dispatch.sdk.v1B\x0bStatusProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3"
 )
 
 _globals = globals()
@@ -28,5 +28,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
         b"\n\023com.dispatch.sdk.v1B\013StatusProtoP\001\242\002\003DSX\252\002\017Dispatch.Sdk.V1\312\002\017Dispatch\\Sdk\\V1\342\002\033Dispatch\\Sdk\\V1\\GPBMetadata\352\002\021Dispatch::Sdk::V1"
     )
     _globals["_STATUS"]._serialized_start = 50
-    _globals["_STATUS"]._serialized_end = 284
+    _globals["_STATUS"]._serialized_end = 453
 # @@protoc_insertion_point(module_scope)
