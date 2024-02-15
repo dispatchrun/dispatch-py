@@ -127,7 +127,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                 waiting={},
                 call_map={},
                 coro_map={},
-                next_coro_id=0x1000,
+                next_coro_id=1,
                 next_call_id=1,
             )
 
@@ -155,7 +155,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                 )
             call_results = input.call_results
 
-        # Dispatch call results.
+        # Send call results to the coroutines that are waiting for them.
         for call_result in call_results:
             call_id = cast(CallID, call_result.correlation_id)
             try:
@@ -179,7 +179,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                 continue
 
             logger.debug(
-                "dispatching call %d to coroutine %d (%s)",
+                "queueing call result %d for coroutine %d (%s)",
                 call_id,
                 waiting_coro.id,
                 waiting_coro.name,
@@ -333,7 +333,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                                 )
                             )
                             state.waiting[child_coro_id] = child
-                            logger.debug("queuing awaitable %d", child_coro_id)
+                            logger.debug("queuing coroutine %d", child_coro_id)
                             state.coro_map[child_coro_id] = coro.id
                             if coro.waiting_coros is None:
                                 coro.waiting_coros = set()
@@ -343,6 +343,7 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                             f"coroutine unexpectedly yielded '{directive}'"
                         )
 
+        logger.debug("serializing state")
         try:
             serialized_state = pickle.dumps(state)
         except pickle.PickleError as e:
@@ -355,7 +356,12 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
             len(serialized_state),
         )
 
-        return Output.poll(state=serialized_state, calls=pending_calls)
+        return Output.poll(
+            state=serialized_state,
+            calls=pending_calls,
+            # FIXME: use min_results + max_results + max_wait to balance latency/throughput
+            max_results=len(pending_calls),
+        )
 
     except Exception as e:
         logger.exception(f"@dispatch.coroutine: '{func.__name__}' raised an exception")

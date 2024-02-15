@@ -50,6 +50,7 @@ class Client:
                 "missing API URL: set it with the DISPATCH_API_URL environment variable"
             )
 
+        logger.debug("initializing client for Dispatch API at URL %s", api_url)
         self.api_url = api_url
         self.api_key = api_key
         self._init_stub()
@@ -63,8 +64,6 @@ class Client:
         self._init_stub()
 
     def _init_stub(self):
-        logger.debug("initializing client for Dispatch API at URL %s", self.api_url)
-
         result = urlparse(self.api_url)
         match result.scheme:
             case "http":

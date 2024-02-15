@@ -37,6 +37,9 @@ class DurableFunction:
         else:
             return result
 
+    def __repr__(self) -> str:
+        return f"DurableFunction({self.__qualname__})"
+
 
 def durable(fn: Callable) -> Callable:
     """Returns a "durable" function that creates serializable
@@ -110,6 +113,9 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
     def gi_yieldfrom(self) -> GeneratorType | None:
         return self.generator.gi_yieldfrom
 
+    def __repr__(self) -> str:
+        return f"DurableGenerator({self.__qualname__})"
+
 
 class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
     """A wrapper for a coroutine that makes it serializable (can be pickled).
@@ -169,3 +175,6 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
     @property
     def cr_origin(self) -> tuple[tuple[str, int, str], ...] | None:
         return self.coroutine.cr_origin
+
+    def __repr__(self) -> str:
+        return f"DurableCoroutine({self.__qualname__})"
