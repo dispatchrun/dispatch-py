@@ -1,4 +1,4 @@
 import logging
 
 # Disable logging when running unit tests.
-logging.disable(logging.WARNING)
+logging.disable(logging.CRITICAL)

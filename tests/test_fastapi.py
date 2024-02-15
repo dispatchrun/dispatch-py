@@ -1,4 +1,3 @@
-import logging
 import os
 import pickle
 import unittest
@@ -32,12 +31,6 @@ def create_dispatch_instance(app, endpoint):
 
 
 class TestFastAPI(unittest.TestCase):
-    def setUp(self):
-        self.log_level = dispatch.function.logger.getEffectiveLevel()
-        dispatch.function.logger.setLevel(logging.CRITICAL)
-
-    def tearDown(self):
-        dispatch.function.logger.setLevel(self.log_level)
 
     def test_Dispatch(self):
         app = fastapi.FastAPI()
@@ -115,9 +108,6 @@ def response_output(resp: function_pb.RunResponse) -> Any:
 
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
-        self.log_level = dispatch.function.logger.getEffectiveLevel()
-        dispatch.function.logger.setLevel(logging.CRITICAL)
-
         self.app = fastapi.FastAPI()
 
         @self.app.get("/")
@@ -129,9 +119,6 @@ class TestCoroutine(unittest.TestCase):
         )
         self.http_client = TestClient(self.app)
         self.client = function_service.client(self.http_client)
-
-    def tearDown(self):
-        dispatch.function.logger.setLevel(self.log_level)
 
     def execute(
         self, func: Function, input=None, state=None, calls=None
