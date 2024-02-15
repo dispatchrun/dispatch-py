@@ -6,6 +6,8 @@ nav:
 
 theme:
   name: "material"
+  features:
+    - navigation.indexes
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
