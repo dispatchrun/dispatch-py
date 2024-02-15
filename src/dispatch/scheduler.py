@@ -72,6 +72,16 @@ class OneShotScheduler:
                 # Dispatch. Otherwise, enqueue the result with the parent
                 # coroutine.
                 if result is not None:
+                    if result.error is not None:
+                        logger.debug(
+                            "coroutine %s (%s) failed with an error: %s",
+                            coro.id,
+                            coro.name,
+                            result.error,
+                        )
+                    else:
+                        logger.debug("coroutine %s (%s) returned", coro.id, coro.name)
+
                     if coro.id == _MAIN_COROUTINE_ID:
                         assert len(state.waiting) == 1
                         if result.error is not None:
@@ -82,6 +92,12 @@ class OneShotScheduler:
                         continue
 
                 # Secondly, handle coroutines that yield.
+                logger.debug(
+                    "coroutine %s (%s) yielded with %s",
+                    coro.id,
+                    coro.name,
+                    type(directive),
+                )
                 match directive:
                     case Call():
                         call_id = state.new_call_id()
@@ -345,7 +361,7 @@ class State:
                 continue
 
             logger.debug(
-                "queueing call result %d for coroutine %d (%s)",
+                "enqueueing call result %d for coroutine %d (%s)",
                 call_id,
                 waiting_coro.id,
                 waiting_coro.name,
