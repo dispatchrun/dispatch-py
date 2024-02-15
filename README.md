@@ -2,7 +2,7 @@
 [![PyPI](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml)
 [![Test](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/dispatch-functions.svg)](https://badge.fury.io/py/dispatch-functions)
-[![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://didactic-adventure-wo1o3nr.pages.github.io/main/)
+[![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://didactic-adventure-wo1o3nr.pages.github.io/main/reference/dispatch/)
 <img align="right" src="https://github.com/stealthrocket/dispatch-sdk-protobuf/assets/865510/87162355-e184-4058-a733-650eee53f333" width="200"/>
 
 # Dispatch SDK for Python
