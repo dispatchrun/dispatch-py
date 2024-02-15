@@ -282,6 +282,10 @@ class Error:
 
         return Error(status, ex.__class__.__qualname__, str(ex))
 
+    def to_exception(self) -> Exception:
+        # TODO: use correct error type
+        return RuntimeError(self.message)
+
     @classmethod
     def _from_proto(cls, proto: error_pb.Error) -> Error:
         return cls(Status.UNSPECIFIED, proto.type, proto.message)

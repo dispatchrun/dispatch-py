@@ -3,11 +3,11 @@ from __future__ import annotations
 import functools
 import inspect
 import logging
-from types import FunctionType
+from types import FunctionType, coroutine
 from typing import Any, Callable, Dict, TypeAlias
 
 from dispatch.client import Client
-from dispatch.coroutine import schedule
+from dispatch.coroutine import call, schedule
 from dispatch.experimental.durable import durable
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output, _Arguments
@@ -31,6 +31,10 @@ class Function:
         self._client = client
         self._name = name
         self._func = func
+
+        # FIXME: is there a way to decorate the function at the definition
+        #  without making it a class method?
+        self.call = durable(self._call)
 
     def __call__(self, *args, **kwargs):
         return self._func(*args, **kwargs)
@@ -83,6 +87,10 @@ class Function:
 
         [dispatch_id] = self._client.dispatch([self.primitive_call_with(input)])
         return dispatch_id
+
+    async def _call(self, *args, **kwargs) -> Any:
+        """Asynchronously call the function from a @dispatch.coroutine."""
+        return await call(self.call_with(*args, **kwargs, correlation_id=None))
 
     def call_with(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
         """Create a Call for this function with the provided input. Useful to
@@ -200,7 +208,8 @@ class Registry:
             else:
                 return Output.value(raw_output)
 
-        return self._register_primitive_function(primitive_func)
+        logger.info("registering function: %s", func.__qualname__)
+        return self._register(primitive_func)
 
     def _register_coroutine(self, func: FunctionType) -> Function:
         """(EXPERIMENTAL) Register a coroutine function with the Dispatch
@@ -232,9 +241,12 @@ class Registry:
         def primitive_func(input: Input) -> Output:
             return schedule(durable_func, input)
 
-        return self._register_primitive_function(primitive_func)
+        logger.info("registering coroutine: %s", func.__qualname__)
+        return self._register(primitive_func)
 
-    def _register_primitive_function(self, func: PrimitiveFunctionType) -> Function:
+    def _register_primitive_function(
+        self, primitive_func: PrimitiveFunctionType
+    ) -> Function:
         """Register a primitive function with the Dispatch programmable endpoints.
 
         Args:
@@ -246,10 +258,15 @@ class Registry:
         Raises:
             ValueError: If the function is already registered.
         """
+        logger.info("registering primitive function: %s", primitive_func.__qualname__)
+        return self._register(primitive_func)
+
+    def _register(self, func: PrimitiveFunctionType) -> Function:
         name = func.__qualname__
-        logger.info("registering function '%s'", name)
         if name in self._functions:
-            raise ValueError(f"Function {name} already registered")
+            raise ValueError(
+                f"function or coroutine already registered with name '{name}'"
+            )
         wrapped_func = Function(self._endpoint, self._client, name, func)
         self._functions[name] = wrapped_func
         return wrapped_func
