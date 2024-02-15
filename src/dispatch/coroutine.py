@@ -3,14 +3,13 @@ import pickle
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from queue import Queue
 from types import coroutine
-from typing import Any, Callable, TypeAlias, cast
+from typing import Any, Awaitable, Callable, TypeAlias, cast
 
 from dispatch.experimental.durable import durable
-from dispatch.experimental.durable.function import DurableCoroutine, DurableFunction
+from dispatch.experimental.durable.function import DurableCoroutine
 from dispatch.proto import Call, CallResult, Error, Input, Output
-from dispatch.status import Status, status_for_output
+from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +22,15 @@ def call(call: Call) -> Any:
     return (yield call)
 
 
-@dataclass
-class Exit:
-    result: Any | None
-    tail_call: Call | None
+@coroutine
+@durable
+def gather(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+    return (yield Gather(awaitables))
 
 
 @dataclass
-class Poll:
-    calls: list[Call]
+class Gather:
+    awaitables: tuple[Awaitable[Any], ...]
 
 
 CallID: TypeAlias = int
@@ -317,6 +316,28 @@ def schedule(func: Callable[[Any], DurableCoroutine], input: Input) -> Output:
                         logger.debug(
                             "queuing call %d (%s)", call_id, directive.function
                         )
+                    case Gather():
+                        coro.waiting_on = []
+                        for awaitable in directive.awaitables:
+                            child_coro_id = state.next_coro_id
+                            state.next_coro_id += 1
+                            child = RunningCoro(
+                                id=child_coro_id,
+                                coro=cast(
+                                    DurableCoroutine, awaitable
+                                ),  # FIXME: not necessarily
+                            )
+                            coro.waiting_on.append(
+                                ResultID(
+                                    result_type=ResultType.CORO, coro_id=child_coro_id
+                                )
+                            )
+                            state.waiting[child_coro_id] = child
+                            logger.debug("queuing awaitable %d", child_coro_id)
+                            state.coro_map[child_coro_id] = coro.id
+                            if coro.waiting_coros is None:
+                                coro.waiting_coros = set()
+                            coro.waiting_coros.add(child_coro_id)
                     case _:
                         raise RuntimeError(
                             f"coroutine unexpectedly yielded '{directive}'"
