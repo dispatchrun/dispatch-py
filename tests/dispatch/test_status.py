@@ -20,6 +20,15 @@ class TestErrorStatus(unittest.TestCase):
     def test_status_for_EOFError(self):
         self.assertEqual(status_for_error(EOFError()), Status.TEMPORARY_ERROR)
 
+    def test_status_for_ConnectionError(self):
+        self.assertEqual(status_for_error(ConnectionError()), Status.TCP_ERROR)
+
+    def test_status_for_PermissionError(self):
+        self.assertEqual(status_for_error(PermissionError()), Status.PERMISSION_DENIED)
+
+    def test_status_for_FileNotFoundError(self):
+        self.assertEqual(status_for_error(FileNotFoundError()), Status.NOT_FOUND)
+
     def test_status_for_InterruptedError(self):
         self.assertEqual(status_for_error(InterruptedError()), Status.TEMPORARY_ERROR)
 

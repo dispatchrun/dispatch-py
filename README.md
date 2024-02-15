@@ -2,7 +2,7 @@
 [![PyPI](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml)
 [![Test](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/dispatch-functions.svg)](https://badge.fury.io/py/dispatch-functions)
-[![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://didactic-adventure-wo1o3nr.pages.github.io/main/reference/dispatch/)
+[![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.stealthrocket.cloud/main/reference/dispatch/)
 <img align="right" src="https://github.com/stealthrocket/dispatch-sdk-protobuf/assets/865510/87162355-e184-4058-a733-650eee53f333" width="200"/>
 
 # Dispatch SDK for Python
@@ -12,7 +12,7 @@ This package implements the Dispatch SDK for Python.
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
 [ngrok]:   https://ngrok.com/
 [pypi]:    https://pypi.org/project/dispatch-functions/
-[signup]:  https://docs.stealthrocket.cloud/dispatch/getting-started
+[signup]:  https://docs.stealthrocket.cloud/stateful-functions/getting-started
 
 - [What is Dispatch?](#what-is-dispatch)
 - [Installation](#installation)
@@ -24,7 +24,7 @@ This package implements the Dispatch SDK for Python.
 
 ## What is Dispatch?
 
-Dispatch is a platform to develop reliable distributed systems. Dispatch
+Dispatch is a platform for developing reliable distributed systems. Dispatch
 provides a simple programming model based on durable coroutines to manage the
 scheduling of function calls across a fleet of service instances. Orchestration
 of function calls is managed by Dispatch, providing **fair scheduling**,
@@ -143,6 +143,11 @@ different value, but in this example it would be:
 ```sh
 export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app"
 ```
+
+### Examples
+
+Check out the [examples](examples/) directory for code samples to help you get
+started with the SDK.
 
 ## Contributing
 
