@@ -11,6 +11,7 @@ from dispatch.client import Client
 from dispatch.experimental.durable import durable
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output, _Arguments
+from dispatch.scheduler import OneShotScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +199,7 @@ class Registry:
 
         @functools.wraps(func)
         def primitive_func(input: Input) -> Output:
-            return dispatch.coroutine.schedule(func, input)
+            return OneShotScheduler(func).run(input)
 
         primitive_func.__qualname__ = f"{func.__qualname__}_primitive"
         primitive_func = durable(primitive_func)

@@ -1,6 +1,7 @@
 import enum
-from typing import Any, Callable, Type, TypeVar
+from typing import Any, Callable, Type
 
+from dispatch.error import IncompatibleStateError
 from dispatch.sdk.v1 import status_pb2 as status_pb
 
 
@@ -62,6 +63,7 @@ def status_for_error(error: Exception) -> Status:
     handler = _find_handler(error, _ERROR_TYPES)
     if handler is not None:
         return handler(error)
+
     # If not, resort to standard error categorization.
     #
     # See https://docs.python.org/3/library/exceptions.html
@@ -70,6 +72,8 @@ def status_for_error(error: Exception) -> Status:
         # Raise the exception and catch it so that the interpreter deals
         # with exception groups and chaining for us.
         raise error
+    except IncompatibleStateError:
+        status = Status.INCOMPATIBLE_STATE
     except TimeoutError:
         status = Status.TIMEOUT
     except (TypeError, ValueError):
