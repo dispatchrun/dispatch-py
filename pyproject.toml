@@ -13,28 +13,31 @@ dependencies = [
     "protobuf >= 4.24.0",
     "types-protobuf >= 4.24.0.20240129",
     "grpc-stubs >= 1.53.0.5",
-    "http-message-signatures >= 0.4.4"
+    "http-message-signatures >= 0.4.4",
 ]
 
 [project.optional-dependencies]
+fastapi = ["fastapi", "httpx"]
+
 dev = [
     "black >= 24.1.0",
     "isort >= 5.13.2",
     "mypy >= 1.8.0",
+    "pytest==8.0.0",
     "fastapi >= 0.109.0",
     "httpx >= 0.26.0",
     "coverage >= 7.4.1",
     "requests >= 2.31.0",
-    "types-requests >= 2.31.0.20240125"
+    "types-requests >= 2.31.0.20240125",
 ]
 
 docs = [
-     "mkdocs==1.5.3",
-     "mkdocstrings[python]==0.24.0",
-     "mkdocs-material==9.5.9",
-     "mkdocs-gen-files==0.5.0",
-     "mkdocs-literate-nav==0.6.1",
-     "mike==2.0.0"
+    "mkdocs==1.5.3",
+    "mkdocstrings[python]==0.24.0",
+    "mkdocs-material==9.5.9",
+    "mkdocs-gen-files==0.5.0",
+    "mkdocs-literate-nav==0.6.1",
+    "mike==2.0.0",
 ]
 
 [tool.setuptools-git-versioning]
@@ -47,12 +50,11 @@ profile = "black"
 src_paths = ["src"]
 
 [tool.coverage.run]
-omit = [
-    "*_pb2_grpc.py",
-    "*_pb2.py",
-    "tests/*",
-    "src/buf/*"
-]
+omit = ["*_pb2_grpc.py", "*_pb2.py", "tests/*", "examples/*", "src/buf/*"]
 
 [tool.mypy]
-exclude= '^src/buf'
+exclude = ['^src/buf', '^tests/examples']
+
+
+[tool.pytest.ini_options]
+testpaths = ['tests']
