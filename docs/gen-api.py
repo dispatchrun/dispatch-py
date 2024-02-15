@@ -1,7 +1,7 @@
 # Adapted from https://github.com/mkdocstrings/griffe/blob/2359a02aef3cdc1776608a9e507c0096285e1d75/scripts/gen_ref_nav.py (ISC License)
 
-from pathlib import Path
 import fnmatch
+from pathlib import Path
 
 import mkdocs_gen_files
 
