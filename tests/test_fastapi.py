@@ -7,9 +7,9 @@ import fastapi
 import google.protobuf.any_pb2
 import google.protobuf.wrappers_pb2
 import httpx
-import dispatch
 from fastapi.testclient import TestClient
 
+import dispatch
 from dispatch.fastapi import Dispatch
 from dispatch.function import Error, Function, Input, Output, _Arguments
 from dispatch.proto import _any_unpickle as any_unpickle
