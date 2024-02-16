@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 import dispatch
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
-from dispatch.function import Error, Function, Input, Output, _Arguments
+from dispatch.function import Arguments, Error, Function, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -145,7 +145,7 @@ class TestCoroutine(unittest.TestCase):
         return resp
 
     def call(self, func: Function, *args, **kwargs) -> function_pb.RunResponse:
-        return self.execute(func, input=_Arguments(list(args), kwargs))
+        return self.execute(func, input=Arguments(args, kwargs))
 
     def proto_call(self, call: call_pb.Call) -> call_pb.CallResult:
         req = function_pb.RunRequest(

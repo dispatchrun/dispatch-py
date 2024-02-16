@@ -10,7 +10,7 @@ import dispatch.coroutine
 from dispatch.client import Client
 from dispatch.experimental.durable import durable
 from dispatch.id import DispatchID
-from dispatch.proto import Call, Error, Input, Output, _Arguments
+from dispatch.proto import Arguments, Call, Error, Input, Output
 from dispatch.scheduler import OneShotScheduler
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class Function:
     def name(self) -> str:
         return self._name
 
-    def dispatch(self, *args, **kwargs) -> DispatchID:
+    def dispatch(self, *args: Any, **kwargs: Any) -> DispatchID:
         """Dispatch a call to the function.
 
         The Registry this function was registered with must be initialized
@@ -76,7 +76,7 @@ class Function:
         Raises:
             RuntimeError: if a Dispatch client has not been configured.
         """
-        return self._primitive_dispatch(_Arguments(list(args), kwargs))
+        return self._primitive_dispatch(Arguments(args, kwargs))
 
     def _primitive_dispatch(self, input: Any = None) -> DispatchID:
         if self._client is None:
@@ -93,7 +93,9 @@ class Function:
             self.build_call(*args, **kwargs, correlation_id=None)
         )
 
-    def build_call(self, *args, correlation_id: int | None = None, **kwargs) -> Call:
+    def build_call(
+        self, *args: Any, correlation_id: int | None = None, **kwargs: Any
+    ) -> Call:
         """Create a Call for this function with the provided input. Useful to
         generate calls when using the Client.
 
@@ -107,7 +109,7 @@ class Function:
             Call: can be passed to Client.dispatch.
         """
         return self._build_primitive_call(
-            _Arguments(list(args), kwargs), correlation_id=correlation_id
+            Arguments(args, kwargs), correlation_id=correlation_id
         )
 
     def _build_primitive_call(

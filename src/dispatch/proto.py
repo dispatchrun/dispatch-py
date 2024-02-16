@@ -63,10 +63,10 @@ class Input:
         self._assert_first_call()
         return self._input
 
-    def input_arguments(self) -> tuple[list[Any], dict[str, Any]]:
+    def input_arguments(self) -> tuple[tuple[Any, ...], dict[str, Any]]:
         """Returns positional and keyword arguments carried by the input."""
         self._assert_first_call()
-        if not isinstance(self._input, _Arguments):
+        if not isinstance(self._input, Arguments):
             raise RuntimeError("input does not hold arguments")
         return self._input.args, self._input.kwargs
 
@@ -88,12 +88,22 @@ class Input:
         if self.is_first_call:
             raise ValueError("This input is for a first function call")
 
+    @classmethod
+    def from_input_arguments(cls, function: str, *args, **kwargs):
+        input = Arguments(args=args, kwargs=kwargs)
+        return Input(
+            req=function_pb.RunRequest(
+                function=function,
+                input=_pb_any_pickle(input),
+            )
+        )
+
 
 @dataclass
-class _Arguments:
+class Arguments:
     """A container for positional and keyword arguments."""
 
-    args: list[Any]
+    args: tuple[Any, ...]
     kwargs: dict[str, Any]
 
 
@@ -189,7 +199,7 @@ class Call:
     """
 
     function: str
-    input: Any
+    input: Any | None = None
     endpoint: str | None = None
     correlation_id: int | None = None
 

@@ -22,7 +22,7 @@ class OneShotScheduler:
     take over scheduling asynchronous calls.
     """
 
-    def __init__(self, entry_point: Callable[[Any], DurableCoroutine]):
+    def __init__(self, entry_point: Callable):
         self.entry_point = entry_point
         logger.debug(
             f"booting coroutine scheduler with entry point '{entry_point.__qualname__}'"
@@ -167,7 +167,11 @@ class OneShotScheduler:
 
             logger.debug("starting main coroutine")
 
-            state = State.new(self.entry_point(*args, **kwargs))
+            main = self.entry_point(*args, **kwargs)
+            if not isinstance(main, DurableCoroutine):
+                raise ValueError("entry point is not a @dispatch.coroutine")
+
+            state = State.new(main)
             state.waiting[_MAIN_COROUTINE_ID] = InflightCoroutine(
                 id=_MAIN_COROUTINE_ID, coro=state.main
             )
