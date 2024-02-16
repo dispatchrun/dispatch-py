@@ -73,6 +73,18 @@ class TestCoroutine(unittest.TestCase):
                 assert next(g) == expect[j]
                 assert next(g2) == expect[j]
 
+    def test_coroutine_wrapper(self):
+        c = durable_coroutine(1)
+        g = c.__await__()
+        assert next(g) == 1
+
+        state = pickle.dumps((c, g))
+        c2, g2 = pickle.loads(state)
+
+        assert next(g2) == 2
+        g3 = c2.__await__()
+        assert next(g3) == 3
+
     def test_export_cr_fields(self):
         c = nested_coroutines(1)
         underlying = c.coroutine

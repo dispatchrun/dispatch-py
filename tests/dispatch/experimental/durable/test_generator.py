@@ -40,6 +40,32 @@ class TestGenerator(unittest.TestCase):
         assert next(g) == 2
         assert next(g) == 3
 
+    def test_multiple_references(self):
+        g = durable_generator(1)
+        assert next(g) == 1
+
+        state = pickle.dumps((g, g))
+        g2, g3 = pickle.loads(state)
+
+        self.assertIs(g2, g3)
+        self.assertIs(g2.generator, g3.generator)
+        assert next(g2) == 2
+        assert next(g3) == 3
+
+    def test_multiple_stack_references(self):
+        @durable
+        def nested():
+            g = durable_generator(1)
+            g2 = g
+            yield next(g)
+            yield next(g2)
+            yield next(g)
+
+        g = nested()
+        self.assertEqual(next(g), 1)
+        g2 = pickle.loads(pickle.dumps(g))
+        self.assertListEqual(list(g2), [2, 3])
+
     def test_nested(self):
         expect = [1, 2, 3, 4, 5, 6]
         assert list(nested_generators(1)) == expect
