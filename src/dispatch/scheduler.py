@@ -226,7 +226,8 @@ class OneShotScheduler:
                 future.add(call_result)
                 if future.ready():
                     state.ready.append(owner)
-                    del state.suspended[coroutine_id]
+                    del state.suspended[owner.id]
+                    logger.debug("owner %s is now ready", owner)
 
         logger.debug(
             "%d/%d coroutines are ready",
@@ -276,8 +277,9 @@ class OneShotScheduler:
                 future = parent.result
                 future.add(coroutine_result)
                 if future.ready():
-                    del state.suspended[coroutine.parent_id]
                     state.ready.insert(0, parent)
+                    del state.suspended[parent.id]
+                    logger.debug("parent %s is now ready", parent)
                 continue
 
             # Handle coroutines that yield.
