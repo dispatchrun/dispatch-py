@@ -73,6 +73,15 @@ typedef enum _framestate {
     FRAME_CLEARED = 4
 } FrameState;
 
+// This is a redefinition of frame owner constants:
+// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L50
+enum _frameowner {
+    FRAME_OWNED_BY_THREAD = 0,
+    FRAME_OWNED_BY_GENERATOR = 1,
+    FRAME_OWNED_BY_FRAME_OBJECT = 2,
+    FRAME_OWNED_BY_CSTACK = 3,
+};
+
 // This is a redefinition of the private PyCoroWrapper:
 typedef struct {
     PyObject_HEAD
@@ -144,9 +153,10 @@ static InterpreterFrame *get_interpreter_frame(PyObject *obj) {
     if (!gen_like) {
         return NULL;
     }
-    struct _PyInterpreterFrame *frame = (struct _PyInterpreterFrame *)(gen_like->gi_iframe);
+    InterpreterFrame *frame = (InterpreterFrame*)(gen_like->gi_iframe);
     assert(frame);
-    return (InterpreterFrame *)frame;
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    return frame;
 }
 
 static InterpreterFrame *get_interpreter_frame_from_args(PyObject *args) {
@@ -176,6 +186,7 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
     }
     assert(frame->f_code);
     assert(frame->prev_instr);
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     // See _PyInterpreterFrame_LASTI
     // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
     intptr_t ip = (intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(frame->f_code);
@@ -188,6 +199,7 @@ static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     int sp = frame->stacktop;
     return PyLong_FromLong((long)sp);
 }
@@ -203,6 +215,7 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
 
     int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
     if (index < 0 || index >= limit) {
@@ -233,6 +246,7 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
     }
     assert(frame->f_code);
     assert(frame->prev_instr);
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     // See _PyInterpreterFrame_LASTI
     // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
     frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(frame->f_code) + (intptr_t)ip);
@@ -250,6 +264,7 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
 
     int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
     if (sp < 0 || sp >= limit) {
@@ -317,6 +332,7 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
 
     int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
     if (index < 0 || index >= limit) {
