@@ -1,5 +1,6 @@
 import unittest
 
+from dispatch.integrations.http import http_response_code_status
 from dispatch.status import Status, status_for_error
 
 
@@ -61,3 +62,57 @@ class TestErrorStatus(unittest.TestCase):
 
         register_error_type(CustomError, handler)
         self.assertEqual(status_for_error(CustomError()), Status.OK)
+
+
+class TestHTTPStatusCodes(unittest.TestCase):
+
+    def test_http_response_code_status_400(self):
+        self.assertEqual(http_response_code_status(400), Status.INVALID_ARGUMENT)
+
+    def test_http_response_code_status_401(self):
+        self.assertEqual(http_response_code_status(401), Status.UNAUTHENTICATED)
+
+    def test_http_response_code_status_403(self):
+        self.assertEqual(http_response_code_status(403), Status.PERMISSION_DENIED)
+
+    def test_http_response_code_status_404(self):
+        self.assertEqual(http_response_code_status(404), Status.NOT_FOUND)
+
+    def test_http_response_code_status_408(self):
+        self.assertEqual(http_response_code_status(408), Status.TIMEOUT)
+
+    def test_http_response_code_status_429(self):
+        self.assertEqual(http_response_code_status(429), Status.THROTTLED)
+
+    def test_http_response_code_status_501(self):
+        self.assertEqual(http_response_code_status(501), Status.PERMANENT_ERROR)
+
+    def test_http_response_code_status_1xx(self):
+        for status in range(100, 200):
+            self.assertEqual(http_response_code_status(100), Status.PERMANENT_ERROR)
+
+    def test_http_response_code_status_2xx(self):
+        for status in range(200, 300):
+            self.assertEqual(http_response_code_status(200), Status.OK)
+
+    def test_http_response_code_status_3xx(self):
+        for status in range(300, 400):
+            self.assertEqual(http_response_code_status(300), Status.PERMANENT_ERROR)
+
+    def test_http_response_code_status_4xx(self):
+        for status in range(400, 500):
+            if status not in (400, 401, 403, 404, 408, 429, 501):
+                self.assertEqual(
+                    http_response_code_status(status), Status.PERMANENT_ERROR
+                )
+
+    def test_http_response_code_status_5xx(self):
+        for status in range(500, 600):
+            if status not in (501,):
+                self.assertEqual(
+                    http_response_code_status(status), Status.TEMPORARY_ERROR
+                )
+
+    def test_http_response_code_status_6xx(self):
+        for status in range(600, 700):
+            self.assertEqual(http_response_code_status(600), Status.UNSPECIFIED)
