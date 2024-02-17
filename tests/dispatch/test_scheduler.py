@@ -23,7 +23,12 @@ async def call_concurrently(*functions):
 
 @durable
 async def call_sequentially(*functions):
-    return [await call_one(function) for function in functions]
+    # Note: this fails on 3.11 but succeeds on 3.12.
+    # return [await call_one(function) for function in functions]
+    results = []
+    for function in functions:
+        results.append(await call_one(function))
+    return results
 
 
 class TestOneShotScheduler(unittest.TestCase):
