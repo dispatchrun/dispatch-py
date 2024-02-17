@@ -102,7 +102,7 @@ class Function:
         Args:
             *args: Positional arguments for the function.
             correlation_id: optional arbitrary integer the caller can use to
-              match this call to a call result.
+                match this call to a call result.
             **kwargs: Keyword arguments for the function.
 
         Returns:
@@ -132,7 +132,7 @@ class Registry:
         Args:
             endpoint: URL of the endpoint that the function is accessible from.
             client: Optional client for the Dispatch API. If provided, calls
-              to local functions can be dispatched directly.
+                to local functions can be dispatched directly.
         """
         self._functions: Dict[str, Function] = {}
         self._endpoint = endpoint

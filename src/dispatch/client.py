@@ -26,11 +26,11 @@ class Client:
 
         Args:
             api_key: Dispatch API key to use for authentication. Uses the value of
-              the DISPATCH_API_KEY environment variable by default.
+                the DISPATCH_API_KEY environment variable by default.
 
             api_url: The URL of the Dispatch API to use. Uses the value of the
-              DISPATCH_API_URL environment variable if set, otherwise
-              defaults to the public Dispatch API (DEFAULT_API_URL).
+                DISPATCH_API_URL environment variable if set, otherwise
+                defaults to the public Dispatch API (DEFAULT_API_URL).
 
         Raises:
             ValueError: if the API key is missing.
