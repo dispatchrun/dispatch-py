@@ -36,7 +36,10 @@ class Client:
             ValueError: if the API key is missing.
         """
 
-        if not api_key:
+        if api_key:
+            self.api_key_from = "api_key"
+        else:
+            self.api_key_from = "DISPATCH_API_KEY"
             api_key = os.environ.get("DISPATCH_API_KEY")
         if not api_key:
             raise ValueError(
@@ -91,7 +94,18 @@ class Client:
         calls_proto = [c._as_proto() for c in calls]
         logger.debug("dispatching %d function call(s)", len(calls_proto))
         req = dispatch_pb.DispatchRequest(calls=calls_proto)
-        resp = self._stub.Dispatch(req)
+
+        try:
+            resp = self._stub.Dispatch(req)
+        except grpc.RpcError as e:
+            status_code = e.code()
+            match status_code:
+                case grpc.StatusCode.UNAUTHENTICATED:
+                    raise PermissionError(
+                        f"Dispatch received an invalid authentication token (check {self.api_key_from} is correct)"
+                    ) from e
+            raise
+
         dispatch_ids = [DispatchID(x) for x in resp.dispatch_ids]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
