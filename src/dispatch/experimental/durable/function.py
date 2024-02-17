@@ -100,8 +100,7 @@ class Serializable:
             ip, sp, stack = None, None, None
 
         if TRACE:
-            typ = "GENERATOR" if isinstance(g, GeneratorType) else "COROUTINE"
-            print(f"\n[DURABLE] SERIALIZING {typ} ({rfn.key}):")
+            print(f"\n[DURABLE] Serializing {self}:")
             print(f"function = {rfn.fn.__qualname__} ({rfn.filename}:{rfn.lineno})")
             print(f"code hash = {rfn.hash}")
             print(f"args = {self.args}")
@@ -313,4 +312,6 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
         return self.generator.gi_yieldfrom
 
     def __repr__(self) -> str:
+        if self.wrapped_coroutine is not None:
+            return f"DurableCoroutineWrapper({self.__qualname__})"
         return f"DurableGenerator({self.__qualname__})"
