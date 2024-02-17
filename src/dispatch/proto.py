@@ -294,6 +294,7 @@ class Error:
             status: categorization of the error.
             type: arbitrary string, used for humans. Optional.
             message: arbitrary message. Optional.
+            value: arbitrary exception from which the error is derived. Optional.
 
         Raises:
             ValueError: Neither type or message was provided or status is
@@ -324,6 +325,7 @@ class Error:
         return Error(status, ex.__class__.__qualname__, str(ex), ex)
 
     def to_exception(self) -> Exception:
+        """Returns an equivalent exception."""
         if self.value is not None:
             return self.value
 
