@@ -16,6 +16,8 @@ from .registry import RegisteredFunction, lookup_function, register_function
 
 TRACE = os.getenv("DURABLE_TRACE", False)
 
+FRAME_CLEARED = 4
+
 
 class DurableFunction:
     """A wrapper for generator functions and async functions that make
@@ -85,11 +87,17 @@ class Serializable:
         g = self.g
         rfn = self.registered_fn
 
-        # Capture the details necessary to recreate the generator.
-        ip = ext.get_frame_ip(g)
-        sp = ext.get_frame_sp(g)
-        frame_state = ext.get_frame_state(g)
-        stack = [ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))]
+        if g is None:
+            frame_state = FRAME_CLEARED
+        else:
+            frame_state = ext.get_frame_state(g)
+
+        if frame_state < FRAME_CLEARED:
+            ip = ext.get_frame_ip(g)
+            sp = ext.get_frame_sp(g)
+            stack = [ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))]
+        else:
+            ip, sp, stack = None, None, None
 
         if TRACE:
             typ = "GENERATOR" if isinstance(g, GeneratorType) else "COROUTINE"
@@ -99,14 +107,15 @@ class Serializable:
             print(f"args = {self.args}")
             print(f"kwargs = {self.kwargs}")
             print(f"wrapped coroutine = {self.wrapped_coroutine}")
-            print(f"IP = {ip}")
-            print(f"SP = {sp}")
             print(f"frame state = {frame_state}")
-            for i, (is_null, value) in enumerate(stack):
-                if is_null:
-                    print(f"stack[{i}] = NULL")
-                else:
-                    print(f"stack[{i}] = {value}")
+            if frame_state < FRAME_CLEARED:
+                print(f"IP = {ip}")
+                print(f"SP = {sp}")
+                for i, (is_null, value) in enumerate(stack):
+                    if is_null:
+                        print(f"stack[{i}] = NULL")
+                    else:
+                        print(f"stack[{i}] = {value}")
             print()
 
         state = {
@@ -154,17 +163,20 @@ class Serializable:
                 f"hash mismatch for function {key}: {code_hash} vs. expected {rfn.hash}"
             )
 
-        if wrapped_coroutine:
-            g = wrapped_coroutine.coroutine.__await__()
-        else:
-            g = rfn.fn(*args, **kwargs)
+        if frame_state["state"] < FRAME_CLEARED:
+            if wrapped_coroutine:
+                g = wrapped_coroutine.coroutine.__await__()
+            else:
+                g = rfn.fn(*args, **kwargs)
 
-        # Restore the frame state (stack + stack pointer + instruction pointer).
-        ext.set_frame_ip(g, frame_state["ip"])
-        ext.set_frame_sp(g, frame_state["sp"])
-        for i, (is_null, obj) in enumerate(frame_state["stack"]):
-            ext.set_frame_stack_at(g, i, is_null, obj)
-        ext.set_frame_state(g, frame_state["state"])
+            # Restore the frame state (stack + stack pointer + instruction pointer).
+            ext.set_frame_ip(g, frame_state["ip"])
+            ext.set_frame_sp(g, frame_state["sp"])
+            for i, (is_null, obj) in enumerate(frame_state["stack"]):
+                ext.set_frame_stack_at(g, i, is_null, obj)
+            ext.set_frame_state(g, frame_state["state"])
+        else:
+            g = None
 
         self.g = g
         self.registered_fn = rfn

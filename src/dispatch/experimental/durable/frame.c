@@ -139,22 +139,10 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
     return NULL;
 }
 
-static InterpreterFrame *get_interpreter_frame(PyObject *obj) {
-    PyGenObject *gen_like = get_generator_like_object(obj);
-    if (!gen_like) {
-        return NULL;
-    }
+static InterpreterFrame *get_interpreter_frame(PyGenObject *gen_like) {
     struct _PyInterpreterFrame *frame = (struct _PyInterpreterFrame *)(gen_like->gi_iframe);
     assert(frame);
     return (InterpreterFrame *)frame;
-}
-
-static InterpreterFrame *get_interpreter_frame_from_args(PyObject *args) {
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-    return get_interpreter_frame(obj);
 }
 
 static PyObject *get_frame_state(PyObject *self, PyObject *args) {
@@ -170,7 +158,19 @@ static PyObject *get_frame_state(PyObject *self, PyObject *args) {
 }
 
 static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
-    InterpreterFrame *frame = get_interpreter_frame_from_args(args);
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -183,7 +183,19 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
 }
 
 static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
-    InterpreterFrame *frame = get_interpreter_frame_from_args(args);
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -193,12 +205,20 @@ static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
 }
 
 static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
-    PyObject *frame_obj;
+    PyObject *obj;
     int index;
-    if (!PyArg_ParseTuple(args, "Oi", &frame_obj, &index)) {
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &index)) {
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(frame_obj);
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -213,21 +233,29 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
     // NULL in C != None in Python. We need to preserve the fact that some items
     // on the stack are NULL (not yet available).
     PyObject *is_null = Py_False;
-    PyObject *obj = frame->localsplus[index];
-    if (!obj) {
+    PyObject *stack_obj = frame->localsplus[index];
+    if (!stack_obj) {
         is_null = Py_True;
-        obj = Py_None;
+        stack_obj = Py_None;
     }
-    return PyTuple_Pack(2, is_null, obj);
+    return PyTuple_Pack(2, is_null, stack_obj);
 }
 
 static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
-    PyObject *frame_obj;
+    PyObject *obj;
     int ip;
-    if (!PyArg_ParseTuple(args, "Oi", &frame_obj, &ip)) {
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &ip)) {
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(frame_obj);
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -240,12 +268,20 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
 }
 
 static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
-    PyObject *frame_obj;
+    PyObject *obj;
     int sp;
-    if (!PyArg_ParseTuple(args, "Oi", &frame_obj, &sp)) {
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &sp)) {
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(frame_obj);
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -268,56 +304,67 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
 }
 
 static PyObject *set_frame_state(PyObject *self, PyObject *args) {
-    PyObject *arg;
+    PyObject *obj;
     int fs;
-    if (!PyArg_ParseTuple(args, "Oi", &arg, &fs)) {
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &fs)) {
         return NULL;
     }
-    PyGenObject *gen = get_generator_like_object(arg);
-    if (!gen) {
+    if (fs == FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot set frame state to FRAME_CLEARED");
         return NULL;
     }
-    // Disallow changing the frame state if the generator/coroutine is
-    // complete or has been closed, with the assumption that its components
-    // have now been torn down. The generator/coroutine should be recreated
-    // before the frame state is changed.
-    if (gen->gi_frame_state >= FRAME_COMPLETED) {
-        PyErr_SetString(PyExc_RuntimeError, "Cannot set frame state if generator/coroutine is complete");
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    if (!frame) {
         return NULL;
     }
 #if PY_MINOR_VERSION == 13
-    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_SUSPENDED_YIELD_FROM && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED && fs != FRAME_CLEARED) {
+    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_SUSPENDED_YIELD_FROM && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED) {
         PyErr_SetString(PyExc_ValueError, "Invalid frame state");
         return NULL;
     }
 #else
-    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED && fs != FRAME_CLEARED) {
+    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED) {
         PyErr_SetString(PyExc_ValueError, "Invalid frame state");
         return NULL;
     }
 #endif
-    gen->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
+    gen_like->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
     Py_RETURN_NONE;
 }
 
 static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
-    PyObject *frame_obj;
+    PyObject *obj;
     int index;
     PyObject *unset;
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "OiOO", &frame_obj, &index, &unset, &obj)) {
+    PyObject *stack_obj;
+    if (!PyArg_ParseTuple(args, "OiOO", &obj, &index, &unset, &stack_obj)) {
         return NULL;
     }
     if (!PyBool_Check(unset)) {
         PyErr_SetString(PyExc_TypeError, "Expected a boolean indicating whether to unset the stack object");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(frame_obj);
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
     if (!frame) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
-
     int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
     if (index < 0 || index >= limit) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
@@ -328,8 +375,8 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
     if (Py_IsTrue(unset)) {
         frame->localsplus[index] = NULL;
     } else {
-        Py_INCREF(obj);
-        frame->localsplus[index] = obj;
+        Py_INCREF(stack_obj);
+        frame->localsplus[index] = stack_obj;
     }
 
     if (index < frame->stacktop) {
