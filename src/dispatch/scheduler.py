@@ -222,7 +222,7 @@ class OneShotScheduler:
                     future = owner.result
                     assert future is not None
                 except (KeyError, AssertionError):
-                    logger.warning("skipping unexpected call result %s", cr)
+                    logger.warning("discarding unexpected call result %s", cr)
                     continue
 
                 logger.debug("dispatching %s to %s", call_result, owner)
@@ -254,7 +254,6 @@ class OneShotScheduler:
                     coroutine_id=coroutine.id, value=e.value
                 )
             except Exception as e:
-                raise
                 coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
 
             # Handle coroutines that return or raise.
@@ -266,7 +265,8 @@ class OneShotScheduler:
 
                 # If this is the main coroutine, we're done.
                 if coroutine.parent_id is None:
-                    assert len(state.suspended) == 0
+                    for suspended in state.suspended.values():
+                        suspended.coroutine.close()
                     if coroutine_result.error is not None:
                         return Output.error(
                             Error.from_exception(coroutine_result.error)
@@ -274,15 +274,18 @@ class OneShotScheduler:
                     return Output.value(coroutine_result.value)
 
                 # Otherwise, notify the parent of the result.
-                assert coroutine.parent_id in state.suspended
-                parent = state.suspended[coroutine.parent_id]
-                assert parent.result is not None
-                future = parent.result
-                future.add(coroutine_result)
-                if future.ready():
-                    state.ready.insert(0, parent)
-                    del state.suspended[parent.id]
-                    logger.debug("parent %s is now ready", parent)
+                try:
+                    parent = state.suspended[coroutine.parent_id]
+                    future = parent.result
+                    assert future is not None
+                except (KeyError, AssertionError):
+                    logger.warning("discarding %s", coroutine_result)
+                else:
+                    future.add(coroutine_result)
+                    if future.ready():
+                        state.ready.insert(0, parent)
+                        del state.suspended[parent.id]
+                        logger.debug("parent %s is now ready", parent)
                 continue
 
             # Handle coroutines that yield.
@@ -342,6 +345,11 @@ class OneShotScheduler:
         except pickle.PickleError as e:
             logger.exception("state could not be serialized")
             return Output.error(Error.from_exception(e, status=Status.PERMANENT_ERROR))
+
+        # Close coroutines before yielding.
+        for suspended in state.suspended.values():
+            suspended.coroutine.close()
+        state.suspended = {}
 
         # Yield to Dispatch.
         logger.debug(
