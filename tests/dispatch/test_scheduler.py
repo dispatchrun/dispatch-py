@@ -1,4 +1,5 @@
 import unittest
+from pprint import pprint
 from typing import Any, Callable
 
 from dispatch.coroutine import call, gather
@@ -284,7 +285,7 @@ class TestOneShotScheduler(unittest.TestCase):
 
     def assert_empty_poll(self, output: Output):
         poll = self.assert_poll(output)
-        self.assertEqual(poll.calls, [])
+        self.assertEqual(len(poll.calls), 0)
 
     def assert_poll_call_functions(self, output: Output, expect: list[str]):
         poll = self.assert_poll(output)
