@@ -1,0 +1,371 @@
+import logging
+import pickle
+import sys
+from dataclasses import dataclass
+from typing import Any, Callable, Protocol, TypeAlias
+
+from dispatch.coroutine import Gather
+from dispatch.error import IncompatibleStateError
+from dispatch.experimental.durable.function import DurableCoroutine, DurableGenerator
+from dispatch.proto import Call, Error, Input, Output
+from dispatch.status import Status
+
+logger = logging.getLogger(__name__)
+
+
+CallID: TypeAlias = int
+CoroutineID: TypeAlias = int
+CorrelationID: TypeAlias = int
+
+
+@dataclass
+class CoroutineResult:
+    """The result from running a coroutine to completion."""
+
+    coroutine_id: CoroutineID
+    value: Any | None = None
+    error: Exception | None = None
+
+
+@dataclass
+class CallResult:
+    """The result of an asynchronous function call."""
+
+    call_id: CallID
+    value: Any | None = None
+    error: Exception | None = None
+
+
+class Future(Protocol):
+    def add(self, result: CallResult | CoroutineResult): ...
+    def ready(self) -> bool: ...
+    def error(self) -> Exception | None: ...
+    def value(self) -> Any: ...
+
+
+@dataclass
+class CallFuture:
+    """A future result of a dispatch.coroutine.call() operation."""
+
+    result: CallResult | None = None
+
+    def add(self, result: CallResult | CoroutineResult):
+        assert isinstance(result, CallResult)
+        self.result = result
+
+    def ready(self) -> bool:
+        return self.result is not None
+
+    def error(self) -> Exception | None:
+        assert self.result is not None
+        return self.result.error
+
+    def value(self) -> Any:
+        assert self.result is not None
+        return self.result.value
+
+
+@dataclass
+class GatherFuture:
+    """A future result of a dispatch.coroutine.gather() operation."""
+
+    order: list[CoroutineID]
+    waiting: set[CoroutineID]
+    results: dict[CoroutineID, CoroutineResult]
+    first_error: Exception | None = None
+
+    def add(self, result: CallResult | CoroutineResult):
+        assert isinstance(result, CoroutineResult)
+
+        try:
+            self.waiting.remove(result.coroutine_id)
+        except KeyError:
+            return
+
+        if result.error is not None and self.first_error is None:
+            self.first_error = result.error
+
+        self.results[result.coroutine_id] = result
+
+    def ready(self) -> bool:
+        return self.first_error is not None or len(self.waiting) == 0
+
+    def error(self) -> Exception | None:
+        assert self.ready()
+        return self.first_error
+
+    def value(self) -> list[Any]:
+        assert self.ready()
+        assert len(self.waiting) == 0
+        return [self.results[id].value for id in self.order]
+
+
+@dataclass
+class Coroutine:
+    """An in-flight coroutine."""
+
+    id: CoroutineID
+    parent_id: CoroutineID | None
+
+    coroutine: DurableCoroutine | DurableGenerator
+
+    result: Future | None = None
+
+    def run(self) -> Any:
+        if self.result is None:
+            return self.coroutine.send(None)
+
+        assert self.result.ready()
+        if (error := self.result.error()) is not None:
+            return self.coroutine.throw(error)
+        return self.coroutine.send(self.result.value())
+
+    def __repr__(self):
+        return f"Coroutine({self.id}, {self.coroutine.__qualname__})"
+
+
+@dataclass
+class State:
+    """State of the scheduler and the coroutines it's managing."""
+
+    version: str
+
+    suspended: dict[CoroutineID, Coroutine]
+    ready: list[Coroutine]
+
+    next_coroutine_id: int
+    next_call_id: int
+
+
+class OneShotScheduler:
+    """Scheduler for local coroutines.
+
+    It's a one-shot scheduler because it only runs one round of scheduling.
+    When all local coroutines are suspended, the scheduler yields to Dispatch to
+    take over scheduling asynchronous calls.
+    """
+
+    def __init__(
+        self, entry_point: Callable, version=sys.version, poll_max_wait_seconds=5
+    ):
+        self.entry_point = entry_point
+        self.version = version
+        self.poll_max_wait_seconds = poll_max_wait_seconds
+        logger.debug(
+            "booting coroutine scheduler with entry point '%s' version '%s'",
+            entry_point.__qualname__,
+            version,
+        )
+
+    def run(self, input: Input) -> Output:
+        try:
+            return self._run(input)
+        except Exception as e:
+            logger.exception(
+                "unexpected exception occurred during coroutine scheduling"
+            )
+            return Output.error(Error.from_exception(e))
+
+    def _init_state(self, input: Input) -> State:
+        logger.debug("starting main coroutine")
+        try:
+            args, kwargs = input.input_arguments()
+        except ValueError:
+            raise ValueError("incorrect input for entry point")
+
+        main = self.entry_point(*args, **kwargs)
+        if not isinstance(main, DurableCoroutine):
+            raise ValueError("entry point is not a @dispatch.coroutine")
+
+        return State(
+            version=sys.version,
+            suspended={},
+            ready=[Coroutine(id=0, parent_id=None, coroutine=main)],
+            next_coroutine_id=1,
+            next_call_id=1,
+        )
+
+    def _rebuild_state(self, input: Input):
+        logger.debug(
+            "resuming scheduler with %d bytes of state", len(input.coroutine_state)
+        )
+        try:
+            state = pickle.loads(input.coroutine_state)
+            if not isinstance(state, State):
+                raise ValueError("invalid state")
+            if state.version != self.version:
+                raise ValueError(
+                    f"version mismatch: '{state.version}' vs. current '{self.version}'"
+                )
+            return state
+        except (pickle.PickleError, ValueError) as e:
+            logger.warning("state is incompatible", exc_info=True)
+            raise IncompatibleStateError from e
+
+    def _run(self, input: Input) -> Output:
+        if input.is_first_call:
+            state = self._init_state(input)
+        else:
+            state = self._rebuild_state(input)
+
+            logger.debug("dispatching %d call result(s)", len(input.call_results))
+            for cr in input.call_results:
+                assert cr.correlation_id is not None
+                coroutine_id = correlation_coroutine_id(cr.correlation_id)
+                call_id = correlation_call_id(cr.correlation_id)
+
+                error = cr.error.to_exception() if cr.error is not None else None
+                call_result = CallResult(call_id=call_id, value=cr.output, error=error)
+
+                try:
+                    owner = state.suspended[coroutine_id]
+                    future = owner.result
+                    assert future is not None
+                except (KeyError, AssertionError):
+                    logger.warning("skipping unexpected call result %s", cr)
+                    continue
+
+                logger.debug("dispatching %s to %s", call_result, owner)
+                future.add(call_result)
+                if future.ready():
+                    state.ready.append(owner)
+                    del state.suspended[owner.id]
+                    logger.debug("owner %s is now ready", owner)
+
+        logger.debug(
+            "%d/%d coroutines are ready",
+            len(state.ready),
+            len(state.ready) + len(state.suspended),
+        )
+
+        pending_calls: list[Call] = []
+        while state.ready:
+            coroutine = state.ready.pop(0)
+            logger.debug("running %s", coroutine)
+
+            assert coroutine.id not in state.suspended
+
+            coroutine_yield = None
+            coroutine_result: CoroutineResult | None = None
+            try:
+                coroutine_yield = coroutine.run()
+            except StopIteration as e:
+                coroutine_result = CoroutineResult(
+                    coroutine_id=coroutine.id, value=e.value
+                )
+            except Exception as e:
+                raise
+                coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
+
+            # Handle coroutines that return or raise.
+            if coroutine_result is not None:
+                if coroutine_result.error is not None:
+                    logger.debug("%s raised %s", coroutine, coroutine_result.error)
+                else:
+                    logger.debug("%s returned %s", coroutine, coroutine_result.value)
+
+                # If this is the main coroutine, we're done.
+                if coroutine.parent_id is None:
+                    assert len(state.suspended) == 0
+                    if coroutine_result.error is not None:
+                        return Output.error(
+                            Error.from_exception(coroutine_result.error)
+                        )
+                    return Output.value(coroutine_result.value)
+
+                # Otherwise, notify the parent of the result.
+                assert coroutine.parent_id in state.suspended
+                parent = state.suspended[coroutine.parent_id]
+                assert parent.result is not None
+                future = parent.result
+                future.add(coroutine_result)
+                if future.ready():
+                    state.ready.insert(0, parent)
+                    del state.suspended[parent.id]
+                    logger.debug("parent %s is now ready", parent)
+                continue
+
+            # Handle coroutines that yield.
+            logger.debug("%s yielded %s", coroutine, coroutine_yield)
+            match coroutine_yield:
+                case Call():
+                    call = coroutine_yield
+                    call_id = state.next_call_id
+                    state.next_call_id += 1
+                    call.correlation_id = correlation_id(coroutine.id, call_id)
+                    logger.debug(
+                        "enqueuing call %d (%s) for %s",
+                        call_id,
+                        call.function,
+                        coroutine,
+                    )
+                    pending_calls.append(call)
+                    coroutine.result = CallFuture()
+                    state.suspended[coroutine.id] = coroutine
+
+                case Gather():
+                    gather = coroutine_yield
+
+                    children = []
+                    for awaitable in gather.awaitables:
+                        g = awaitable.__await__()
+                        if not isinstance(g, DurableGenerator):
+                            raise ValueError(
+                                "gather awaitable is not a @dispatch.coroutine"
+                            )
+                        child_id = state.next_coroutine_id
+                        state.next_coroutine_id += 1
+                        child = Coroutine(
+                            id=child_id, parent_id=coroutine.id, coroutine=g
+                        )
+                        logger.debug("enqueuing %s for %s", child, coroutine)
+                        children.append(child)
+
+                    # Prepend children to get a depth-first traversal of coroutines.
+                    state.ready = children + state.ready
+
+                    child_ids = [child.id for child in children]
+                    coroutine.result = GatherFuture(
+                        order=child_ids, waiting=set(child_ids), results={}
+                    )
+                    state.suspended[coroutine.id] = coroutine
+
+                case _:
+                    raise RuntimeError(
+                        f"coroutine unexpectedly yielded '{coroutine_yield}'"
+                    )
+
+        # Serialize coroutines and scheduler state.
+        logger.debug("serializing state")
+        try:
+            serialized_state = pickle.dumps(state)
+        except pickle.PickleError as e:
+            logger.exception("state could not be serialized")
+            return Output.error(Error.from_exception(e, status=Status.PERMANENT_ERROR))
+
+        # Yield to Dispatch.
+        logger.debug(
+            "yielding to Dispatch with %d call(s) and %d bytes of state",
+            len(pending_calls),
+            len(serialized_state),
+        )
+        return Output.poll(
+            state=serialized_state,
+            calls=pending_calls,
+            max_results=1,
+            # FIXME: use min_results + max_results + max_wait to balance latency/throughput
+            # max_results=len(max_results),
+            max_wait_seconds=self.poll_max_wait_seconds,
+        )
+
+
+def correlation_id(coroutine_id: CoroutineID, call_id: CallID) -> CorrelationID:
+    return coroutine_id << 32 | call_id
+
+
+def correlation_coroutine_id(correlation_id: CorrelationID) -> CoroutineID:
+    return correlation_id >> 32
+
+
+def correlation_call_id(correlation_id: CorrelationID) -> CallID:
+    return correlation_id & 0xFFFFFFFF

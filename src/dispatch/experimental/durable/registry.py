@@ -7,11 +7,44 @@ from types import FunctionType
 class RegisteredFunction:
     """A function that can be referenced in durable state."""
 
-    key: str
     fn: FunctionType
+
+    key: str
     filename: str
     lineno: int
     hash: str
+
+    def __getstate__(self):
+        return {
+            "key": self.key,
+            "filename": self.filename,
+            "lineno": self.lineno,
+            "hash": self.hash,
+        }
+
+    def __setstate__(self, state):
+        key, filename, lineno, code_hash = (
+            state["key"],
+            state["filename"],
+            state["lineno"],
+            state["hash"],
+        )
+
+        rfn = lookup_function(key)
+        if filename != rfn.filename or lineno != rfn.lineno:
+            raise ValueError(
+                f"location mismatch for function {key}: {filename}:{lineno} vs. expected {rfn.filename}:{rfn.lineno}"
+            )
+        elif code_hash != rfn.hash:
+            raise ValueError(
+                f"hash mismatch for function {key}: {code_hash} vs. expected {rfn.hash}"
+            )
+
+        self.fn = rfn.fn
+        self.key = key
+        self.filename = filename
+        self.lineno = lineno
+        self.hash = code_hash
 
 
 _REGISTRY: dict[str, RegisteredFunction] = {}
@@ -35,21 +68,25 @@ def register_function(fn: FunctionType) -> RegisteredFunction:
     Raises:
         ValueError: The function conflicts with another registered function.
     """
-    code = fn.__code__
-    key = code.co_qualname
-    if key in _REGISTRY:
-        raise ValueError(f"durable function already registered with key {key}")
-
-    filename = code.co_filename
-    lineno = code.co_firstlineno
-    code_hash = "sha256:" + hashlib.sha256(code.co_code).hexdigest()
-
-    wrapper = RegisteredFunction(
-        key=key, fn=fn, filename=filename, lineno=lineno, hash=code_hash
+    rfn = RegisteredFunction(
+        key=fn.__qualname__,
+        fn=fn,
+        filename=fn.__code__.co_filename,
+        lineno=fn.__code__.co_firstlineno,
+        hash="sha256:" + hashlib.sha256(fn.__code__.co_code).hexdigest(),
     )
 
-    _REGISTRY[key] = wrapper
-    return wrapper
+    try:
+        existing = _REGISTRY[rfn.key]
+    except KeyError:
+        pass
+    else:
+        if existing == rfn:
+            return existing
+        raise ValueError(f"durable function already registered with key {rfn.key}")
+
+    _REGISTRY[rfn.key] = rfn
+    return rfn
 
 
 def lookup_function(key: str) -> RegisteredFunction:
@@ -65,3 +102,8 @@ def lookup_function(key: str) -> RegisteredFunction:
         KeyError: A function has not been registered with this key.
     """
     return _REGISTRY[key]
+
+
+def clear_functions():
+    """Clear functions clears the registry."""
+    _REGISTRY.clear()

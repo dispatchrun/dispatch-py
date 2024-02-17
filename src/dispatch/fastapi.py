@@ -192,7 +192,7 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
 
         logger.info("running function '%s'", req.function)
         try:
-            output = func(input)
+            output = func._primitive_call(input)
         except Exception:
             # This indicates that an exception was raised in a primitive
             # function. Primitive functions must catch exceptions, categorize

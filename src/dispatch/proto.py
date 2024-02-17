@@ -63,10 +63,10 @@ class Input:
         self._assert_first_call()
         return self._input
 
-    def input_arguments(self) -> tuple[list[Any], dict[str, Any]]:
+    def input_arguments(self) -> tuple[tuple[Any, ...], dict[str, Any]]:
         """Returns positional and keyword arguments carried by the input."""
         self._assert_first_call()
-        if not isinstance(self._input, _Arguments):
+        if not isinstance(self._input, Arguments):
             raise RuntimeError("input does not hold arguments")
         return self._input.args, self._input.kwargs
 
@@ -88,12 +88,35 @@ class Input:
         if self.is_first_call:
             raise ValueError("This input is for a first function call")
 
+    @classmethod
+    def from_input_arguments(cls, function: str, *args, **kwargs):
+        input = Arguments(args=args, kwargs=kwargs)
+        return Input(
+            req=function_pb.RunRequest(
+                function=function,
+                input=_pb_any_pickle(input),
+            )
+        )
+
+    @classmethod
+    def from_poll_results(
+        cls, function: str, coroutine_state: Any, call_results: list[CallResult]
+    ):
+        return Input(
+            req=function_pb.RunRequest(
+                poll_result=poll_pb.PollResult(
+                    coroutine_state=coroutine_state,
+                    results=[result._as_proto() for result in call_results],
+                )
+            )
+        )
+
 
 @dataclass
-class _Arguments:
+class Arguments:
     """A container for positional and keyword arguments."""
 
-    args: list[Any]
+    args: tuple[Any, ...]
     kwargs: dict[str, Any]
 
 
@@ -145,16 +168,26 @@ class Output:
         )
 
     @classmethod
-    def poll(cls, state: Any, calls: None | list[Call] = None) -> Output:
+    def poll(
+        cls,
+        state: Any,
+        calls: None | list[Call] = None,
+        max_results: int = 1,
+        max_wait_seconds: int | None = None,
+    ) -> Output:
         """Suspend the function with a set of Calls, instructing the
         orchestrator to resume the function with the provided state when
         call results are ready."""
         state_bytes = pickle.dumps(state)
+        max_wait = (
+            duration_pb2.Duration(seconds=max_wait_seconds)
+            if max_wait_seconds is not None
+            else None
+        )
         poll = poll_pb.Poll(
             coroutine_state=state_bytes,
-            # FIXME: make this configurable
-            max_results=1,
-            max_wait=duration_pb2.Duration(seconds=5),
+            max_results=max_results,
+            max_wait=max_wait,
         )
 
         if calls is not None:
@@ -184,7 +217,7 @@ class Call:
     """
 
     function: str
-    input: Any
+    input: Any | None = None
     endpoint: str | None = None
     correlation_id: int | None = None
 
@@ -281,6 +314,10 @@ class Error:
             status = status_for_error(ex)
 
         return Error(status, ex.__class__.__qualname__, str(ex))
+
+    def to_exception(self) -> Exception:
+        # TODO: use correct error type
+        return RuntimeError(self.message)
 
     @classmethod
     def _from_proto(cls, proto: error_pb.Error) -> Error:

@@ -11,8 +11,9 @@ import httpx
 from fastapi.testclient import TestClient
 
 import dispatch
+from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
-from dispatch.function import Error, Function, Input, Output, _Arguments
+from dispatch.function import Arguments, Error, Function, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -108,6 +109,8 @@ def response_output(resp: function_pb.RunResponse) -> Any:
 
 class TestCoroutine(unittest.TestCase):
     def setUp(self):
+        clear_functions()
+
         self.app = fastapi.FastAPI()
 
         @self.app.get("/")
@@ -142,7 +145,7 @@ class TestCoroutine(unittest.TestCase):
         return resp
 
     def call(self, func: Function, *args, **kwargs) -> function_pb.RunResponse:
-        return self.execute(func, input=_Arguments(list(args), kwargs))
+        return self.execute(func, input=Arguments(args, kwargs))
 
     def proto_call(self, call: call_pb.Call) -> call_pb.CallResult:
         req = function_pb.RunRequest(
@@ -303,7 +306,7 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
-                    state=text, calls=[coro_compute_len.primitive_call_with(text)]
+                    state=text, calls=[coro_compute_len._build_primitive_call(text)]
                 )
             text = input.coroutine_state
             length = input.call_results[0].output
@@ -343,7 +346,7 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
-                    state=text, calls=[coro_compute_len.primitive_call_with(text)]
+                    state=text, calls=[coro_compute_len._build_primitive_call(text)]
                 )
             error = input.call_results[0].error
             if error is not None:
@@ -423,7 +426,7 @@ class TestCoroutine(unittest.TestCase):
 
         @self.dispatch.primitive_function()
         def mycoro(input: Input) -> Output:
-            return Output.tail_call(other_coroutine.primitive_call_with(42))
+            return Output.tail_call(other_coroutine._build_primitive_call(42))
 
         resp = self.call(mycoro)
         self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)
