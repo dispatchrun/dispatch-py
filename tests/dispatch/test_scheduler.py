@@ -56,19 +56,12 @@ class TestOneShotScheduler(unittest.TestCase):
     def test_call_one(self):
         output = self.schedule(call_one, "foo")
 
-        self.assert_poll_calls(output, [Call(function="foo", correlation_id=1)])
+        self.assert_poll_call_functions(output, ["foo"])
 
     def test_call_many(self):
         output = self.schedule(call_many, "foo", "bar", "baz")
 
-        self.assert_poll_calls(
-            output,
-            [
-                Call(function="foo", correlation_id=1),
-                Call(function="bar", correlation_id=2),
-                Call(function="baz", correlation_id=3),
-            ],
-        )
+        self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
     def test_call_one_indirect(self):
         @durable
@@ -77,7 +70,7 @@ class TestOneShotScheduler(unittest.TestCase):
 
         output = self.schedule(main)
 
-        self.assert_poll_calls(output, [Call(function="foo", correlation_id=1)])
+        self.assert_poll_call_functions(output, ["foo"])
 
     def test_call_many_indirect(self):
         @durable
@@ -86,18 +79,9 @@ class TestOneShotScheduler(unittest.TestCase):
 
         output = self.schedule(main, "foo", "bar", "baz")
 
-        self.assert_poll_calls(
-            output,
-            [
-                Call(function="foo", correlation_id=1),
-                Call(function="bar", correlation_id=2),
-                Call(function="baz", correlation_id=3),
-            ],
-        )
+        self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
     def test_depth_first_run(self):
-        self.skipTest("not the case currently")
-
         @durable
         async def main():
             return await gather(
@@ -109,18 +93,8 @@ class TestOneShotScheduler(unittest.TestCase):
 
         output = self.schedule(main)
 
-        self.assert_poll_calls(
-            output,
-            [
-                Call(function="a", correlation_id=1),
-                Call(function="b", correlation_id=2),
-                Call(function="c", correlation_id=3),
-                Call(function="d", correlation_id=4),
-                Call(function="e", correlation_id=5),
-                Call(function="f", correlation_id=6),
-                Call(function="g", correlation_id=7),
-                Call(function="h", correlation_id=8),
-            ],
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c", "d", "e", "f", "g", "h"]
         )
 
     def schedule(self, main: Callable, *args: Any, **kwargs: Any) -> Output:
@@ -164,13 +138,8 @@ class TestOneShotScheduler(unittest.TestCase):
         self.assertTrue(response.HasField("poll"))
         return response.poll
 
-    def assert_poll_calls(self, output: Output, expect: list[Call]):
+    def assert_poll_call_functions(self, output: Output, expect: list[str]):
         poll = self.assert_poll(output)
-
-        # We're not testing endpoint/input here. Just extract
-        # function name and correlation ID.
-        actual = [
-            Call(function=c.function, correlation_id=c.correlation_id)
-            for c in poll.calls
-        ]
+        # Note: we're not testing endpoint/input/correlation ID here.
+        actual = [c.function for c in poll.calls]
         self.assertListEqual(actual, expect)
