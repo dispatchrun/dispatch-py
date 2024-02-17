@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pickle
 from dataclasses import dataclass
+from types import TracebackType
 from typing import Any
 
 import google.protobuf.any_pb2
@@ -280,7 +281,13 @@ class Error:
     Output.
     """
 
-    def __init__(self, status: Status, type: str | None, message: str | None):
+    def __init__(
+        self,
+        status: Status,
+        type: str | None,
+        message: str | None,
+        value: Exception | None = None,
+    ):
         """Create a new Error.
 
         Args:
@@ -300,6 +307,7 @@ class Error:
         self.type = type
         self.message = message
         self.status = status
+        self.value = value
 
     @classmethod
     def from_exception(cls, ex: Exception, status: Status | None = None) -> Error:
@@ -313,18 +321,29 @@ class Error:
         if status is None:
             status = status_for_error(ex)
 
-        return Error(status, ex.__class__.__qualname__, str(ex))
+        return Error(status, ex.__class__.__qualname__, str(ex), ex)
 
     def to_exception(self) -> Exception:
-        # TODO: use correct error type
-        return RuntimeError(self.message)
+        if self.value is not None:
+            return self.value
+
+        g = globals()
+        try:
+            cls = g[self.type]
+            assert issubclass(cls, Exception)
+        except (KeyError, AssertionError):
+            return RuntimeError(self.message)
+        else:
+            return cls(self.message)
 
     @classmethod
     def _from_proto(cls, proto: error_pb.Error) -> Error:
-        return cls(Status.UNSPECIFIED, proto.type, proto.message)
+        value = pickle.loads(proto.value) if proto.value else None
+        return cls(Status.UNSPECIFIED, proto.type, proto.message, value)
 
     def _as_proto(self) -> error_pb.Error:
-        return error_pb.Error(type=self.type, message=self.message)
+        value = pickle.dumps(self.value) if self.value else None
+        return error_pb.Error(type=self.type, message=self.message, value=value)
 
 
 def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:

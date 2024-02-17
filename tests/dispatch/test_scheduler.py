@@ -31,6 +31,11 @@ async def call_sequentially(*functions):
     return results
 
 
+@durable
+async def raises_error():
+    raise ValueError("oops")
+
+
 class TestOneShotScheduler(unittest.TestCase):
     def test_main_return(self):
         @durable
@@ -43,10 +48,10 @@ class TestOneShotScheduler(unittest.TestCase):
     def test_main_raise(self):
         @durable
         async def main():
-            raise RuntimeError("oops")
+            raise ValueError("oops")
 
         output = self.start(main)
-        self.assert_exit_result_error(output, RuntimeError, "oops")
+        self.assert_exit_result_error(output, ValueError, "oops")
 
     def test_main_args(self):
         @durable
@@ -215,6 +220,14 @@ class TestOneShotScheduler(unittest.TestCase):
 
         self.assertEqual(len(correlation_ids), 8)
 
+    def test_raise_indirect(self):
+        @durable
+        async def main():
+            return await gather(call_one("a"), raises_error())
+
+        output = self.start(main)
+        self.assert_exit_result_error(output, ValueError, "oops")
+
     def start(self, main: Callable, *args: Any, **kwargs: Any) -> Output:
         input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
         return OneShotScheduler(main).run(input)
@@ -258,6 +271,7 @@ class TestOneShotScheduler(unittest.TestCase):
         self.assertEqual(error.__class__, expect)
         if message is not None:
             self.assertEqual(str(error), message)
+        return error
 
     def assert_poll(self, output: Output) -> poll_pb.Poll:
         response = output._message
