@@ -24,9 +24,22 @@ class TestClient(unittest.TestCase):
     def test_api_key_from_env(self):
         client = Client(api_url=f"http://127.0.0.1:{self.server.port}")
 
-        with self.assertRaises(grpc._channel._InactiveRpcError) as mc:
+        with self.assertRaisesRegex(
+            PermissionError,
+            "Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
+        ) as mc:
             client.dispatch([Call(function="my-function", input=42)])
-        self.assertTrue("got 'Bearer WHATEVER'" in str(mc.exception))
+
+    def test_api_key_from_arg(self):
+        client = Client(
+            api_url=f"http://127.0.0.1:{self.server.port}", api_key="WHATEVER"
+        )
+
+        with self.assertRaisesRegex(
+            PermissionError,
+            "Dispatch received an invalid authentication token \(check api_key is correct\)",
+        ) as mc:
+            client.dispatch([Call(function="my-function", input=42)])
 
     @mock.patch.dict(os.environ, {"DISPATCH_API_KEY": ""})
     def test_api_key_missing(self):
