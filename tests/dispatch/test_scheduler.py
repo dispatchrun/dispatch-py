@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from dispatch.coroutine import call, gather
 from dispatch.experimental.durable import durable
-from dispatch.proto import Call, Error, Input, Output
+from dispatch.proto import Call, CallResult, Error, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.scheduler import OneShotScheduler
 from dispatch.sdk.v1 import call_pb2 as call_pb
@@ -17,15 +17,13 @@ async def call_one(function):
 
 
 @durable
-async def call_many(*functions):
+async def call_concurrently(*functions):
     return await gather(*[call_one(function) for function in functions])
 
 
-import logging
-
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+@durable
+async def call_sequentially(*functions):
+    return [await call_one(function) for function in functions]
 
 
 class TestOneShotScheduler(unittest.TestCase):
@@ -34,7 +32,7 @@ class TestOneShotScheduler(unittest.TestCase):
         async def main():
             return 1
 
-        output = self.schedule(main)
+        output = self.start(main)
         self.assert_exit_result_value(output, 1)
 
     def test_main_raise(self):
@@ -42,7 +40,7 @@ class TestOneShotScheduler(unittest.TestCase):
         async def main():
             raise RuntimeError("oops")
 
-        output = self.schedule(main)
+        output = self.start(main)
         self.assert_exit_result_error(output, RuntimeError, "oops")
 
     def test_main_args(self):
@@ -50,16 +48,16 @@ class TestOneShotScheduler(unittest.TestCase):
         async def main(a, b=1):
             return a + b
 
-        output = self.schedule(main, 2, b=10)
+        output = self.start(main, 2, b=10)
         self.assert_exit_result_value(output, 12)
 
     def test_call_one(self):
-        output = self.schedule(call_one, "foo")
+        output = self.start(call_one, "foo")
 
         self.assert_poll_call_functions(output, ["foo"])
 
-    def test_call_many(self):
-        output = self.schedule(call_many, "foo", "bar", "baz")
+    def test_call_concurrently(self):
+        output = self.start(call_concurrently, "foo", "bar", "baz")
 
         self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
@@ -68,16 +66,16 @@ class TestOneShotScheduler(unittest.TestCase):
         async def main():
             return await call_one("foo")
 
-        output = self.schedule(main)
+        output = self.start(main)
 
         self.assert_poll_call_functions(output, ["foo"])
 
-    def test_call_many_indirect(self):
+    def test_call_concurrently_indirect(self):
         @durable
         async def main(*functions):
-            return await call_many(*functions)
+            return await call_concurrently(*functions)
 
-        output = self.schedule(main, "foo", "bar", "baz")
+        output = self.start(main, "foo", "bar", "baz")
 
         self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
@@ -85,20 +83,144 @@ class TestOneShotScheduler(unittest.TestCase):
         @durable
         async def main():
             return await gather(
-                call_many("a", "b", "c"),
+                call_concurrently("a", "b", "c"),
                 call_one("d"),
-                call_many("e", "f", "g"),
+                call_concurrently("e", "f", "g"),
                 call_one("h"),
             )
 
-        output = self.schedule(main)
+        output = self.start(main)
 
         self.assert_poll_call_functions(
             output, ["a", "b", "c", "d", "e", "f", "g", "h"]
         )
 
-    def schedule(self, main: Callable, *args: Any, **kwargs: Any) -> Output:
+    def test_resume_after_call(self):
+        @durable
+        async def main():
+            result1 = await call_one("foo")
+            result2 = await call_one("bar")
+            return result1 + result2
+
+        output = self.start(main)
+        calls = self.assert_poll_call_functions(output, ["foo"])
+        output = self.resume(
+            main,
+            output,
+            [CallResult.from_value(1, correlation_id=calls[0].correlation_id)],
+        )
+        calls = self.assert_poll_call_functions(output, ["bar"])
+        output = self.resume(
+            main,
+            output,
+            [CallResult.from_value(2, correlation_id=calls[0].correlation_id)],
+        )
+        self.assert_exit_result_value(output, 3)
+
+    def test_resume_after_gather_all_at_once(self):
+        @durable
+        async def main():
+            return sum(await call_concurrently("a", "b", "c", "d"))
+
+        output = self.start(main)
+        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+        results = [
+            CallResult.from_value(i, correlation_id=call.correlation_id)
+            for i, call in enumerate(calls)
+        ]
+        output = self.resume(main, output, results)
+        self.assert_exit_result_value(output, 0 + 1 + 2 + 3)
+
+    def test_resume_after_gather_one_at_a_time(self):
+        @durable
+        async def main():
+            return sum(await call_concurrently("a", "b", "c", "d"))
+
+        output = self.start(main)
+        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+        for i, call in enumerate(calls):
+            output = self.resume(
+                main,
+                output,
+                [CallResult.from_value(i, correlation_id=call.correlation_id)],
+            )
+            if i < len(calls) - 1:
+                self.assert_empty_poll(output)
+
+        self.assert_exit_result_value(output, 0 + 1 + 2 + 3)
+
+    def test_dag(self):
+        @durable
+        async def main():
+            result1 = await gather(
+                call_sequentially("a", "e"),
+                call_one("b"),
+                call_concurrently("c", "d"),
+            )
+            result2 = await call_one("f")
+            result3 = await call_concurrently("g", "h")
+            return [result1, result2, result3]
+
+        correlation_ids = set()
+
+        output = self.start(main)
+        # a, b, c, d are called first. e is not because it depends on a.
+        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+        correlation_ids.update(call.correlation_id for call in calls)
+        results = [
+            CallResult.from_value(i, correlation_id=call.correlation_id)
+            for i, call in enumerate(calls)
+        ]
+        output = self.resume(main, output, results)
+        # e is called next
+        calls = self.assert_poll_call_functions(output, ["e"])
+        correlation_ids.update(call.correlation_id for call in calls)
+        output = self.resume(
+            main,
+            output,
+            [CallResult.from_value(4, correlation_id=calls[0].correlation_id)],
+        )
+        # f is called next
+        calls = self.assert_poll_call_functions(output, ["f"])
+        correlation_ids.update(call.correlation_id for call in calls)
+        output = self.resume(
+            main,
+            output,
+            [CallResult.from_value(5, correlation_id=calls[0].correlation_id)],
+        )
+        # g, h are called next
+        calls = self.assert_poll_call_functions(output, ["g", "h"])
+        correlation_ids.update(call.correlation_id for call in calls)
+        output = self.resume(
+            main,
+            output,
+            [
+                CallResult.from_value(6, correlation_id=calls[0].correlation_id),
+                CallResult.from_value(7, correlation_id=calls[1].correlation_id),
+            ],
+        )
+        self.assert_exit_result_value(
+            output,
+            [
+                [[0, 4], 1, [2, 3]],  # result1 = (a, e), b, (c, d)
+                5,  # result2 = f
+                [6, 7],  # result3 = (g, h)
+            ],
+        )
+
+        self.assertEqual(len(correlation_ids), 8)
+
+    def start(self, main: Callable, *args: Any, **kwargs: Any) -> Output:
         input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
+        return OneShotScheduler(main).run(input)
+
+    def resume(
+        self, main: Callable, prev_output: Output, call_results: list[CallResult]
+    ):
+        poll = self.assert_poll(prev_output)
+        input = Input.from_poll_results(
+            main.__qualname__, poll.coroutine_state, call_results
+        )
         return OneShotScheduler(main).run(input)
 
     def assert_exit(self, output: Output) -> exit_pb.Exit:
@@ -134,12 +256,27 @@ class TestOneShotScheduler(unittest.TestCase):
 
     def assert_poll(self, output: Output) -> poll_pb.Poll:
         response = output._message
-        self.assertFalse(response.HasField("exit"))
+        if response.HasField("exit"):
+            raise RuntimeError(
+                f"coroutine unexpectedly returned {response.exit.result}"
+            )
         self.assertTrue(response.HasField("poll"))
         return response.poll
 
+    def assert_empty_poll(self, output: Output):
+        poll = self.assert_poll(output)
+        self.assertEqual(poll.calls, [])
+
     def assert_poll_call_functions(self, output: Output, expect: list[str]):
         poll = self.assert_poll(output)
-        # Note: we're not testing endpoint/input/correlation ID here.
-        actual = [c.function for c in poll.calls]
-        self.assertListEqual(actual, expect)
+        # Note: we're not testing endpoint/input here.
+        # Check function names match:
+        self.assertListEqual([c.function for c in poll.calls], expect)
+        # Check correlation IDs are unique.
+        correlation_ids = [c.correlation_id for c in poll.calls]
+        self.assertEqual(
+            len(correlation_ids),
+            len(set(correlation_ids)),
+            "correlation IDs were not unique",
+        )
+        return poll.calls

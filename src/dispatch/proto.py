@@ -98,6 +98,19 @@ class Input:
             )
         )
 
+    @classmethod
+    def from_poll_results(
+        cls, function: str, coroutine_state: Any, call_results: list[CallResult]
+    ):
+        return Input(
+            req=function_pb.RunRequest(
+                poll_result=poll_pb.PollResult(
+                    coroutine_state=coroutine_state,
+                    results=[result._as_proto() for result in call_results],
+                )
+            )
+        )
+
 
 @dataclass
 class Arguments:
