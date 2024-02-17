@@ -1,7 +1,8 @@
 import unittest
 
-from dispatch.status import Status, status_for_error
 from dispatch.integrations.http import http_response_code_status
+from dispatch.status import Status, status_for_error
+
 
 class TestErrorStatus(unittest.TestCase):
 
@@ -62,6 +63,7 @@ class TestErrorStatus(unittest.TestCase):
         register_error_type(CustomError, handler)
         self.assertEqual(status_for_error(CustomError()), Status.OK)
 
+
 class TestHTTPStatusCodes(unittest.TestCase):
 
     def test_http_response_code_status_400(self):
@@ -100,12 +102,16 @@ class TestHTTPStatusCodes(unittest.TestCase):
     def test_http_response_code_status_4xx(self):
         for status in range(400, 500):
             if status not in (400, 401, 403, 404, 408, 429, 501):
-                self.assertEqual(http_response_code_status(status), Status.PERMANENT_ERROR)
+                self.assertEqual(
+                    http_response_code_status(status), Status.PERMANENT_ERROR
+                )
 
     def test_http_response_code_status_5xx(self):
         for status in range(500, 600):
             if status not in (501,):
-                self.assertEqual(http_response_code_status(status), Status.TEMPORARY_ERROR)
+                self.assertEqual(
+                    http_response_code_status(status), Status.TEMPORARY_ERROR
+                )
 
     def test_http_response_code_status_6xx(self):
         for status in range(600, 700):
