@@ -443,7 +443,7 @@ class TestCoroutine(unittest.TestCase):
         self.assertEqual('"OK"', http_response.text)
 
         resp = self.call(get, "/missing")
-        self.assertEqual(Status.PERMANENT_ERROR, Status(resp.status))
+        self.assertEqual(Status.NOT_FOUND, Status(resp.status))
 
     def test_library_output_categorization(self):
         @self.dispatch.function()

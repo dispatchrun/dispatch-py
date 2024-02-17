@@ -5,6 +5,16 @@ def http_response_code_status(code: int) -> Status:
     """Returns a Status that's broadly equivalent to an HTTP response
     status code."""
     match code:
+        case 400:  # Bad Request
+            return Status.INVALID_ARGUMENT
+        case 401:  # Unauthorized
+            return Status.UNAUTHENTICATED
+        case 403:  # Forbidden
+            return Status.PERMISSION_DENIED
+        case 404:  # Not Found
+            return Status.NOT_FOUND
+        case 408:  # Request Timeout
+            return Status.TIMEOUT
         case 429:  # Too Many Requests
             return Status.THROTTLED
         case 501:  # Not Implemented
