@@ -145,7 +145,9 @@ class OneShotScheduler:
     take over scheduling asynchronous calls.
     """
 
-    def __init__(self, entry_point: Callable, version=sys.version, poll_max_wait_seconds=5):
+    def __init__(
+        self, entry_point: Callable, version=sys.version, poll_max_wait_seconds=5
+    ):
         self.entry_point = entry_point
         self.version = version
         self.poll_max_wait_seconds = poll_max_wait_seconds
