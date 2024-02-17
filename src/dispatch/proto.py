@@ -331,6 +331,7 @@ class Error:
 
         g = globals()
         try:
+            assert isinstance(self.type, str)
             cls = g[self.type]
             assert issubclass(cls, Exception)
         except (KeyError, AssertionError):
