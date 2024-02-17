@@ -145,9 +145,10 @@ class OneShotScheduler:
     take over scheduling asynchronous calls.
     """
 
-    def __init__(self, entry_point: Callable, version=sys.version):
+    def __init__(self, entry_point: Callable, version=sys.version, poll_max_wait_seconds=5):
         self.entry_point = entry_point
         self.version = version
+        self.poll_max_wait_seconds = poll_max_wait_seconds
         logger.debug(
             "booting coroutine scheduler with entry point '%s' version '%s'",
             entry_point.__qualname__,
@@ -349,8 +350,10 @@ class OneShotScheduler:
         return Output.poll(
             state=serialized_state,
             calls=pending_calls,
-            # FIXME: use min_results + max_results + max_wait to balance latency/throughput
             max_results=1,
+            # FIXME: use min_results + max_results + max_wait to balance latency/throughput
+            # max_results=len(max_results),
+            max_wait_seconds=self.poll_max_wait_seconds,
         )
 
 

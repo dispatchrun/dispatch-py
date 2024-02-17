@@ -173,16 +173,17 @@ class Output:
         state: Any,
         calls: None | list[Call] = None,
         max_results: int = 1,
-        max_wait_seconds: int = 5,
+        max_wait_seconds: int | None = None,
     ) -> Output:
         """Suspend the function with a set of Calls, instructing the
         orchestrator to resume the function with the provided state when
         call results are ready."""
         state_bytes = pickle.dumps(state)
+        max_wait = duration_pb2.Duration(seconds=max_wait_seconds) if max_wait_seconds is not None else None
         poll = poll_pb.Poll(
             coroutine_state=state_bytes,
             max_results=max_results,
-            max_wait=duration_pb2.Duration(seconds=max_wait_seconds),
+            max_wait=max_wait,
         )
 
         if calls is not None:
