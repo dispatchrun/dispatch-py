@@ -63,22 +63,22 @@ class Dispatch(Registry):
             app: The FastAPI app to configure.
 
             endpoint: Full URL of the application the Dispatch programmable
-              endpoint will be running on. Uses the value of the
-              DISPATCH_ENDPOINT_URL environment variable by default.
+                endpoint will be running on. Uses the value of the
+                DISPATCH_ENDPOINT_URL environment variable by default.
 
             verification_key: Key to use when verifying signed requests. Uses
-              the value of the DISPATCH_VERIFICATION_KEY environment variable
-              by default. The environment variable is expected to carry an
-              Ed25519 public key in base64 or PEM format.
-              If not set, request signature verification is disabled (a warning
-              will be logged by the constructor).
+                the value of the DISPATCH_VERIFICATION_KEY environment variable
+                by default. The environment variable is expected to carry an
+                Ed25519 public key in base64 or PEM format.
+                If not set, request signature verification is disabled (a warning
+                will be logged by the constructor).
 
             api_key: Dispatch API key to use for authentication. Uses the value of
-              the DISPATCH_API_KEY environment variable by default.
+                the DISPATCH_API_KEY environment variable by default.
 
             api_url: The URL of the Dispatch API to use. Uses the value of the
-              DISPATCH_API_URL environment variable if set, otherwise
-              defaults to the public Dispatch API (DEFAULT_API_URL).
+                DISPATCH_API_URL environment variable if set, otherwise
+                defaults to the public Dispatch API (DEFAULT_API_URL).
 
         Raises:
             ValueError: If any of the required arguments are missing.

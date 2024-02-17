@@ -290,7 +290,7 @@ class Error:
 
         Raises:
             ValueError: Neither type or message was provided or status is
-              invalid.
+                invalid.
         """
         if type is None and message is None:
             raise ValueError("At least one of type or message is required")
