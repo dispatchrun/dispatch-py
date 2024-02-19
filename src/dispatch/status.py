@@ -83,38 +83,31 @@ def status_for_error(error: Exception) -> Status:
     handler = _find_handler(error, _ERROR_TYPES)
     if handler is not None:
         return handler(error)
-
     # If not, resort to standard error categorization.
     #
     # See https://docs.python.org/3/library/exceptions.html
-    status = Status.PERMANENT_ERROR
-    try:
-        # Raise the exception and catch it so that the interpreter deals
-        # with exception groups and chaining for us.
-        raise error
-    except IncompatibleStateError:
-        status = Status.INCOMPATIBLE_STATE
-    except TimeoutError:
-        status = Status.TIMEOUT
-    except (TypeError, ValueError):
-        status = Status.INVALID_ARGUMENT
-    except ConnectionError:
-        status = Status.TCP_ERROR
-    except PermissionError:
-        status = Status.PERMISSION_DENIED
-    except FileNotFoundError:
-        status = Status.NOT_FOUND
-    except (EOFError, InterruptedError, KeyboardInterrupt, OSError):
-        # For OSError, we might want to categorize the values of errno to
-        # determine whether the error is temporary or permanent.
-        #
-        # In general, permanent errors from the OS are rare because they tend to
-        # be caused by invalid use of syscalls, which are unlikely at higher
-        # abstraction levels.
-        status = Status.TEMPORARY_ERROR
-    except BaseException:
-        pass
-    return status
+    match error:
+        case IncompatibleStateError():
+            return Status.INCOMPATIBLE_STATE
+        case TimeoutError():
+            return Status.TIMEOUT
+        case TypeError() | ValueError():
+            return Status.INVALID_ARGUMENT
+        case ConnectionError():
+            return Status.TCP_ERROR
+        case PermissionError():
+            return Status.PERMISSION_DENIED
+        case FileNotFoundError():
+            return Status.NOT_FOUND
+        case EOFError() | InterruptedError() | KeyboardInterrupt() | OSError():
+            # For OSError, we might want to categorize the values of errnon
+            # to determine whether the error is temporary or permanent.
+            #
+            # In general, permanent errors from the OS are rare because they
+            # tend to be caused by invalid use of syscalls, which are
+            # unlikely at higher abstraction levels.
+            return Status.TEMPORARY_ERROR
+    return Status.PERMANENT_ERROR
 
 
 def status_for_output(output: Any) -> Status:

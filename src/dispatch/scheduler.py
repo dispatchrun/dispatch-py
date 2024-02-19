@@ -106,19 +106,19 @@ class Coroutine:
 
     id: CoroutineID
     parent_id: CoroutineID | None
-
     coroutine: DurableCoroutine | DurableGenerator
-
     result: Future | None = None
 
     def run(self) -> Any:
         if self.result is None:
             return self.coroutine.send(None)
-
         assert self.result.ready()
         if (error := self.result.error()) is not None:
             return self.coroutine.throw(error)
         return self.coroutine.send(self.result.value())
+
+    def __str__(self):
+        return self.coroutine.__qualname__
 
     def __repr__(self):
         return f"Coroutine({self.id}, {self.coroutine.__qualname__})"
@@ -254,6 +254,9 @@ class OneShotScheduler:
                     coroutine_id=coroutine.id, value=e.value
                 )
             except Exception as e:
+                logger.exception(
+                    f"@dispatch.coroutine: '{coroutine}' raised an exception"
+                )
                 coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
 
             # Handle coroutines that return or raise.
