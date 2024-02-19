@@ -47,6 +47,8 @@ logger = logging.getLogger(__name__)
 class Dispatch(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
+    __slots__ = ()
+
     def __init__(
         self,
         app: fastapi.FastAPI,

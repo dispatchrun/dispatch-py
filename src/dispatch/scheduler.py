@@ -18,7 +18,7 @@ CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
 
 
-@dataclass
+@dataclass(slots=True)
 class CoroutineResult:
     """The result from running a coroutine to completion."""
 
@@ -27,7 +27,7 @@ class CoroutineResult:
     error: Exception | None = None
 
 
-@dataclass
+@dataclass(slots=True)
 class CallResult:
     """The result of an asynchronous function call."""
 
@@ -43,7 +43,7 @@ class Future(Protocol):
     def value(self) -> Any: ...
 
 
-@dataclass
+@dataclass(slots=True)
 class CallFuture:
     """A future result of a dispatch.coroutine.call() operation."""
 
@@ -65,7 +65,7 @@ class CallFuture:
         return self.result.value
 
 
-@dataclass
+@dataclass(slots=True)
 class GatherFuture:
     """A future result of a dispatch.coroutine.gather() operation."""
 
@@ -100,7 +100,7 @@ class GatherFuture:
         return [self.results[id].value for id in self.order]
 
 
-@dataclass
+@dataclass(slots=True)
 class Coroutine:
     """An in-flight coroutine."""
 
@@ -124,15 +124,13 @@ class Coroutine:
         return f"Coroutine({self.id}, {self.coroutine.__qualname__})"
 
 
-@dataclass
+@dataclass(slots=True)
 class State:
     """State of the scheduler and the coroutines it's managing."""
 
     version: str
-
     suspended: dict[CoroutineID, Coroutine]
     ready: list[Coroutine]
-
     next_coroutine_id: int
     next_call_id: int
 
@@ -144,6 +142,8 @@ class OneShotScheduler:
     When all local coroutines are suspended, the scheduler yields to Dispatch to
     take over scheduling asynchronous calls.
     """
+
+    __slots__ = ("entry_point", "version", "poll_max_wait_seconds")
 
     def __init__(
         self, entry_point: Callable, version=sys.version, poll_max_wait_seconds=5

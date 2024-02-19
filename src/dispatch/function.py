@@ -28,6 +28,8 @@ class Function:
     Dispatch Python SDK.
     """
 
+    __slots__ = ("_endpoint", "_client", "_name", "_primitive_func", "_func", "call")
+
     def __init__(
         self,
         endpoint: str,
@@ -125,6 +127,8 @@ class Function:
 
 class Registry:
     """Registry of local functions."""
+
+    __slots__ = ("_functions", "_endpoint", "_client")
 
     def __init__(self, endpoint: str, client: Client | None):
         """Initialize a local function registry.

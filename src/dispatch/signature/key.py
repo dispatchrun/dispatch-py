@@ -48,7 +48,7 @@ def private_key_from_bytes(key: bytes) -> Ed25519PrivateKey:
     return Ed25519PrivateKey.from_private_bytes(key)
 
 
-@dataclass
+@dataclass(slots=True)
 class KeyResolver(HTTPSignatureKeyResolver):
     """KeyResolver provides public and private keys.
 

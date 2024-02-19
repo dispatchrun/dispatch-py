@@ -3,12 +3,11 @@ from dataclasses import dataclass
 from types import FunctionType
 
 
-@dataclass
+@dataclass(slots=True)
 class RegisteredFunction:
     """A function that can be referenced in durable state."""
 
     fn: FunctionType
-
     key: str
     filename: str
     lineno: int
