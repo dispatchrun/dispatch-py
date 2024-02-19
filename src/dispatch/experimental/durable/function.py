@@ -62,7 +62,15 @@ def durable(fn: Callable) -> Callable:
 class Serializable:
     """A wrapper for a generator or coroutine that makes it serializable."""
 
-    __slots__ = ("g", "registered_fn", "wrapped_coroutine", "args", "kwargs", "__name__", "__qualname__")
+    __slots__ = (
+        "g",
+        "registered_fn",
+        "wrapped_coroutine",
+        "args",
+        "kwargs",
+        "__name__",
+        "__qualname__",
+    )
 
     g: GeneratorType | CoroutineType
     registered_fn: RegisteredFunction
