@@ -63,6 +63,12 @@ class TestErrorStatus(unittest.TestCase):
         register_error_type(CustomError, handler)
         assert status_for_error(CustomError()) is Status.OK
 
+    def test_status_for_custom_timeout(self):
+        class CustomError(TimeoutError):
+            pass
+
+        assert status_for_error(CustomError()) is Status.TIMEOUT
+
 
 class TestHTTPStatusCodes(unittest.TestCase):
 
