@@ -7,6 +7,7 @@ import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
 import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
 import dispatch.sdk.v1.function_pb2 as function_pb
 import dispatch.sdk.v1.function_pb2_grpc as function_grpc
+import dispatch.sdk.v1.status_pb2 as status_pb
 from dispatch import Client, DispatchID
 
 _test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
@@ -18,7 +19,7 @@ class FakeDispatchService(dispatch_grpc.DispatchServiceServicer):
         self._next_dispatch_id = 1
         self._pending_calls = []
 
-        self.responses = {}  # indexed by dispatch ID
+        self.responses = []
         self.dispatched_calls = []
 
     def _make_dispatch_id(self) -> DispatchID:
@@ -53,7 +54,10 @@ class FakeDispatchService(dispatch_grpc.DispatchServiceServicer):
 
     def execute(self, client: function_grpc.FunctionServiceStub):
         """Synchronously execute all pending function calls."""
-        while len(self._pending_calls) > 0:
+
+        _next_pending_calls = []
+
+        for entry in self._pending_calls:
             entry = self._pending_calls.pop(0)
             call: call_pb.Call = entry["call"]
 
@@ -63,7 +67,38 @@ class FakeDispatchService(dispatch_grpc.DispatchServiceServicer):
             )
 
             resp = client.Run(req)
-            self.responses[entry["dispatch_id"]] = resp
+            self.responses.append(
+                {"dispatch_id": entry["dispatch_id"], "response": resp}
+            )
+
+            if self._should_retry_status(resp.status):
+                _next_pending_calls.append(
+                    {"dispatch_id": self._make_dispatch_id(), "call": call}
+                )
+
+        self._pending_calls = _next_pending_calls
+
+    def response_for(self, dispatch_id: DispatchID) -> function_pb.RunResponse | None:
+        for entry in self.responses:
+            if entry["dispatch_id"] == dispatch_id:
+                return entry["response"]
+        return None
+
+    def _should_retry_status(self, status: status_pb.Status) -> bool:
+        match status:
+            case (
+                status_pb.STATUS_THROTTLED
+                | status_pb.STATUS_TIMEOUT
+                | status_pb.STATUS_TEMPORARY_ERROR
+                | status_pb.STATUS_INCOMPATIBLE_STATE
+                | status_pb.STATUS_DNS_ERROR
+                | status_pb.STATUS_TCP_ERROR
+                | status_pb.STATUS_TLS_ERROR
+                | status_pb.STATUS_HTTP_ERROR
+            ):
+                return True
+            case _:
+                return False
 
 
 class ServerTest:

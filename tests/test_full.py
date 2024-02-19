@@ -66,5 +66,5 @@ class TestFullFastapi(unittest.TestCase):
         self.execute()
 
         # Validate results.
-        resp = self.servicer.responses[dispatch_id]
+        resp = self.servicer.response_for(dispatch_id)
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
