@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import pickle
 from dataclasses import dataclass
+from traceback import format_exception
 from types import TracebackType
 from typing import Any
 
 import google.protobuf.any_pb2
 import google.protobuf.message
 import google.protobuf.wrappers_pb2
+import tblib  # type: ignore[import-untyped]
 from google.protobuf import duration_pb2
 
 from dispatch.sdk.v1 import call_pb2 as call_pb
@@ -287,21 +289,24 @@ class Error:
         type: str | None,
         message: str | None,
         value: Exception | None = None,
+        traceback: bytes | None = None,
     ):
         """Create a new Error.
 
         Args:
             status: categorization of the error.
-            type: arbitrary string, used for humans. Optional.
-            message: arbitrary message. Optional.
+            type: arbitrary string, used for humans.
+            message: arbitrary message.
             value: arbitrary exception from which the error is derived. Optional.
 
         Raises:
             ValueError: Neither type or message was provided or status is
                 invalid.
         """
-        if type is None and message is None:
-            raise ValueError("At least one of type or message is required")
+        if type is None:
+            raise ValueError("Error type is required")
+        if message is None:
+            raise ValueError("Error message is required")
         if status is Status.OK:
             raise ValueError("Status cannot be OK")
 
@@ -309,6 +314,9 @@ class Error:
         self.message = message
         self.status = status
         self.value = value
+        self.traceback = traceback
+        if not traceback and value:
+            self.traceback = "".join(format_exception(value)).encode("utf-8")
 
     @classmethod
     def from_exception(cls, ex: Exception, status: Status | None = None) -> Error:
@@ -318,35 +326,42 @@ class Error:
         The status tries to be inferred, but can be overridden. If it is not
         provided or cannot be inferred, it defaults to TEMPORARY_ERROR.
         """
-
         if status is None:
             status = status_for_error(ex)
-
         return Error(status, ex.__class__.__qualname__, str(ex), ex)
 
     def to_exception(self) -> Exception:
         """Returns an equivalent exception."""
         if self.value is not None:
-            return self.value
-
-        g = globals()
-        try:
-            assert isinstance(self.type, str)
-            cls = g[self.type]
-            assert issubclass(cls, Exception)
-        except (KeyError, AssertionError):
-            return RuntimeError(self.message)
+            e = self.value
         else:
-            return cls(self.message)
+            g = globals()
+            try:
+                assert isinstance(self.type, str)
+                cls = g[self.type]
+                assert issubclass(cls, Exception)
+            except (KeyError, AssertionError):
+                e = RuntimeError(self.message)
+            else:
+                e = cls(self.message)
+        if self.traceback is not None:
+            e.__traceback__ = tblib.Traceback.from_string(
+                self.traceback.decode("utf-8"), strict=False
+            ).as_traceback()
+        return e
 
     @classmethod
     def _from_proto(cls, proto: error_pb.Error) -> Error:
         value = pickle.loads(proto.value) if proto.value else None
-        return cls(Status.UNSPECIFIED, proto.type, proto.message, value)
+        return cls(
+            Status.UNSPECIFIED, proto.type, proto.message, value, proto.traceback
+        )
 
     def _as_proto(self) -> error_pb.Error:
         value = pickle.dumps(self.value) if self.value else None
-        return error_pb.Error(type=self.type, message=self.message, value=value)
+        return error_pb.Error(
+            type=self.type, message=self.message, value=value, traceback=self.traceback
+        )
 
 
 def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
