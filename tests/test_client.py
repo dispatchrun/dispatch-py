@@ -26,7 +26,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaisesRegex(
             PermissionError,
-            "Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
+            r"Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
         ) as mc:
             client.dispatch([Call(function="my-function", input=42)])
 
@@ -37,7 +37,7 @@ class TestClient(unittest.TestCase):
 
         with self.assertRaisesRegex(
             PermissionError,
-            "Dispatch received an invalid authentication token \(check api_key is correct\)",
+            r"Dispatch received an invalid authentication token \(check api_key is correct\)",
         ) as mc:
             client.dispatch([Call(function="my-function", input=42)])
 
