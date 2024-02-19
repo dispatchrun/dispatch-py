@@ -23,6 +23,8 @@ class DurableFunction:
     """A wrapper for generator functions and async functions that make
     their generator and coroutine instances serializable."""
 
+    __slots__ = ("registered_fn", "__name__", "__qualname__")
+
     def __init__(self, fn: FunctionType):
         self.registered_fn = register_function(fn)
         self.__name__ = fn.__name__
@@ -60,6 +62,8 @@ def durable(fn: Callable) -> Callable:
 class Serializable:
     """A wrapper for a generator or coroutine that makes it serializable."""
 
+    __slots__ = ("g", "registered_fn", "wrapped_coroutine", "args", "kwargs", "__name__", "__qualname__")
+
     g: GeneratorType | CoroutineType
     registered_fn: RegisteredFunction
     wrapped_coroutine: Union["DurableCoroutine", None]
@@ -79,7 +83,6 @@ class Serializable:
         self.wrapped_coroutine = wrapped_coroutine
         self.args = args
         self.kwargs = kwargs
-
         self.__name__ = registered_fn.fn.__name__
         self.__qualname__ = registered_fn.fn.__qualname__
 
@@ -196,6 +199,8 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
     """A wrapper for a coroutine that makes it serializable (can be pickled).
     Instances behave like the coroutines they wrap."""
 
+    __slots__ = ("coroutine",)
+
     def __init__(
         self,
         coroutine: CoroutineType,
@@ -258,6 +263,8 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
 class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
     """A wrapper for a generator that makes it serializable (can be pickled).
     Instances behave like the generators they wrap."""
+
+    __slots__ = ("generator",)
 
     def __init__(
         self,

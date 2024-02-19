@@ -36,6 +36,8 @@ class Input:
     This class is intended to be used as read-only.
     """
 
+    __slots__ = ("_has_input", "_input", "_coroutine_state", "_call_results")
+
     def __init__(self, req: function_pb.RunRequest):
         self._has_input = req.HasField("input")
         if self._has_input:
@@ -115,7 +117,7 @@ class Input:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class Arguments:
     """A container for positional and keyword arguments."""
 
@@ -123,6 +125,7 @@ class Arguments:
     kwargs: dict[str, Any]
 
 
+@dataclass(slots=True)
 class Output:
     """The output of a primitive function.
 
@@ -131,6 +134,8 @@ class Output:
     methods create an instance of this class. For example Output.value() or
     Output.poll().
     """
+
+    _message: function_pb.RunResponse
 
     def __init__(self, proto: function_pb.RunResponse):
         self._message = proto
@@ -211,7 +216,7 @@ class Output:
 # the current Python process.
 
 
-@dataclass
+@dataclass(slots=True)
 class Call:
     """Instruction to call a function.
 
@@ -234,7 +239,7 @@ class Call:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class CallResult:
     """Result of a Call."""
 
@@ -276,6 +281,7 @@ class CallResult:
         return CallResult(correlation_id=correlation_id, error=error)
 
 
+@dataclass(slots=True)
 class Error:
     """Error when running a function.
 
@@ -283,11 +289,17 @@ class Error:
     Output.
     """
 
+    status: Status
+    type: str
+    message: str
+    value: Exception | None = None
+    traceback: bytes | None = None
+
     def __init__(
         self,
         status: Status,
-        type: str | None,
-        message: str | None,
+        type: str,
+        message: str,
         value: Exception | None = None,
         traceback: bytes | None = None,
     ):

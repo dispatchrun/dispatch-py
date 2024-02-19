@@ -21,6 +21,8 @@ DEFAULT_API_URL = "https://api.stealthrocket.cloud"
 class Client:
     """Client for the Dispatch API."""
 
+    __slots__ = ("api_url", "api_key", "_stub", "api_key_from")
+
     def __init__(self, api_key: None | str = None, api_url: None | str = None):
         """Create a new Dispatch client.
 

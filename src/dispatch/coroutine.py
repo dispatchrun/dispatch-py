@@ -23,6 +23,6 @@ def gather(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
     return (yield Gather(awaitables))
 
 
-@dataclass
+@dataclass(slots=True)
 class Gather:
     awaitables: tuple[Awaitable[Any], ...]
