@@ -1542,12 +1542,16 @@ with_call method of a Function instead.</p>
 <h2 id="dispatch.Error" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Error</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#dispatch.Error" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Error</span><span class="p">(</span>
     <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span><span class="p">,</span>
-    <span class="nb">type</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">message</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
+    <span class="n">message</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">traceback</span><span class="p">:</span> <span class="n">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1591,7 +1595,7 @@ Output.</p>
         <tr>
           <td><code>type</code></td>
           <td>
-                <code>str | None</code>
+                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1605,7 +1609,7 @@ Output.</p>
         <tr>
           <td><code>message</code></td>
           <td>
-                <code>str | None</code>
+                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1804,6 +1808,10 @@ between the two cases.</p>
 <h2 id="dispatch.Output" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Output</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#dispatch.Output" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Output</span><span class="p">(</span><span class="n">proto</span><span class="p">:</span> <span class="n"><span title="dispatch.sdk.v1.function_pb2.RunResponse">RunResponse</span></span><span class="p">)</span>
