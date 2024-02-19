@@ -1,7 +1,6 @@
 import logging
 import pickle
 import sys
-import traceback
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol, TypeAlias
 
