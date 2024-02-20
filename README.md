@@ -148,11 +148,11 @@ export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ec
 
 ### Durable coroutines for Python
 
-Statefule functions can be turned into durable coroutines by declaring them
+Stateful functions can be turned into durable coroutines by declaring them
 *async*. When doing so, every await point becomes a durable step in the
 function execution: if the awaited operation fails, it is automatically
 retried and the parent function is paused until the result becomes available,
-or a parmanent error is raised.
+or a permanent error is raised.
 
 ```python
 @dispatch.function
