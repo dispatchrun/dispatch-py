@@ -144,7 +144,42 @@ different value, but in this example it would be:
 export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app"
 ```
 
-### Examples
+### Durable coroutines for Python
+
+Statefule functions can be turned into durable coroutines by declaring them
+*async*. When doing so, every await point becomes a durable step in the
+function execution: if the awaited operation fails, it is automatically
+retried and the parent function is paused until the result becomes available,
+or a parmanent error is raised.
+
+```python
+@dispatch.function
+async def pipeline(msg):
+    # Each await point is a durability step, the functions can be run across the
+    # fleet of service instances and retried as needed without losing track of
+    # progress through the function execution.
+    msg = await transform1(msg)
+    msg = await transform2(msg)
+    await publish(msg)
+
+@dispatch.function
+async def publish(msg):
+    # Each dispatch function runs concurrently to the others, even if it does
+    # blocking operations like this POST request, it does not prevent other
+    # concurrent operations from carrying on in the program.
+    r = requests.post("https://somewhere.com/", data=msg)
+    r.raise_for_status()
+
+@dispatch.function
+async def transform1(msg):
+    ...
+
+@dispatch.function
+async def transform2(msg):
+    ...
+```
+
+## Examples
 
 Check out the [examples](examples/) directory for code samples to help you get
 started with the SDK.
