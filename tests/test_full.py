@@ -84,5 +84,9 @@ class TestFullFastapi(unittest.TestCase):
             self.execute()
         except httpx.HTTPStatusError as e:
             assert e.response.status_code == 403
+            assert e.response.json() == {
+                "code": "permission_denied",
+                "message": 'Expected "Signature-Input" header field to be present',
+            }
         else:
             assert False, "Expected HTTPStatusError"
