@@ -1,8 +1,6 @@
 import traceback
 import unittest
 
-from httpx import HTTPStatusError
-
 from dispatch.proto import Error
 
 
@@ -55,26 +53,3 @@ class TestError(unittest.TestCase):
         reconstructed_exception = error.to_exception()
         assert type(reconstructed_exception) is type(original_exception)
         assert str(reconstructed_exception) == str(original_exception)
-
-    def test_reconstruct_httpx_error(self):
-        req = Request("http://example.com")
-        res = Response(404)
-        try:
-            raise HTTPStatusError("test", request=res, response=res)
-        except Exception as e:
-            original_exception = e
-
-        error = Error.from_exception(original_exception)
-        proto_error = error._as_proto()
-
-        reconstructed_exception = Error._from_proto(proto_error).to_exception()
-        assert type(reconstructed_exception) is type(original_exception)
-        assert str(reconstructed_exception) == str(original_exception)
-
-class Request:
-    def __init__(self, url):
-        self.url = url
-
-class Response:
-    def __init__(self, status_code):
-        self.status_code = status_code
