@@ -12,7 +12,7 @@ from ... import function_service
 from ...test_client import ServerTest
 
 
-class TestAutoRetry(unittest.TestCase):
+class TestGithubStats(unittest.TestCase):
     @mock.patch.dict(
         os.environ,
         {
@@ -36,6 +36,7 @@ class TestAutoRetry(unittest.TestCase):
         response = http_client.get("/")
         self.assertEqual(response.status_code, 200)
 
+        server.execute(app_client)
         server.execute(app_client)
 
         self.assertEqual(len(servicer.responses), 1)
