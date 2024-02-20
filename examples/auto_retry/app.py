@@ -44,7 +44,7 @@ def third_party_api_call(x):
         return "SUCCESS"
 
 
-# Use the `dispatch.function` decorator to mark a function as durable.
+# Use the `dispatch.function` decorator to declare a stateful function.
 @dispatch.function()
 def some_logic():
     print("Executing some logic")
@@ -56,8 +56,9 @@ def some_logic():
 # This is a normal FastAPI route that handles regular traffic.
 @app.get("/")
 def root():
-    # Use the `dispatch` method to call the durable function. This call is
-    # non-blocking and returns immediately.
+    # Use the `dispatch` method to call the stateful function. This call is
+    # returns immediately after scheduling the function call, which happens in
+    # the background.
     some_logic.dispatch()
-    # Sending an unrelated response immediately.
+    # Sending a response now that the HTTP handler has completed.
     return "OK"
