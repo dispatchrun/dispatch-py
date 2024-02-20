@@ -1,6 +1,5 @@
 import traceback
 import unittest
-from pprint import pprint
 
 from dispatch.proto import Error
 
@@ -41,3 +40,16 @@ class TestError(unittest.TestCase):
         assert type(reconstructed_exception2) is type(original_exception)
         assert str(reconstructed_exception2) == str(original_exception)
         assert original_traceback == reconstructed_traceback2
+
+    def test_conversion_without_traceback(self):
+        try:
+            raise ValueError("test")
+        except Exception as e:
+            original_exception = e
+
+        error = Error.from_exception(original_exception)
+        error.traceback = ""
+
+        reconstructed_exception = error.to_exception()
+        assert type(reconstructed_exception) is type(original_exception)
+        assert str(reconstructed_exception) == str(original_exception)
