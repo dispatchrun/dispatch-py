@@ -8,6 +8,8 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
+import dispatch.sdk.v1.status_pb2 as status_pb
+
 from ... import function_service
 from ...test_client import ServerTest
 
@@ -36,4 +38,13 @@ class TestAutoRetry(unittest.TestCase):
 
         server.execute(app_client)
 
-        self.assertEqual(len(servicer.responses), 1)
+        # Seed(2) used in the app outputs 0, 0, 0, 2, 1, 5. So we expect 6
+        # calls, including 5 retries.
+        for i in range(6):
+            server.execute(app_client)
+        self.assertEqual(len(servicer.responses), 6)
+
+        statuses = [r["response"].status for r in servicer.responses]
+        self.assertEqual(
+            statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
+        )
