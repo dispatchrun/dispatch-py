@@ -47,7 +47,7 @@ class Function:
     Dispatch Python SDK.
     """
 
-    __slots__ = ("_endpoint", "_client", "_name", "_primitive_func", "_func", "call")
+    __slots__ = ("_endpoint", "_client", "_name", "_primitive_func", "_func", "_call")
 
     def __init__(
         self,
@@ -62,13 +62,12 @@ class Function:
         self._name = name
         self._primitive_func = primitive_func
         self._func = func
-
         # FIXME: is there a way to decorate the function at the definition
         #  without making it a class method?
-        self.call = durable(self._call_async)
+        self._call = durable(self._call_async)
 
     def __call__(self, *args, **kwargs):
-        return self.call(*args, **kwargs)
+        return self._call(*args, **kwargs)
 
     def _primitive_call(self, input: Input) -> Output:
         return self._primitive_func(input)
@@ -109,7 +108,7 @@ class Function:
         return dispatch_id
 
     async def _call_async(self, *args, **kwargs) -> Any:
-        """Asynchronously call the function from a @dispatch.coroutine."""
+        """Asynchronously call the function from a @dispatch.function."""
         return await dispatch.coroutine.call(
             self.build_call(*args, **kwargs, correlation_id=None)
         )
