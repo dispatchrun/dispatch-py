@@ -45,7 +45,7 @@ def third_party_api_call(x):
 
 
 # Use the `dispatch.function` decorator to declare a stateful function.
-@dispatch.function()
+@dispatch.function
 def some_logic():
     print("Executing some logic")
     x = rng.randint(0, 5)

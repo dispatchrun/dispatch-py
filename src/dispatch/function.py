@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import functools
 import inspect
 import logging
+from functools import wraps
 from types import FunctionType
 from typing import Any, Callable, Dict, TypeAlias
 
@@ -21,6 +21,25 @@ PrimitiveFunctionType: TypeAlias = Callable[[Input], Output]
 and unconditionally returns a dispatch.proto.Output. It must not raise
 exceptions.
 """
+
+
+# https://stackoverflow.com/questions/653368/how-to-create-a-decorator-that-can-be-used-either-with-or-without-parameters
+def decorator(f):
+    """This decorator is intended to declare decorators that can be used with
+    or without parameters. If the decorated function is called with a single
+    callable argument, it is assumed to be a function and the decorator is
+    applied to it. Otherwise, the decorator is called with the arguments
+    provided and the result is returned.
+    """
+
+    @wraps(f)
+    def method(self, *args, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
+            return f(self, args[0])
+        else:
+            return lambda realf: f(self, realf, *args, **kwargs)
+
+    return method
 
 
 class Function:
@@ -142,32 +161,19 @@ class Registry:
         self._endpoint = endpoint
         self._client = client
 
-    def function(self) -> Callable[[FunctionType], Function]:
+    @decorator
+    def function(self, f: Callable) -> Function:
         """Returns a decorator that registers functions."""
+        return self._register_function(f)
 
-        # Note: the indirection here means that we can add parameters
-        # to the decorator later without breaking existing apps.
-        return self._register_function
-
-    def coroutine(self) -> Callable[[FunctionType], Function | FunctionType]:
-        """Returns a decorator that registers coroutines."""
-
-        # Note: the indirection here means that we can add parameters
-        # to the decorator later without breaking existing apps.
-        return self._register_coroutine
-
-    def primitive_function(self) -> Callable[[PrimitiveFunctionType], Function]:
+    @decorator
+    def primitive_function(self, f: Callable) -> Function:
         """Returns a decorator that registers primitive functions."""
-
-        # Note: the indirection here means that we can add parameters
-        # to the decorator later without breaking existing apps.
-        return self._register_primitive_function
+        return self._register_primitive_function(f)
 
     def _register_function(self, func: Callable) -> Function:
         if inspect.iscoroutinefunction(func):
-            raise TypeError(
-                "async functions must be registered via @dispatch.coroutine"
-            )
+            return self._register_coroutine(func)
 
         logger.info("registering function: %s", func.__qualname__)
 
@@ -175,6 +181,7 @@ class Registry:
         # it's referenced from a @dispatch.coroutine.
         func = durable(func)
 
+        @wraps(func)
         def primitive_func(input: Input) -> Output:
             try:
                 try:
@@ -196,14 +203,11 @@ class Registry:
         return self._register(func, primitive_func)
 
     def _register_coroutine(self, func: Callable) -> Function:
-        if not inspect.iscoroutinefunction(func):
-            raise TypeError(f"{func.__qualname__} must be an async function")
-
         logger.info("registering coroutine: %s", func.__qualname__)
 
         func = durable(func)
 
-        @functools.wraps(func)
+        @wraps(func)
         def primitive_func(input: Input) -> Output:
             return OneShotScheduler(func).run(input)
 

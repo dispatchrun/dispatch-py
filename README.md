@@ -45,7 +45,7 @@ The SDK allows Python applications to declare *Stateful Functions* that the
 Dispatch scheduler can orchestrate. This is the bare minimum structure used
 to declare stateful functions:
 ```python
-@dispatch.function()
+@dispatch.function
 def action(msg):
     ...
 ```
@@ -94,7 +94,7 @@ import requests
 app = FastAPI()
 dispatch = Dispatch(app)
 
-@dispatch.function()
+@dispatch.function
 def publish(url, payload):
     r = requests.post(url, data=payload)
     r.raise_for_status()

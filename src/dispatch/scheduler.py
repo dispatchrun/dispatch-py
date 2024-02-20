@@ -175,7 +175,7 @@ class OneShotScheduler:
 
         main = self.entry_point(*args, **kwargs)
         if not isinstance(main, DurableCoroutine):
-            raise ValueError("entry point is not a @dispatch.coroutine")
+            raise ValueError("entry point is not a @dispatch.function")
 
         return State(
             version=sys.version,
@@ -255,7 +255,7 @@ class OneShotScheduler:
                 )
             except Exception as e:
                 logger.exception(
-                    f"@dispatch.coroutine: '{coroutine}' raised an exception"
+                    f"@dispatch.function: '{coroutine}' raised an exception"
                 )
                 coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
 
@@ -317,7 +317,7 @@ class OneShotScheduler:
                         g = awaitable.__await__()
                         if not isinstance(g, DurableGenerator):
                             raise ValueError(
-                                "gather awaitable is not a @dispatch.coroutine"
+                                "gather awaitable is not a @dispatch.function"
                             )
                         child_id = state.next_coroutine_id
                         state.next_coroutine_id += 1
