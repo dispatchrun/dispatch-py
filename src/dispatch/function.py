@@ -36,8 +36,9 @@ def decorator(f):
     def method(self, *args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             return f(self, args[0])
-        else:
-            return lambda realf: f(self, realf, *args, **kwargs)
+        def wrapper(func):
+            return f(self, func, *args, **kwargs)
+        return wrapper
 
     return method
 
