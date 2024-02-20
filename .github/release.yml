@@ -1,5 +1,8 @@
 changelog:
   categories:
+    - title: Breaking changes
+      labels:
+        - breaking change
     - title: New features
       labels:
         - enhancement
@@ -12,3 +15,9 @@ changelog:
     - title: Other changes
       labels:
         - "*"
+      exclude:
+        labels:
+          - internal
+    - title: Internal
+      labels:
+        - internal
