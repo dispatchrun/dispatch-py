@@ -759,15 +759,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Registry.coroutine" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;coroutine
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dispatch.function.Registry.primitive_function" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;primitive_function
@@ -778,6 +769,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decorator
+    </span>
+  </a>
   
 </li>
       
@@ -1241,15 +1241,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Registry.coroutine" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;coroutine
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dispatch.function.Registry.primitive_function" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;primitive_function
@@ -1260,6 +1251,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decorator
+    </span>
+  </a>
   
 </li>
       
@@ -1682,7 +1682,7 @@ to local functions can be dispatched directly.</p>
 
 
 <a href="#dispatch.function.Registry.function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><span title="types.FunctionType">FunctionType</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1698,37 +1698,12 @@ to local functions can be dispatched directly.</p>
 
 
 
-<h3 id="dispatch.function.Registry.coroutine" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">coroutine</span>
-
-
-<a href="#dispatch.function.Registry.coroutine" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">coroutine</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="p">(</span>
-    <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><span title="types.FunctionType">FunctionType</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span> <span class="o">|</span> <span class="n"><span title="types.FunctionType">FunctionType</span></span><span class="p">]</span>
-<span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Returns a decorator that registers coroutines.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
 <h3 id="dispatch.function.Registry.primitive_function" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">primitive_function</span>
 
 
 <a href="#dispatch.function.Registry.primitive_function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="p">(</span>
-    <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">]</span>
-<span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1748,6 +1723,31 @@ to local functions can be dispatched directly.</p>
 
 </div>
 
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="dispatch.function.decorator" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>          <span class="doc doc-object-name doc-function-name">decorator</span>
+
+
+<a href="#dispatch.function.decorator" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>This decorator is intended to declare decorators that can be used with
+or without parameters. If the decorated function is called with a single
+callable argument, it is assumed to be a function and the decorator is
+applied to it. Otherwise, the decorator is called with the arguments
+provided and the result is returned.</p>
+
+  </div>
+
+</div>
 
 
 
