@@ -357,9 +357,11 @@ class Error:
             else:
                 e = cls(self.message)
         if self.traceback is not None:
-            e.__traceback__ = tblib.Traceback.from_string(
-                self.traceback.decode("utf-8"), strict=False
-            ).as_traceback()
+            try:
+                t = self.traceback.decode("utf-8")
+                e.__traceback__ = tblib.Traceback.from_string(t).as_traceback()
+            except Exception:
+                pass  # ignore, better to not have a traceback than to crash
         return e
 
     @classmethod
