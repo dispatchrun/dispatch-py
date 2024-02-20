@@ -179,6 +179,9 @@ async def transform2(msg):
     ...
 ```
 
+Note that in order to provide durability guarantees, the awaited functions must
+be marked with the `@dispatch.function` decorator.
+
 ## Examples
 
 Check out the [examples](examples/) directory for code samples to help you get
