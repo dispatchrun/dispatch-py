@@ -20,6 +20,8 @@ This package implements the Dispatch SDK for Python.
   - [Configuration](#configuration)
   - [Integration with FastAPI](#integration-with-fastapi)
   - [Local testing with ngrok](#local-testing-with-ngrok)
+  - [Durable coroutines for Python](#durable-coroutines-for-python)
+- [Examples](#examples)
 - [Contributing](#contributing)
 
 ## What is Dispatch?
