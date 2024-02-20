@@ -58,7 +58,7 @@ class TestFullFastapi(unittest.TestCase):
 
     def test_simple_end_to_end(self):
         # The FastAPI server.
-        @self.dispatch.function()
+        @self.dispatch.function
         def my_function(name: str) -> str:
             return f"Hello world: {name}"
 
@@ -73,7 +73,7 @@ class TestFullFastapi(unittest.TestCase):
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
 
     def test_simple_missing_signature(self):
-        @self.dispatch.function()
+        @self.dispatch.function
         def my_function(name: str) -> str:
             return f"Hello world: {name}"
 

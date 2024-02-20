@@ -20,6 +20,8 @@ This package implements the Dispatch SDK for Python.
   - [Configuration](#configuration)
   - [Integration with FastAPI](#integration-with-fastapi)
   - [Local testing with ngrok](#local-testing-with-ngrok)
+  - [Durable coroutines for Python](#durable-coroutines-for-python)
+- [Examples](#examples)
 - [Contributing](#contributing)
 
 ## What is Dispatch?
@@ -45,7 +47,7 @@ The SDK allows Python applications to declare *Stateful Functions* that the
 Dispatch scheduler can orchestrate. This is the bare minimum structure used
 to declare stateful functions:
 ```python
-@dispatch.function()
+@dispatch.function
 def action(msg):
     ...
 ```
@@ -94,7 +96,7 @@ import requests
 app = FastAPI()
 dispatch = Dispatch(app)
 
-@dispatch.function()
+@dispatch.function
 def publish(url, payload):
     r = requests.post(url, data=payload)
     r.raise_for_status()
@@ -144,7 +146,59 @@ different value, but in this example it would be:
 export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app"
 ```
 
-### Examples
+### Durable coroutines for Python
+
+The `@dispatch.function` decorator can also be applied to Python coroutines
+(a.k.a. *async* functions), in which case each await point on another
+stateful function becomes a durability step in the execution: if the awaited
+operation fails, it is automatically retried and the parent function is paused
+until the result becomes available, or a permanent error is raised.
+
+```python
+@dispatch.function
+async def pipeline(msg):
+    # Each await point is a durability step, the functions can be run across the
+    # fleet of service instances and retried as needed without losing track of
+    # progress through the function execution.
+    msg = await transform1(msg)
+    msg = await transform2(msg)
+    await publish(msg)
+
+@dispatch.function
+async def publish(msg):
+    # Each dispatch function runs concurrently to the others, even if it does
+    # blocking operations like this POST request, it does not prevent other
+    # concurrent operations from carrying on in the program.
+    r = requests.post("https://somewhere.com/", data=msg)
+    r.raise_for_status()
+
+@dispatch.function
+async def transform1(msg):
+    ...
+
+@dispatch.function
+async def transform2(msg):
+    ...
+```
+
+This model is composable and can be used to create fan-out/fan-in control flows.
+`gather` can be used to wait on multiple concurrent calls to stateful functions,
+for example:
+
+```python
+from dispatch import gather
+
+@dispatch.function
+async def process(msgs):
+    concurrent_calls = [transform(msg) for msg in msgs]
+    return await gather(*concurrent_calls)
+
+@dispatch.function
+async def transform(msg):
+    ...
+```
+
+## Examples
 
 Check out the [examples](examples/) directory for code samples to help you get
 started with the SDK.
