@@ -67,10 +67,7 @@ class Function:
         self._primitive_func = primitive_func
         # FIXME: is there a way to decorate the function at the definition
         #  without making it a class method?
-        if coroutine:
-            self._func = durable(self._call_async)
-        else:
-            self._func = func
+        self._func = durable(self._call_async) if coroutine else func
 
     def __call__(self, *args, **kwargs):
         return self._func(*args, **kwargs)
