@@ -56,7 +56,7 @@ def durable(fn: Callable) -> Callable:
     elif isinstance(fn, FunctionType):
         return DurableFunction(fn)
     else:
-        raise TypeError("unsupported callable")
+        raise TypeError(f"cannot create a durable function from value of type {fn.__qualname__}")
 
 
 class Serializable:

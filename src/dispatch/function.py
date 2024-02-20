@@ -68,7 +68,7 @@ class Function:
         self.call = durable(self._call_async)
 
     def __call__(self, *args, **kwargs):
-        return self._func(*args, **kwargs)
+        return self.call(*args, **kwargs)
 
     def _primitive_call(self, input: Input) -> Output:
         return self._primitive_func(input)
@@ -162,14 +162,14 @@ class Registry:
         self._client = client
 
     @decorator
-    def function(self, f: Callable) -> Function:
+    def function(self, func: Callable) -> Function:
         """Returns a decorator that registers functions."""
-        return self._register_function(f)
+        return self._register_function(func)
 
     @decorator
-    def primitive_function(self, f: Callable) -> Function:
+    def primitive_function(self, func: Callable) -> Function:
         """Returns a decorator that registers primitive functions."""
-        return self._register_primitive_function(f)
+        return self._register_primitive_function(func)
 
     def _register_function(self, func: Callable) -> Function:
         if inspect.iscoroutinefunction(func):
