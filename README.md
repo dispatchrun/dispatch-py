@@ -148,11 +148,11 @@ export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ec
 
 ### Durable coroutines for Python
 
-Stateful functions can be turned into durable coroutines by declaring them
-*async*. When doing so, every await point becomes a durable step in the
-function execution: if the awaited operation fails, it is automatically
-retried and the parent function is paused until the result becomes available,
-or a permanent error is raised.
+The `@dispatch.function` decorator can also be applied to Python coroutines
+(a.k.a. *async* functions), in which case each await point on another
+stateful function becomes a durability step in the execution: if the awaited
+operation fails, it is automatically retried and the parent function is paused
+until the result becomes available, or a permanent error is raised.
 
 ```python
 @dispatch.function
@@ -181,8 +181,22 @@ async def transform2(msg):
     ...
 ```
 
-Note that in order to provide durability guarantees, the awaited functions must
-be marked with the `@dispatch.function` decorator.
+This model is composable and can be used to create fan-out/fan-in control flows.
+`gather` can be used to wait on multiple concurrent calls to stateful functions,
+for example:
+
+```python
+from dispatch import gather
+
+@dispatch.function
+async def process(msgs):
+    concurrent_calls = [transform(msg) for msg in msgs]
+    return await gather(*concurrent_calls)
+
+@dispatch.function
+async def transform(msg):
+    ...
+```
 
 ## Examples
 
