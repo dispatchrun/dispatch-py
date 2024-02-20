@@ -26,7 +26,9 @@ class TestAutoRetry(unittest.TestCase):
         server = ServerTest()
         servicer = server.servicer
         app.dispatch._client = server.client
-        app.some_logic._client = server.client
+        app.get_repo_info._client = server.client
+        app.get_contributors._client = server.client
+        app.main._client = server.client
 
         http_client = TestClient(app.app, base_url="http://dispatch-service")
         app_client = function_service.client(http_client)
