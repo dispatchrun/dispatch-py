@@ -2,6 +2,7 @@ import hashlib
 import hmac
 
 import http_sfv
+from http_message_signatures import InvalidSignature
 
 
 def generate_content_digest(body: str | bytes) -> str:
@@ -34,7 +35,9 @@ def verify_content_digest(digest_header: str | bytes, body: str | bytes):
         digest = parsed_header["sha-256"].value
         expect_digest = hashlib.sha256(body).digest()
     else:
-        raise ValueError("missing content digest")
+        raise ValueError("missing content digest in http request header")
 
     if not hmac.compare_digest(digest, expect_digest):
-        raise ValueError("unexpected content digest")
+        raise InvalidSignature(
+            "digest of the request body does not match the Content-Digest header"
+        )

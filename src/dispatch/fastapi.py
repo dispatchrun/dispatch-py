@@ -137,29 +137,47 @@ class Dispatch(Registry):
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
 
-class _GRPCResponse(fastapi.Response):
+class _ConnectResponse(fastapi.Response):
     media_type = "application/grpc+proto"
+
+
+class _ConnectError(fastapi.HTTPException):
+    __slots__ = ("status", "code", "message")
+
+    def __init__(self, status, code, message):
+        super().__init__(status)
+        self.status = status
+        self.code = code
+        self.message = message
 
 
 def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | None):
     app = fastapi.FastAPI()
+
+    @app.exception_handler(_ConnectError)
+    async def on_error(request: fastapi.Request, exc: _ConnectError):
+        # https://connectrpc.com/docs/protocol/#error-end-stream
+        return fastapi.responses.JSONResponse(
+            status_code=exc.status, content={"code": exc.code, "message": exc.message}
+        )
 
     @app.post(
         # The endpoint for execution is hardcoded at the moment. If the service
         # gains more endpoints, this should be turned into a dynamic dispatch
         # like the official gRPC server does.
         "/Run",
-        response_class=_GRPCResponse,
+        response_class=_ConnectResponse,
     )
     async def execute(request: fastapi.Request):
         # Raw request body bytes are only available through the underlying
         # starlette Request object's body method, which returns an awaitable,
         # forcing execute() to be async.
         data: bytes = await request.body()
-
         logger.debug("handling run request with %d byte body", len(data))
 
-        if verification_key is not None:
+        if verification_key is None:
+            logger.debug("skipping request signature verification")
+        else:
             signed_request = Request(
                 method=request.method,
                 url=str(request.url),
@@ -169,29 +187,28 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
             max_age = timedelta(minutes=5)
             try:
                 verify_request(signed_request, verification_key, max_age)
-            except (InvalidSignature, ValueError):
-                logger.error("failed to verify request signature", exc_info=True)
-                raise fastapi.HTTPException(
-                    status_code=403, detail="request signature is invalid"
-                )
-        else:
-            logger.debug("skipping request signature verification")
+            except ValueError as e:
+                raise _ConnectError(401, "unauthenticated", str(e))
+            except InvalidSignature as e:
+                # The http_message_signatures package sometimes wraps does not
+                # attach a message to the exception, so we set a default to
+                # have some context about the reason for the error.
+                message = str(e) or "invalid signature"
+                raise _ConnectError(403, "permission_denied", message)
 
         req = function_pb.RunRequest.FromString(data)
-
         if not req.function:
-            raise fastapi.HTTPException(status_code=400, detail="function is required")
+            raise _ConnectError(400, "invalid_argument", "function is required")
 
         try:
             func = function_registry._functions[req.function]
         except KeyError:
             logger.debug("function '%s' not found", req.function)
-            raise fastapi.HTTPException(
-                status_code=404, detail=f"Function '{req.function}' does not exist"
+            raise _ConnectError(
+                404, "not_found", f"function '{req.function}' does not exist"
             )
 
         input = Input(req)
-
         logger.info("running function '%s'", req.function)
         try:
             output = func._primitive_call(input)
@@ -203,8 +220,8 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
             # so indicates a problem, and we return a 500 rather than attempt
             # to catch and categorize the error here.
             logger.error("function '%s' fatal error", req.function, exc_info=True)
-            raise fastapi.HTTPException(
-                status_code=500, detail=f"function '{req.function}' fatal error"
+            raise _ConnectError(
+                500, "internal", f"function '{req.function}' fatal error"
             )
         else:
             response = output._message
@@ -241,7 +258,6 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
                     )
 
         logger.debug("finished handling run request with status %s", status.name)
-
         return fastapi.Response(content=response.SerializeToString())
 
     return app
