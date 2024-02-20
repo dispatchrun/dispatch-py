@@ -16,6 +16,7 @@ Logs will show a pipeline of functions being called and their results.
 
 import httpx
 from fastapi import FastAPI
+
 from dispatch.fastapi import Dispatch
 
 app = FastAPI()
@@ -44,10 +45,12 @@ def get_contributors(repo_info: dict):
 @dispatch.coroutine()
 async def main():
     repo_info = await get_repo_info.call("stealthrocket", "coroutine")
-    print(f"""Repository: {repo_info['full_name']}
+    print(
+        f"""Repository: {repo_info['full_name']}
 Stars: {repo_info['stargazers_count']}
 Watchers: {repo_info['watchers_count']}
-Forks: {repo_info['forks_count']}""")
+Forks: {repo_info['forks_count']}"""
+    )
 
     contributors = await get_contributors.call(repo_info)
     print(f"Contributors: {len(contributors)}")
