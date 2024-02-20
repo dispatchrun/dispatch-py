@@ -74,7 +74,10 @@ class TestSignature(unittest.TestCase):
     def test_content_digest_invalid(self):
         sign_request(self.request, private_key, datetime.now())
         self.request.body = "foo"
-        with self.assertRaisesRegex(ValueError, "unexpected content digest"):
+        with self.assertRaisesRegex(
+            InvalidSignature,
+            "digest of the request body does not match the Content-Digest header",
+        ):
             verify_request(self.request, public_key, max_age=timedelta(minutes=1))
 
     def test_signature_coverage(self):

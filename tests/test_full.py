@@ -1,6 +1,7 @@
 import unittest
 
 import fastapi
+import httpx
 from fastapi.testclient import TestClient
 
 from dispatch import Call, Input, Output
@@ -39,8 +40,10 @@ class TestFullFastapi(unittest.TestCase):
             api_url="http://127.0.0.1:10000",
         )
 
-        http_client = TestClient(self.app, base_url="http://dispatch-service")
-        self.app_client = function_service.client(http_client, signing_key=private_key)
+        self.http_client = TestClient(self.app, base_url="http://dispatch-service")
+        self.app_client = function_service.client(
+            self.http_client, signing_key=private_key
+        )
 
         self.server = ServerTest()
         # shortcuts
@@ -68,3 +71,22 @@ class TestFullFastapi(unittest.TestCase):
         # Validate results.
         resp = self.servicer.response_for(dispatch_id)
         self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
+
+    def test_simple_missing_signature(self):
+        @self.dispatch.function()
+        def my_function(name: str) -> str:
+            return f"Hello world: {name}"
+
+        [dispatch_id] = self.client.dispatch([my_function.build_call(52)])
+
+        self.app_client = function_service.client(self.http_client)  # no signing key
+        try:
+            self.execute()
+        except httpx.HTTPStatusError as e:
+            assert e.response.status_code == 403
+            assert e.response.json() == {
+                "code": "permission_denied",
+                "message": 'Expected "Signature-Input" header field to be present',
+            }
+        else:
+            assert False, "Expected HTTPStatusError"
