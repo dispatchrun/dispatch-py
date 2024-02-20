@@ -47,7 +47,7 @@ class Function:
     Dispatch Python SDK.
     """
 
-    __slots__ = ("_endpoint", "_client", "_name", "_primitive_func", "_func", "_call")
+    __slots__ = ("_endpoint", "_client", "_name", "_primitive_func", "_func")
 
     def __init__(
         self,
@@ -61,13 +61,15 @@ class Function:
         self._client = client
         self._name = name
         self._primitive_func = primitive_func
-        self._func = func
         # FIXME: is there a way to decorate the function at the definition
         #  without making it a class method?
-        self._call = durable(self._call_async)
+        if inspect.iscoroutinefunction(func):
+            self._func = durable(self._call_async)
+        else:
+            self._func = func
 
     def __call__(self, *args, **kwargs):
-        return self._call(*args, **kwargs)
+        return self._func(*args, **kwargs)
 
     def _primitive_call(self, input: Input) -> Output:
         return self._primitive_func(input)
