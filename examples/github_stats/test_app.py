@@ -37,6 +37,5 @@ class TestGithubStats(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         server.execute(app_client)
-        server.execute(app_client)
 
         self.assertEqual(len(servicer.responses), 1)

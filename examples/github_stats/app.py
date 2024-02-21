@@ -24,8 +24,8 @@ app = FastAPI()
 dispatch = Dispatch(app)
 
 
-@dispatch.function()
-def get_repo_info(repo_owner: str, repo_name: str):
+@dispatch.function
+async def get_repo_info(repo_owner: str, repo_name: str):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     api_response = httpx.get(url)
     api_response.raise_for_status()
@@ -33,8 +33,8 @@ def get_repo_info(repo_owner: str, repo_name: str):
     return repo_info
 
 
-@dispatch.function()
-def get_contributors(repo_info: dict):
+@dispatch.function
+async def get_contributors(repo_info: dict):
     contributors_url = repo_info["contributors_url"]
     response = httpx.get(contributors_url)
     response.raise_for_status()
@@ -42,7 +42,7 @@ def get_contributors(repo_info: dict):
     return contributors
 
 
-@dispatch.coroutine()
+@dispatch.function
 async def main():
     repo_info = await get_repo_info("stealthrocket", "coroutine")
     print(
