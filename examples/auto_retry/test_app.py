@@ -26,7 +26,7 @@ class TestAutoRetry(unittest.TestCase):
 
         # Setup a fake Dispatch server.
         endpoint_client = EndpointClient.from_app(app)
-        dispatch_service = DispatchService(endpoint_client, collect_responses=True)
+        dispatch_service = DispatchService(endpoint_client, collect_roundtrips=True)
         dispatch_server = DispatchServer(dispatch_service)
 
         # Use it when dispatching function calls.
@@ -42,9 +42,12 @@ class TestAutoRetry(unittest.TestCase):
         # calls, including 5 retries.
         for i in range(6):
             dispatch_service.dispatch_calls()
-        self.assertEqual(len(dispatch_service.responses), 6)
 
-        statuses = [r.status for r in dispatch_service.responses.values()]
+        self.assertEqual(len(dispatch_service.roundtrips), 1)
+        roundtrips = list(dispatch_service.roundtrips.values())[0]
+        self.assertEqual(len(roundtrips), 6)
+
+        statuses = [response.status for request, response in roundtrips]
         self.assertEqual(
             statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
         )

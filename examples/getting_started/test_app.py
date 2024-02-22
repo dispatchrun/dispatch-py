@@ -25,7 +25,7 @@ class TestGettingStarted(unittest.TestCase):
 
         # Setup a fake Dispatch server.
         endpoint_client = EndpointClient.from_app(app)
-        dispatch_service = DispatchService(endpoint_client, collect_responses=True)
+        dispatch_service = DispatchService(endpoint_client, collect_roundtrips=True)
         dispatch_server = DispatchServer(dispatch_service)
 
         # Use it when dispatching function calls.
@@ -36,4 +36,7 @@ class TestGettingStarted(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         dispatch_service.dispatch_calls()
-        self.assertEqual(len(dispatch_service.responses), 1)
+
+        self.assertEqual(len(dispatch_service.roundtrips), 1)  # one call submitted
+        dispatch_id, roundtrips = list(dispatch_service.roundtrips.items())[0]
+        self.assertEqual(len(roundtrips), 1)  # one roundtrip for this call

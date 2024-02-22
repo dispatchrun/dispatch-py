@@ -33,7 +33,7 @@ class TestFullFastapi(unittest.TestCase):
 
         api_key = "0000000000000000"
         self.dispatch_service = DispatchService(
-            endpoint_client, api_key, collect_responses=True
+            endpoint_client, api_key, collect_roundtrips=True
         )
         self.dispatch_server = DispatchServer(self.dispatch_service)
         self.dispatch_client = dispatch.Client(
@@ -64,8 +64,10 @@ class TestFullFastapi(unittest.TestCase):
         self.dispatch_service.dispatch_calls()
 
         # Validate results.
-        resp = self.dispatch_service.responses[dispatch_id]
-        self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
+        roundtrips = self.dispatch_service.roundtrips[dispatch_id]
+        self.assertEqual(len(roundtrips), 1)
+        _, response = roundtrips[0]
+        self.assertEqual(any_unpickle(response.exit.result.output), "Hello world: 52")
 
     def test_simple_missing_signature(self):
         @self.dispatch.function

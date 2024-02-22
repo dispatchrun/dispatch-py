@@ -1,5 +1,6 @@
 import os
 from collections import OrderedDict
+from typing import TypeAlias
 
 import grpc
 
@@ -22,6 +23,10 @@ _default_retry_on_status = {
 }
 
 
+RoundTrip: TypeAlias = tuple[function_pb.RunRequest, function_pb.RunResponse]
+"""A request to a Dispatch endpoint, and the response that was received."""
+
+
 class DispatchService(dispatch_grpc.DispatchServiceServicer):
     """Test instance of Dispatch that provides the bare minimum
     functionality required to test functions locally."""
@@ -31,7 +36,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         endpoint_client: EndpointClient,
         api_key: str | None = None,
         retry_on_status: set[Status] | None = None,
-        collect_responses: bool = False,
+        collect_roundtrips: bool = False,
     ):
         """Initialize the Dispatch service.
 
@@ -41,7 +46,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             api_key: Expected API key on requests to the service. If omitted, the
                 value of the DISPATCH_API_KEY environment variable is used instead.
             retry_on_status: Set of status codes to enable retries for.
-            collect_responses: Enable collection of responses.
+            collect_roundtrips: Enable collection of request/response round-trips
+                to the configured endpoint.
         """
         super().__init__()
 
@@ -59,8 +65,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
         self.queue: list[tuple[DispatchID, call_pb.Call]] = []
 
-        self.responses: OrderedDict[DispatchID, function_pb.RunResponse] = OrderedDict()
-        self.collect_responses = collect_responses
+        self.roundtrips: OrderedDict[DispatchID, list[RoundTrip]] | None = None
+        if collect_roundtrips:
+            self.roundtrips = OrderedDict()
 
     def Dispatch(self, request: dispatch_pb.DispatchRequest, context):
         """RPC handler for Dispatch requests. Requests are only queued for
@@ -100,18 +107,23 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         while self.queue:
             dispatch_id, call = self.queue.pop(0)
 
-            resp = self.endpoint_client.run(
-                function_pb.RunRequest(
-                    function=call.function,
-                    input=call.input,
-                )
+            request = function_pb.RunRequest(
+                function=call.function,
+                input=call.input,
             )
 
-            if self.collect_responses:
-                self.responses[dispatch_id] = resp
+            response = self.endpoint_client.run(request)
 
-            if Status(resp.status) in self.retry_on_status:
-                dispatch_id = self._make_dispatch_id()
+            if self.roundtrips is not None:
+                try:
+                    roundtrips = self.roundtrips[dispatch_id]
+                except KeyError:
+                    roundtrips = []
+
+                roundtrips.append((request, response))
+                self.roundtrips[dispatch_id] = roundtrips
+
+            if Status(response.status) in self.retry_on_status:
                 _next_queue.append((dispatch_id, call))
 
         self.queue = _next_queue
