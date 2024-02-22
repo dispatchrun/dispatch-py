@@ -1,6 +1,8 @@
+import logging
 import os
 import threading
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import TypeAlias
 
 import grpc
@@ -9,6 +11,7 @@ import dispatch.sdk.v1.call_pb2 as call_pb
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
 import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
 import dispatch.sdk.v1.function_pb2 as function_pb
+import dispatch.sdk.v1.poll_pb2 as poll_pb
 from dispatch.id import DispatchID
 from dispatch.proto import Status
 from dispatch.test import EndpointClient
@@ -22,6 +25,9 @@ _default_retry_on_status = {
     Status.TLS_ERROR,
     Status.HTTP_ERROR,
 }
+
+
+logger = logging.getLogger(__name__)
 
 
 RoundTrip: TypeAlias = tuple[function_pb.RunRequest, function_pb.RunResponse]
@@ -64,7 +70,10 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
         self._next_dispatch_id = 1
 
-        self.queue: list[tuple[DispatchID, call_pb.Call]] = []
+        self.queue: list[tuple[DispatchID, function_pb.RunRequest]] = []
+
+        self.pollers: dict[DispatchID, Poller] = {}
+        self.parents: dict[DispatchID, Poller] = {}
 
         self.roundtrips: OrderedDict[DispatchID, list[RoundTrip]] | None = None
         if collect_roundtrips:
@@ -84,8 +93,15 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         with self._work_signal:
             for call in request.calls:
                 dispatch_id = self._make_dispatch_id()
+                logger.debug(
+                    "enqueueing call to function %s as %s", call.function, dispatch_id
+                )
                 resp.dispatch_ids.append(dispatch_id)
-                self.queue.append((dispatch_id, call))
+                run_request = function_pb.RunRequest(
+                    function=call.function,
+                    input=call.input,
+                )
+                self.queue.append((dispatch_id, run_request))
 
             self._work_signal.notify()
 
@@ -113,11 +129,10 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         configured endpoint."""
         _next_queue = []
         while self.queue:
-            dispatch_id, call = self.queue.pop(0)
+            dispatch_id, request = self.queue.pop(0)
 
-            request = function_pb.RunRequest(
-                function=call.function,
-                input=call.input,
+            logger.debug(
+                "dispatching call to function %s (%s)", request.function, dispatch_id
             )
 
             response = self.endpoint_client.run(request)
@@ -132,13 +147,86 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 self.roundtrips[dispatch_id] = roundtrips
 
             if Status(response.status) in self.retry_on_status:
-                _next_queue.append((dispatch_id, call))
+                logger.debug(
+                    "retrying call to function %s (%s)", request.function, dispatch_id
+                )
+                _next_queue.append((dispatch_id, request))
 
             elif response.HasField("poll"):
-                # TODO: register pollers so that the service can deliver call results once ready
+                assert not response.HasField("exit")
+
+                logger.debug("registering poller %s", dispatch_id)
+                assert dispatch_id not in self.pollers
+                poller = Poller(
+                    id=dispatch_id,
+                    function=request.function,
+                    coroutine_state=response.poll.coroutine_state,
+                    waiting={},
+                    results={},
+                )
+                self.pollers[dispatch_id] = poller
+
                 for call in response.poll.calls:
-                    dispatch_id = self._make_dispatch_id()
-                    _next_queue.append((dispatch_id, call))
+                    child_dispatch_id = self._make_dispatch_id()
+                    child_request = function_pb.RunRequest(
+                        function=call.function,
+                        input=call.input,
+                    )
+                    _next_queue.append((child_dispatch_id, child_request))
+                    self.parents[child_dispatch_id] = poller
+                    poller.waiting[child_dispatch_id] = call
+
+            else:
+                assert response.HasField("exit")
+
+                if response.exit.HasField("tail_call"):
+                    tail_call = response.exit.tail_call
+                    logger.debug(
+                        "enqueueing tail call to %s (%s)",
+                        tail_call.function,
+                        dispatch_id,
+                    )
+                    tail_call_request = function_pb.RunRequest(
+                        function=tail_call.function,
+                        input=tail_call.input,
+                    )
+                    _next_queue.append((dispatch_id, tail_call_request))
+
+                elif dispatch_id in self.parents:
+                    result = response.exit.result
+                    poller = self.parents[dispatch_id]
+                    logger.debug(
+                        "notifying poller %s of call result %s", poller.id, dispatch_id
+                    )
+
+                    call = poller.waiting[dispatch_id]
+                    result.correlation_id = call.correlation_id
+                    poller.results[dispatch_id] = result
+                    del self.parents[dispatch_id]
+                    del poller.waiting[dispatch_id]
+
+                    logger.debug(
+                        "poller %s has %d waiting and %d ready results",
+                        poller.id,
+                        len(poller.waiting),
+                        len(poller.results),
+                    )
+
+                    if not poller.waiting:
+                        logger.debug(
+                            "poller %s is now ready; enqueueing delivery of %d call result(s)",
+                            poller.id,
+                            len(poller.results),
+                        )
+                        poll_results_request = function_pb.RunRequest(
+                            function=poller.function,
+                            poll_result=poll_pb.PollResult(
+                                coroutine_state=poller.coroutine_state,
+                                results=poller.results.values(),
+                            ),
+                        )
+                        del self.pollers[poller.id]
+                        _next_queue.append((poller.id, poll_results_request))
 
         self.queue = _next_queue
 
@@ -179,3 +267,15 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
+
+
+@dataclass
+class Poller:
+    id: DispatchID
+    function: str
+
+    coroutine_state: bytes
+    # TODO: support max_wait/max_results
+
+    waiting: dict[DispatchID, call_pb.Call]
+    results: dict[DispatchID, call_pb.CallResult]
