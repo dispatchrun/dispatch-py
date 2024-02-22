@@ -10,9 +10,7 @@ from fastapi.testclient import TestClient
 
 from dispatch import Client
 from dispatch.sdk.v1 import status_pb2 as status_pb
-from dispatch.test import DispatchServer, EndpointClient
-
-from ...dispatch_service import MockDispatchService
+from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 
 class TestAutoRetry(unittest.TestCase):
@@ -24,18 +22,17 @@ class TestAutoRetry(unittest.TestCase):
         },
     )
     def test_app(self):
-        from . import app
+        from .app import app, dispatch
 
-        endpoint_client = EndpointClient.from_app(app.app)
-
-        dispatch_service = MockDispatchService(endpoint_client)
+        # Setup a fake Dispatch server.
+        endpoint_client = EndpointClient.from_app(app)
+        dispatch_service = DispatchService(endpoint_client)
         dispatch_server = DispatchServer(dispatch_service)
-        dispatch_client = Client(api_url=dispatch_server.url)
 
-        app.dispatch._client = dispatch_client
-        app.some_logic._client = dispatch_client
+        # Use it when dispatching function calls.
+        dispatch.set_client(Client(api_url=dispatch_server.url))
 
-        http_client = TestClient(app.app)
+        http_client = TestClient(app)
         response = http_client.get("/")
         self.assertEqual(response.status_code, 200)
 

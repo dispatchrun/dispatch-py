@@ -7,9 +7,7 @@ import dispatch
 from dispatch.fastapi import Dispatch
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
-from dispatch.test import DispatchServer, EndpointClient
-
-from .dispatch_service import MockDispatchService
+from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 signing_key = private_key_from_pem(
     """
@@ -34,7 +32,7 @@ class TestFullFastapi(unittest.TestCase):
         endpoint_client = EndpointClient.from_app(self.endpoint_app, signing_key)
 
         api_key = "0000000000000000"
-        self.dispatch_service = MockDispatchService(endpoint_client, api_key)
+        self.dispatch_service = DispatchService(endpoint_client, api_key)
         self.dispatch_server = DispatchServer(self.dispatch_service)
         self.dispatch_client = dispatch.Client(
             api_key, api_url=self.dispatch_server.url

@@ -4,9 +4,7 @@ from unittest import mock
 
 from dispatch import Call, Client
 from dispatch.proto import _any_unpickle as any_unpickle
-from dispatch.test import DispatchServer, EndpointClient
-
-from .dispatch_service import MockDispatchService
+from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 
 class TestClient(unittest.TestCase):
@@ -14,7 +12,7 @@ class TestClient(unittest.TestCase):
         endpoint_client = EndpointClient.from_url("http://function-service")
 
         api_key = "0000000000000000"
-        self.dispatch_service = MockDispatchService(endpoint_client, api_key)
+        self.dispatch_service = DispatchService(endpoint_client, api_key)
         self.dispatch_server = DispatchServer(self.dispatch_service)
         self.dispatch_client = Client(api_key, api_url=self.dispatch_server.url)
 

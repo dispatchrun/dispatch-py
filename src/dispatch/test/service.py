@@ -12,7 +12,7 @@ from dispatch import DispatchID
 from dispatch.test import EndpointClient
 
 
-class MockDispatchService(dispatch_grpc.DispatchServiceServicer):
+class DispatchService(dispatch_grpc.DispatchServiceServicer):
     def __init__(self, endpoint_client: EndpointClient, api_key: str | None = None):
         super().__init__()
 
