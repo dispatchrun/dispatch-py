@@ -9,6 +9,7 @@ import dispatch.sdk.v1.function_pb2 as function_pb
 import dispatch.sdk.v1.function_pb2_grpc as function_grpc
 import dispatch.sdk.v1.status_pb2 as status_pb
 from dispatch import Client, DispatchID
+from dispatch.test import EndpointClient
 
 _test_auth_token = "THIS_IS_A_TEST_AUTH_TOKEN"
 
@@ -52,7 +53,7 @@ class FakeDispatchService(dispatch_grpc.DispatchServiceServicer):
 
         return resp
 
-    def execute(self, client: function_grpc.FunctionServiceStub):
+    def execute(self, client: EndpointClient):
         """Synchronously execute all pending function calls."""
 
         _next_pending_calls = []
@@ -66,7 +67,7 @@ class FakeDispatchService(dispatch_grpc.DispatchServiceServicer):
                 input=call.input,
             )
 
-            resp = client.Run(req)
+            resp = client.run(req)
             self.responses.append(
                 {"dispatch_id": entry["dispatch_id"], "response": resp}
             )
@@ -128,5 +129,5 @@ class ServerTest:
         self.server.wait_for_termination()
         self.thread_pool.shutdown(wait=True, cancel_futures=True)
 
-    def execute(self, client: function_grpc.FunctionServiceStub):
+    def execute(self, client: EndpointClient):
         return self.servicer.execute(client)

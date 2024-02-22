@@ -9,8 +9,8 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 import dispatch.sdk.v1.status_pb2 as status_pb
+from dispatch.test import EndpointClient
 
-from ... import function_service
 from ...test_client import ServerTest
 
 
@@ -22,7 +22,7 @@ class TestAutoRetry(unittest.TestCase):
             "DISPATCH_API_KEY": "0000000000000000",
         },
     )
-    def test_foo(self):
+    def test_app(self):
         from . import app
 
         server = ServerTest()
@@ -30,8 +30,8 @@ class TestAutoRetry(unittest.TestCase):
         app.dispatch._client = server.client
         app.some_logic._client = server.client
 
-        http_client = TestClient(app.app, base_url="http://dispatch-service")
-        app_client = function_service.client(http_client)
+        http_client = TestClient(app.app)
+        app_client = EndpointClient.from_app(app.app)
 
         response = http_client.get("/")
         self.assertEqual(response.status_code, 200)

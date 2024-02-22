@@ -2,14 +2,12 @@ import unittest
 
 import fastapi
 import httpx
-from fastapi.testclient import TestClient
 
-from dispatch import Call, Input, Output
 from dispatch.fastapi import Dispatch
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
+from dispatch.test import EndpointClient
 
-from . import function_service
 from .test_client import ServerTest
 
 public_key = public_key_from_pem(
@@ -32,6 +30,14 @@ MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 class TestFullFastapi(unittest.TestCase):
     def setUp(self):
         self.app = fastapi.FastAPI()
+
+        self.app_client = EndpointClient.from_app(self.app, signing_key=private_key)
+
+        self.server = ServerTest()
+        # shortcuts
+        self.client = self.server.client
+        self.servicer = self.server.servicer
+
         self.dispatch = Dispatch(
             self.app,
             endpoint="http://function-service",
@@ -39,16 +45,6 @@ class TestFullFastapi(unittest.TestCase):
             api_key="0000000000000000",
             api_url="http://127.0.0.1:10000",
         )
-
-        self.http_client = TestClient(self.app, base_url="http://dispatch-service")
-        self.app_client = function_service.client(
-            self.http_client, signing_key=private_key
-        )
-
-        self.server = ServerTest()
-        # shortcuts
-        self.client = self.server.client
-        self.servicer = self.server.servicer
 
     def tearDown(self):
         self.server.stop()
@@ -79,7 +75,7 @@ class TestFullFastapi(unittest.TestCase):
 
         [dispatch_id] = self.client.dispatch([my_function.build_call(52)])
 
-        self.app_client = function_service.client(self.http_client)  # no signing key
+        self.app_client = EndpointClient.from_app(self.app)  # no signing key
         try:
             self.execute()
         except httpx.HTTPStatusError as e:

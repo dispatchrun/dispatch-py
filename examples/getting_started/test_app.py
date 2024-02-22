@@ -8,7 +8,8 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-from ... import function_service
+from dispatch.test import EndpointClient
+
 from ...test_client import ServerTest
 
 
@@ -20,7 +21,7 @@ class TestGettingStarted(unittest.TestCase):
             "DISPATCH_API_KEY": "0000000000000000",
         },
     )
-    def test_foo(self):
+    def test_app(self):
         from . import app
 
         server = ServerTest()
@@ -28,8 +29,8 @@ class TestGettingStarted(unittest.TestCase):
         app.dispatch._client = server.client
         app.publish._client = server.client
 
-        http_client = TestClient(app.app, base_url="http://dispatch-service")
-        app_client = function_service.client(http_client)
+        http_client = TestClient(app.app)
+        app_client = EndpointClient.from_app(app.app)
 
         response = http_client.get("/")
         self.assertEqual(response.status_code, 200)
