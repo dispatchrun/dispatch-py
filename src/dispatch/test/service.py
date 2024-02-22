@@ -126,4 +126,10 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             if Status(response.status) in self.retry_on_status:
                 _next_queue.append((dispatch_id, call))
 
+            elif response.HasField("poll"):
+                # TODO: register pollers so that the service can deliver call results once ready
+                for call in response.poll.calls:
+                    dispatch_id = self._make_dispatch_id()
+                    _next_queue.append((dispatch_id, call))
+
         self.queue = _next_queue
