@@ -84,7 +84,7 @@ class Client:
 
         self._stub = dispatch_grpc.DispatchServiceStub(channel)
 
-    def dispatch(self, calls: Iterable[Call]) -> Iterable[DispatchID]:
+    def dispatch(self, calls: Iterable[Call]) -> list[DispatchID]:
         """Dispatch function calls.
 
         Args:

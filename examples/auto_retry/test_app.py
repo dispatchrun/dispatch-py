@@ -8,10 +8,11 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-import dispatch.sdk.v1.status_pb2 as status_pb
-from dispatch.test import EndpointClient
+from dispatch import Client
+from dispatch.sdk.v1 import status_pb2 as status_pb
+from dispatch.test import DispatchServer, EndpointClient
 
-from ...test_client import ServerTest
+from ...dispatch_service import MockDispatchService
 
 
 class TestAutoRetry(unittest.TestCase):
@@ -25,26 +26,28 @@ class TestAutoRetry(unittest.TestCase):
     def test_app(self):
         from . import app
 
-        server = ServerTest()
-        servicer = server.servicer
-        app.dispatch._client = server.client
-        app.some_logic._client = server.client
+        endpoint_client = EndpointClient.from_app(app.app)
+
+        dispatch_service = MockDispatchService(endpoint_client)
+        dispatch_server = DispatchServer(dispatch_service)
+        dispatch_client = Client(api_url=dispatch_server.url)
+
+        app.dispatch._client = dispatch_client
+        app.some_logic._client = dispatch_client
 
         http_client = TestClient(app.app)
-        app_client = EndpointClient.from_app(app.app)
-
         response = http_client.get("/")
         self.assertEqual(response.status_code, 200)
 
-        server.execute(app_client)
+        dispatch_service.dispatch_calls()
 
         # Seed(2) used in the app outputs 0, 0, 0, 2, 1, 5. So we expect 6
         # calls, including 5 retries.
         for i in range(6):
-            server.execute(app_client)
-        self.assertEqual(len(servicer.responses), 6)
+            dispatch_service.dispatch_calls()
+        self.assertEqual(len(dispatch_service.responses), 6)
 
-        statuses = [r["response"].status for r in servicer.responses]
+        statuses = [r.status for r in dispatch_service.responses.values()]
         self.assertEqual(
             statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
         )

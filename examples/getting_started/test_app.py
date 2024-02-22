@@ -8,9 +8,10 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-from dispatch.test import EndpointClient
+from dispatch import Client
+from dispatch.test import DispatchServer, EndpointClient
 
-from ...test_client import ServerTest
+from ...dispatch_service import MockDispatchService
 
 
 class TestGettingStarted(unittest.TestCase):
@@ -24,17 +25,18 @@ class TestGettingStarted(unittest.TestCase):
     def test_app(self):
         from . import app
 
-        server = ServerTest()
-        servicer = server.servicer
-        app.dispatch._client = server.client
-        app.publish._client = server.client
+        endpoint_client = EndpointClient.from_app(app.app)
+
+        dispatch_service = MockDispatchService(endpoint_client)
+        dispatch_server = DispatchServer(dispatch_service)
+        dispatch_client = Client(api_url=dispatch_server.url)
+
+        app.dispatch._client = dispatch_client
+        app.publish._client = dispatch_client
 
         http_client = TestClient(app.app)
-        app_client = EndpointClient.from_app(app.app)
-
         response = http_client.get("/")
         self.assertEqual(response.status_code, 200)
 
-        server.execute(app_client)
-
-        self.assertEqual(len(servicer.responses), 1)
+        dispatch_service.dispatch_calls()
+        self.assertEqual(len(dispatch_service.responses), 1)
