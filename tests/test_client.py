@@ -2,27 +2,28 @@ import os
 import unittest
 from unittest import mock
 
-import grpc
-
 from dispatch import Call, Client
 from dispatch.proto import _any_unpickle as any_unpickle
-
-from .dispatch_service import ServerTest
+from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 
 class TestClient(unittest.TestCase):
     def setUp(self):
-        self.server = ServerTest()
-        # shortcuts
-        self.servicer = self.server.servicer
-        self.client = self.server.client
+        endpoint_client = EndpointClient.from_url("http://function-service")
+
+        api_key = "0000000000000000"
+        self.dispatch_service = DispatchService(endpoint_client, api_key)
+        self.dispatch_server = DispatchServer(self.dispatch_service)
+        self.dispatch_client = Client(api_key, api_url=self.dispatch_server.url)
+
+        self.dispatch_server.start()
 
     def tearDown(self):
-        self.server.stop()
+        self.dispatch_server.stop()
 
     @mock.patch.dict(os.environ, {"DISPATCH_API_KEY": "WHATEVER"})
     def test_api_key_from_env(self):
-        client = Client(api_url=f"http://127.0.0.1:{self.server.port}")
+        client = Client(api_url=self.dispatch_server.url)
 
         with self.assertRaisesRegex(
             PermissionError,
@@ -31,9 +32,7 @@ class TestClient(unittest.TestCase):
             client.dispatch([Call(function="my-function", input=42)])
 
     def test_api_key_from_arg(self):
-        client = Client(
-            api_url=f"http://127.0.0.1:{self.server.port}", api_key="WHATEVER"
-        )
+        client = Client(api_url=self.dispatch_server.url, api_key="WHATEVER")
 
         with self.assertRaisesRegex(
             PermissionError,
@@ -61,14 +60,14 @@ class TestClient(unittest.TestCase):
         Client(api_url="https://example.com", api_key="foo")
 
     def test_call_pickle(self):
-        results = self.client.dispatch([Call(function="my-function", input=42)])
-        self.assertEqual(len(results), 1)
-        id = results[0]
+        dispatch_ids = self.dispatch_client.dispatch(
+            [Call(function="my-function", input=42)]
+        )
+        self.assertEqual(len(dispatch_ids), 1)
 
-        dispatched_calls = self.servicer.dispatched_calls
-        self.assertEqual(len(dispatched_calls), 1)
-        entry = dispatched_calls[0]
-        self.assertEqual(entry["dispatch_id"], id)
-        call = entry["call"]
+        pending_calls = self.dispatch_service.queue
+        self.assertEqual(len(pending_calls), 1)
+        dispatch_id, call = pending_calls[0]
+        self.assertEqual(dispatch_id, dispatch_ids[0])
         self.assertEqual(call.function, "my-function")
         self.assertEqual(any_unpickle(call.input), 42)

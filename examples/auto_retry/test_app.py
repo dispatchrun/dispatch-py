@@ -8,10 +8,9 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-import dispatch.sdk.v1.status_pb2 as status_pb
-
-from ... import function_service
-from ...test_client import ServerTest
+from dispatch import Client
+from dispatch.sdk.v1 import status_pb2 as status_pb
+from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 
 class TestAutoRetry(unittest.TestCase):
@@ -22,29 +21,33 @@ class TestAutoRetry(unittest.TestCase):
             "DISPATCH_API_KEY": "0000000000000000",
         },
     )
-    def test_foo(self):
-        from . import app
+    def test_app(self):
+        from .app import app, dispatch
 
-        server = ServerTest()
-        servicer = server.servicer
-        app.dispatch._client = server.client
-        app.some_logic._client = server.client
+        # Setup a fake Dispatch server.
+        endpoint_client = EndpointClient.from_app(app)
+        dispatch_service = DispatchService(endpoint_client, collect_roundtrips=True)
+        with DispatchServer(dispatch_service) as dispatch_server:
 
-        http_client = TestClient(app.app, base_url="http://dispatch-service")
-        app_client = function_service.client(http_client)
+            # Use it when dispatching function calls.
+            dispatch.set_client(Client(api_url=dispatch_server.url))
 
-        response = http_client.get("/")
-        self.assertEqual(response.status_code, 200)
+            http_client = TestClient(app)
+            response = http_client.get("/")
+            self.assertEqual(response.status_code, 200)
 
-        server.execute(app_client)
+            dispatch_service.dispatch_calls()
 
-        # Seed(2) used in the app outputs 0, 0, 0, 2, 1, 5. So we expect 6
-        # calls, including 5 retries.
-        for i in range(6):
-            server.execute(app_client)
-        self.assertEqual(len(servicer.responses), 6)
+            # Seed(2) used in the app outputs 0, 0, 0, 2, 1, 5. So we expect 6
+            # calls, including 5 retries.
+            for i in range(6):
+                dispatch_service.dispatch_calls()
 
-        statuses = [r["response"].status for r in servicer.responses]
-        self.assertEqual(
-            statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
-        )
+            self.assertEqual(len(dispatch_service.roundtrips), 1)
+            roundtrips = list(dispatch_service.roundtrips.values())[0]
+            self.assertEqual(len(roundtrips), 6)
+
+            statuses = [response.status for request, response in roundtrips]
+            self.assertEqual(
+                statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
+            )

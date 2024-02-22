@@ -2,25 +2,14 @@ import unittest
 
 import fastapi
 import httpx
-from fastapi.testclient import TestClient
 
-from dispatch import Call, Input, Output
+import dispatch
 from dispatch.fastapi import Dispatch
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
+from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
-from . import function_service
-from .test_client import ServerTest
-
-public_key = public_key_from_pem(
-    """
------BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
------END PUBLIC KEY-----
-"""
-)
-
-private_key = private_key_from_pem(
+signing_key = private_key_from_pem(
     """
 -----BEGIN PRIVATE KEY-----
 MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
@@ -28,33 +17,41 @@ MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 """
 )
 
+verification_key = public_key_from_pem(
+    """
+-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
+-----END PUBLIC KEY-----
+"""
+)
+
 
 class TestFullFastapi(unittest.TestCase):
     def setUp(self):
-        self.app = fastapi.FastAPI()
+        self.endpoint_app = fastapi.FastAPI()
+        endpoint_client = EndpointClient.from_app(self.endpoint_app, signing_key)
+
+        api_key = "0000000000000000"
+        self.dispatch_service = DispatchService(
+            endpoint_client, api_key, collect_roundtrips=True
+        )
+        self.dispatch_server = DispatchServer(self.dispatch_service)
+        self.dispatch_client = dispatch.Client(
+            api_key, api_url=self.dispatch_server.url
+        )
+
         self.dispatch = Dispatch(
-            self.app,
-            endpoint="http://function-service",
-            verification_key=public_key,
-            api_key="0000000000000000",
-            api_url="http://127.0.0.1:10000",
+            self.endpoint_app,
+            endpoint="http://function-service",  # unused
+            verification_key=verification_key,
+            api_key=api_key,
+            api_url=self.dispatch_server.url,
         )
 
-        self.http_client = TestClient(self.app, base_url="http://dispatch-service")
-        self.app_client = function_service.client(
-            self.http_client, signing_key=private_key
-        )
-
-        self.server = ServerTest()
-        # shortcuts
-        self.client = self.server.client
-        self.servicer = self.server.servicer
+        self.dispatch_server.start()
 
     def tearDown(self):
-        self.server.stop()
-
-    def execute(self):
-        self.server.execute(self.app_client)
+        self.dispatch_server.stop()
 
     def test_simple_end_to_end(self):
         # The FastAPI server.
@@ -63,25 +60,29 @@ class TestFullFastapi(unittest.TestCase):
             return f"Hello world: {name}"
 
         # The client.
-        [dispatch_id] = self.client.dispatch([my_function.build_call(52)])
+        [dispatch_id] = self.dispatch_client.dispatch([my_function.build_call(52)])
 
         # Simulate execution for testing purposes.
-        self.execute()
+        self.dispatch_service.dispatch_calls()
 
         # Validate results.
-        resp = self.servicer.response_for(dispatch_id)
-        self.assertEqual(any_unpickle(resp.exit.result.output), "Hello world: 52")
+        roundtrips = self.dispatch_service.roundtrips[dispatch_id]
+        self.assertEqual(len(roundtrips), 1)
+        _, response = roundtrips[0]
+        self.assertEqual(any_unpickle(response.exit.result.output), "Hello world: 52")
 
     def test_simple_missing_signature(self):
         @self.dispatch.function
         def my_function(name: str) -> str:
             return f"Hello world: {name}"
 
-        [dispatch_id] = self.client.dispatch([my_function.build_call(52)])
+        [dispatch_id] = self.dispatch_client.dispatch([my_function.build_call(52)])
 
-        self.app_client = function_service.client(self.http_client)  # no signing key
+        self.dispatch_service.endpoint_client = EndpointClient.from_app(
+            self.endpoint_app
+        )  # no signing key
         try:
-            self.execute()
+            self.dispatch_service.dispatch_calls()
         except httpx.HTTPStatusError as e:
             assert e.response.status_code == 403
             assert e.response.json() == {

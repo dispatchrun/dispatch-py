@@ -55,7 +55,7 @@ class Function:
     def __init__(
         self,
         endpoint: str,
-        client: Client | None,
+        client: Client,
         name: str,
         primitive_func: PrimitiveFunctionType,
         func: Callable,
@@ -102,11 +102,6 @@ class Function:
         return self._primitive_dispatch(Arguments(args, kwargs))
 
     def _primitive_dispatch(self, input: Any = None) -> DispatchID:
-        if self._client is None:
-            raise RuntimeError(
-                "Dispatch Client has not been configured (api_key not provided)"
-            )
-
         [dispatch_id] = self._client.dispatch([self._build_primitive_call(input)])
         return dispatch_id
 
@@ -151,13 +146,13 @@ class Registry:
 
     __slots__ = ("_functions", "_endpoint", "_client")
 
-    def __init__(self, endpoint: str, client: Client | None):
+    def __init__(self, endpoint: str, client: Client):
         """Initialize a local function registry.
 
         Args:
             endpoint: URL of the endpoint that the function is accessible from.
-            client: Optional client for the Dispatch API. If provided, calls
-                to local functions can be dispatched directly.
+            client: Client for the Dispatch API. Used to dispatch calls to
+                local functions.
         """
         self._functions: Dict[str, Function] = {}
         self._endpoint = endpoint
@@ -235,3 +230,9 @@ class Registry:
         )
         self._functions[name] = wrapped_func
         return wrapped_func
+
+    def set_client(self, client: Client):
+        """Set the Client instance used to dispatch calls to local functions."""
+        self._client = client
+        for fn in self._functions.values():
+            fn._client = client

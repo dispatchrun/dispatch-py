@@ -10,7 +10,6 @@ import google.protobuf.wrappers_pb2
 import httpx
 from fastapi.testclient import TestClient
 
-import dispatch
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
 from dispatch.function import Arguments, Error, Function, Input, Output
@@ -18,8 +17,7 @@ from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.status import Status
-
-from . import function_service
+from dispatch.test import EndpointClient
 
 
 def create_dispatch_instance(app, endpoint):
@@ -78,9 +76,7 @@ class TestFastAPI(unittest.TestCase):
                 f"You told me: '{input.input}' ({len(input.input)} characters)"
             )
 
-        http_client = TestClient(app)
-
-        client = function_service.client(http_client)
+        client = EndpointClient.from_app(app)
 
         pickled = pickle.dumps("Hello World!")
         input_any = google.protobuf.any_pb2.Any()
@@ -91,7 +87,7 @@ class TestFastAPI(unittest.TestCase):
             input=input_any,
         )
 
-        resp = client.Run(req)
+        resp = client.run(req)
 
         self.assertIsInstance(resp, function_pb.RunResponse)
 
@@ -121,7 +117,7 @@ class TestCoroutine(unittest.TestCase):
             self.app, endpoint="https://127.0.0.1:9999"
         )
         self.http_client = TestClient(self.app)
-        self.client = function_service.client(self.http_client)
+        self.client = EndpointClient.from_app(self.app)
 
     def execute(
         self, func: Function, input=None, state=None, calls=None
@@ -140,7 +136,7 @@ class TestCoroutine(unittest.TestCase):
             for c in calls:
                 req.poll_result.results.append(c)
 
-        resp = self.client.Run(req)
+        resp = self.client.run(req)
         self.assertIsInstance(resp, function_pb.RunResponse)
         return resp
 
@@ -152,7 +148,7 @@ class TestCoroutine(unittest.TestCase):
             function=call.function,
             input=call.input,
         )
-        resp = self.client.Run(req)
+        resp = self.client.run(req)
         self.assertIsInstance(resp, function_pb.RunResponse)
 
         # Assert the response is terminal. Good enough until the test client can
@@ -178,7 +174,7 @@ class TestCoroutine(unittest.TestCase):
         )
 
         with self.assertRaises(httpx.HTTPStatusError) as cm:
-            self.client.Run(req)
+            self.client.run(req)
         self.assertEqual(cm.exception.response.status_code, 404)
 
     def test_string_input(self):
