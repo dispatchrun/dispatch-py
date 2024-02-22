@@ -7,7 +7,8 @@ from dispatch.sdk.v1 import dispatch_pb2_grpc as dispatch_grpc
 
 class DispatchServer:
     """Test server for a Dispatch service. This is useful for testing
-    a mock version of Dispatch locally (e.g. see MockDispatchService).
+    a mock version of Dispatch locally (e.g. see
+    dispatch.test.DispatchService).
 
     Args:
         service: Dispatch service to serve.
