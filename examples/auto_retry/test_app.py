@@ -27,27 +27,27 @@ class TestAutoRetry(unittest.TestCase):
         # Setup a fake Dispatch server.
         endpoint_client = EndpointClient.from_app(app)
         dispatch_service = DispatchService(endpoint_client, collect_roundtrips=True)
-        dispatch_server = DispatchServer(dispatch_service)
+        with DispatchServer(dispatch_service) as dispatch_server:
 
-        # Use it when dispatching function calls.
-        dispatch.set_client(Client(api_url=dispatch_server.url))
+            # Use it when dispatching function calls.
+            dispatch.set_client(Client(api_url=dispatch_server.url))
 
-        http_client = TestClient(app)
-        response = http_client.get("/")
-        self.assertEqual(response.status_code, 200)
+            http_client = TestClient(app)
+            response = http_client.get("/")
+            self.assertEqual(response.status_code, 200)
 
-        dispatch_service.dispatch_calls()
-
-        # Seed(2) used in the app outputs 0, 0, 0, 2, 1, 5. So we expect 6
-        # calls, including 5 retries.
-        for i in range(6):
             dispatch_service.dispatch_calls()
 
-        self.assertEqual(len(dispatch_service.roundtrips), 1)
-        roundtrips = list(dispatch_service.roundtrips.values())[0]
-        self.assertEqual(len(roundtrips), 6)
+            # Seed(2) used in the app outputs 0, 0, 0, 2, 1, 5. So we expect 6
+            # calls, including 5 retries.
+            for i in range(6):
+                dispatch_service.dispatch_calls()
 
-        statuses = [response.status for request, response in roundtrips]
-        self.assertEqual(
-            statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
-        )
+            self.assertEqual(len(dispatch_service.roundtrips), 1)
+            roundtrips = list(dispatch_service.roundtrips.values())[0]
+            self.assertEqual(len(roundtrips), 6)
+
+            statuses = [response.status for request, response in roundtrips]
+            self.assertEqual(
+                statuses, [status_pb.STATUS_TEMPORARY_ERROR] * 5 + [status_pb.STATUS_OK]
+            )

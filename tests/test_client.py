@@ -16,6 +16,8 @@ class TestClient(unittest.TestCase):
         self.dispatch_server = DispatchServer(self.dispatch_service)
         self.dispatch_client = Client(api_key, api_url=self.dispatch_server.url)
 
+        self.dispatch_server.start()
+
     def tearDown(self):
         self.dispatch_server.stop()
 

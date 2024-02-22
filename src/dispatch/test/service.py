@@ -1,4 +1,5 @@
 import os
+import threading
 from collections import OrderedDict
 from typing import TypeAlias
 
@@ -69,6 +70,10 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         if collect_roundtrips:
             self.roundtrips = OrderedDict()
 
+        self._thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
+        self._work_signal = threading.Condition()
+
     def Dispatch(self, request: dispatch_pb.DispatchRequest, context):
         """RPC handler for Dispatch requests. Requests are only queued for
         processing here."""
@@ -76,10 +81,13 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
         resp = dispatch_pb.DispatchResponse()
 
-        for call in request.calls:
-            dispatch_id = self._make_dispatch_id()
-            resp.dispatch_ids.append(dispatch_id)
-            self.queue.append((dispatch_id, call))
+        with self._work_signal:
+            for call in request.calls:
+                dispatch_id = self._make_dispatch_id()
+                resp.dispatch_ids.append(dispatch_id)
+                self.queue.append((dispatch_id, call))
+
+            self._work_signal.notify()
 
         return resp
 
@@ -133,3 +141,41 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                     _next_queue.append((dispatch_id, call))
 
         self.queue = _next_queue
+
+    def start(self):
+        """Start starts a background thread to continuously dispatch calls to the
+        configured endpoint."""
+        if self._thread is not None:
+            raise RuntimeError("service has already been started")
+
+        self._stop_event.clear()
+        self._thread = threading.Thread(target=self._dispatch_continuously)
+        self._thread.start()
+
+    def stop(self):
+        """Stop stops the background thread that's dispatching calls to
+        the configured endpoint."""
+        self._stop_event.set()
+        with self._work_signal:
+            self._work_signal.notify()
+        if self._thread is not None:
+            self._thread.join()
+            self._thread = None
+
+    def _dispatch_continuously(self):
+        while True:
+            with self._work_signal:
+                if not self.queue and not self._stop_event.is_set():
+                    self._work_signal.wait()
+
+            if self._stop_event.is_set():
+                break
+
+            self.dispatch_calls()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()

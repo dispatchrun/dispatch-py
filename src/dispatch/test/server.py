@@ -28,15 +28,25 @@ class DispatchServer:
         self._port = self._server.add_insecure_port(f"{hostname}:{port}")
 
         dispatch_grpc.add_DispatchServiceServicer_to_server(service, self._server)
-        self._server.start()
 
     @property
     def url(self):
         """Returns the URL of the server."""
         return f"http://{self._hostname}:{self._port}"
 
+    def start(self):
+        """Start the server."""
+        self._server.start()
+
     def stop(self):
         """Stop the server."""
         self._server.stop(0)
         self._server.wait_for_termination()
         self._thread_pool.shutdown(wait=True, cancel_futures=True)
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()

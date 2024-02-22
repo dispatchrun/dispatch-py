@@ -48,6 +48,8 @@ class TestFullFastapi(unittest.TestCase):
             api_url=self.dispatch_server.url,
         )
 
+        self.dispatch_server.start()
+
     def tearDown(self):
         self.dispatch_server.stop()
 
