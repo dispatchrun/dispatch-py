@@ -63,7 +63,7 @@ class TestClient(unittest.TestCase):
         )
         self.assertEqual(len(dispatch_ids), 1)
 
-        pending_calls = self.dispatch_service.pending_calls
+        pending_calls = self.dispatch_service.queue
         self.assertEqual(len(pending_calls), 1)
         dispatch_id, call = pending_calls[0]
         self.assertEqual(dispatch_id, dispatch_ids[0])

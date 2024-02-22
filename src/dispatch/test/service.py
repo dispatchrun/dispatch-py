@@ -7,13 +7,42 @@ import dispatch.sdk.v1.call_pb2 as call_pb
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
 import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
 import dispatch.sdk.v1.function_pb2 as function_pb
-import dispatch.sdk.v1.status_pb2 as status_pb
-from dispatch import DispatchID
+from dispatch.id import DispatchID
+from dispatch.proto import Status
 from dispatch.test import EndpointClient
+
+_default_retry_on_status = {
+    Status.THROTTLED,
+    Status.TIMEOUT,
+    Status.TEMPORARY_ERROR,
+    Status.DNS_ERROR,
+    Status.TCP_ERROR,
+    Status.TLS_ERROR,
+    Status.HTTP_ERROR,
+}
 
 
 class DispatchService(dispatch_grpc.DispatchServiceServicer):
-    def __init__(self, endpoint_client: EndpointClient, api_key: str | None = None):
+    """Test instance of Dispatch that provides the bare minimum
+    functionality required to test functions locally."""
+
+    def __init__(
+        self,
+        endpoint_client: EndpointClient,
+        api_key: str | None = None,
+        retry_on_status: set[Status] | None = None,
+        collect_responses: bool = False,
+    ):
+        """Initialize the Dispatch service.
+
+        Args:
+            endpoint_client: Client to use to interact with the local Dispatch
+                endpoint (that provides the functions).
+            api_key: Expected API key on requests to the service. If omitted, the
+                value of the DISPATCH_API_KEY environment variable is used instead.
+            retry_on_status: Set of status codes to enable retries for.
+            collect_responses: Enable collection of responses.
+        """
         super().__init__()
 
         self.endpoint_client = endpoint_client
@@ -22,15 +51,30 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             api_key = os.getenv("DISPATCH_API_KEY")
         self.api_key = api_key
 
+        if retry_on_status is None:
+            retry_on_status = _default_retry_on_status
+        self.retry_on_status = retry_on_status
+
         self._next_dispatch_id = 1
 
-        self.pending_calls: list[tuple[DispatchID, call_pb.Call]] = []
-        self.responses: OrderedDict[DispatchID, function_pb.RunResponse] = OrderedDict()
+        self.queue: list[tuple[DispatchID, call_pb.Call]] = []
 
-    def _make_dispatch_id(self) -> DispatchID:
-        dispatch_id = self._next_dispatch_id
-        self._next_dispatch_id += 1
-        return "{:032x}".format(dispatch_id)
+        self.responses: OrderedDict[DispatchID, function_pb.RunResponse] = OrderedDict()
+        self.collect_responses = collect_responses
+
+    def Dispatch(self, request: dispatch_pb.DispatchRequest, context):
+        """RPC handler for Dispatch requests. Requests are only queued for
+        processing here."""
+        self._validate_authentication(context)
+
+        resp = dispatch_pb.DispatchResponse()
+
+        for call in request.calls:
+            dispatch_id = self._make_dispatch_id()
+            resp.dispatch_ids.append(dispatch_id)
+            self.queue.append((dispatch_id, call))
+
+        return resp
 
     def _validate_authentication(self, context: grpc.ServicerContext):
         expected = f"Bearer {self.api_key}"
@@ -44,52 +88,30 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 )
         context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization header")
 
-    def Dispatch(self, request: dispatch_pb.DispatchRequest, context):
-        self._validate_authentication(context)
-
-        resp = dispatch_pb.DispatchResponse()
-
-        for call in request.calls:
-            dispatch_id = self._make_dispatch_id()
-            self.pending_calls.append((dispatch_id, call))
-            resp.dispatch_ids.append(dispatch_id)
-
-        return resp
+    def _make_dispatch_id(self) -> DispatchID:
+        dispatch_id = self._next_dispatch_id
+        self._next_dispatch_id += 1
+        return "{:032x}".format(dispatch_id)
 
     def dispatch_calls(self):
-        """Synchronously dispatch all pending function calls."""
+        """Synchronously dispatch pending function calls to the
+        configured endpoint."""
+        _next_queue = []
+        while self.queue:
+            dispatch_id, call = self.queue.pop(0)
 
-        _next_pending_calls = []
-
-        while self.pending_calls:
-            dispatch_id, call = self.pending_calls.pop(0)
-
-            req = function_pb.RunRequest(
-                function=call.function,
-                input=call.input,
+            resp = self.endpoint_client.run(
+                function_pb.RunRequest(
+                    function=call.function,
+                    input=call.input,
+                )
             )
 
-            resp = self.endpoint_client.run(req)
-            self.responses[dispatch_id] = resp
+            if self.collect_responses:
+                self.responses[dispatch_id] = resp
 
-            if self._should_retry_status(resp.status):
+            if Status(resp.status) in self.retry_on_status:
                 dispatch_id = self._make_dispatch_id()
-                _next_pending_calls.append((dispatch_id, call))
+                _next_queue.append((dispatch_id, call))
 
-        self.pending_calls = _next_pending_calls
-
-    def _should_retry_status(self, status: status_pb.Status) -> bool:
-        match status:
-            case (
-                status_pb.STATUS_THROTTLED
-                | status_pb.STATUS_TIMEOUT
-                | status_pb.STATUS_TEMPORARY_ERROR
-                | status_pb.STATUS_INCOMPATIBLE_STATE
-                | status_pb.STATUS_DNS_ERROR
-                | status_pb.STATUS_TCP_ERROR
-                | status_pb.STATUS_TLS_ERROR
-                | status_pb.STATUS_HTTP_ERROR
-            ):
-                return True
-            case _:
-                return False
+        self.queue = _next_queue

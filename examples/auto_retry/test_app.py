@@ -26,7 +26,7 @@ class TestAutoRetry(unittest.TestCase):
 
         # Setup a fake Dispatch server.
         endpoint_client = EndpointClient.from_app(app)
-        dispatch_service = DispatchService(endpoint_client)
+        dispatch_service = DispatchService(endpoint_client, collect_responses=True)
         dispatch_server = DispatchServer(dispatch_service)
 
         # Use it when dispatching function calls.

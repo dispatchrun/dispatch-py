@@ -32,7 +32,9 @@ class TestFullFastapi(unittest.TestCase):
         endpoint_client = EndpointClient.from_app(self.endpoint_app, signing_key)
 
         api_key = "0000000000000000"
-        self.dispatch_service = DispatchService(endpoint_client, api_key)
+        self.dispatch_service = DispatchService(
+            endpoint_client, api_key, collect_responses=True
+        )
         self.dispatch_server = DispatchServer(self.dispatch_service)
         self.dispatch_client = dispatch.Client(
             api_key, api_url=self.dispatch_server.url
