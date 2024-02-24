@@ -17,9 +17,10 @@ from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb
 
 from buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
 from dispatch.sdk.v1 import call_pb2 as dispatch_dot_sdk_dot_v1_dot_call__pb2
+from dispatch.sdk.v1 import error_pb2 as dispatch_dot_sdk_dot_v1_dot_error__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b"\n\x1a\x64ispatch/sdk/v1/poll.proto\x12\x0f\x64ispatch.sdk.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1a\x64ispatch/sdk/v1/call.proto\x1a\x1egoogle/protobuf/duration.proto\"\xd1\x01\n\x04Poll\x12'\n\x0f\x63oroutine_state\x18\x01 \x01(\x0cR\x0e\x63oroutineState\x12+\n\x05\x63\x61lls\x18\x02 \x03(\x0b\x32\x15.dispatch.sdk.v1.CallR\x05\x63\x61lls\x12\x43\n\x08max_wait\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationB\r\xbaH\n\xaa\x01\x04\x32\x02\x08\x01\xc8\x01\x01R\x07maxWait\x12.\n\x0bmax_results\x18\x04 \x01(\x05\x42\r\xbaH\n\x1a\x05\x18\xe8\x07(\x01\xc8\x01\x01R\nmaxResults\"l\n\nPollResult\x12'\n\x0f\x63oroutine_state\x18\x01 \x01(\x0cR\x0e\x63oroutineState\x12\x35\n\x07results\x18\x02 \x03(\x0b\x32\x1b.dispatch.sdk.v1.CallResultR\x07resultsB~\n\x13\x63om.dispatch.sdk.v1B\tPollProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3"
+    b"\n\x1a\x64ispatch/sdk/v1/poll.proto\x12\x0f\x64ispatch.sdk.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1a\x64ispatch/sdk/v1/call.proto\x1a\x1b\x64ispatch/sdk/v1/error.proto\x1a\x1egoogle/protobuf/duration.proto\"\xd1\x01\n\x04Poll\x12'\n\x0f\x63oroutine_state\x18\x01 \x01(\x0cR\x0e\x63oroutineState\x12+\n\x05\x63\x61lls\x18\x02 \x03(\x0b\x32\x15.dispatch.sdk.v1.CallR\x05\x63\x61lls\x12\x43\n\x08max_wait\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationB\r\xbaH\n\xaa\x01\x04\x32\x02\x08\x01\xc8\x01\x01R\x07maxWait\x12.\n\x0bmax_results\x18\x04 \x01(\x05\x42\r\xbaH\n\x1a\x05\x18\xe8\x07(\x01\xc8\x01\x01R\nmaxResults\"\x9a\x01\n\nPollResult\x12'\n\x0f\x63oroutine_state\x18\x01 \x01(\x0cR\x0e\x63oroutineState\x12\x35\n\x07results\x18\x02 \x03(\x0b\x32\x1b.dispatch.sdk.v1.CallResultR\x07results\x12,\n\x05\x65rror\x18\x03 \x01(\x0b\x32\x16.dispatch.sdk.v1.ErrorR\x05\x65rrorB~\n\x13\x63om.dispatch.sdk.v1B\tPollProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3"
 )
 
 _globals = globals()
@@ -40,8 +41,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _globals["_POLL"].fields_by_name[
         "max_results"
     ]._serialized_options = b"\272H\n\032\005\030\350\007(\001\310\001\001"
-    _globals["_POLL"]._serialized_start = 137
-    _globals["_POLL"]._serialized_end = 346
-    _globals["_POLLRESULT"]._serialized_start = 348
-    _globals["_POLLRESULT"]._serialized_end = 456
+    _globals["_POLL"]._serialized_start = 166
+    _globals["_POLL"]._serialized_end = 375
+    _globals["_POLLRESULT"]._serialized_start = 378
+    _globals["_POLLRESULT"]._serialized_end = 532
 # @@protoc_insertion_point(module_scope)
