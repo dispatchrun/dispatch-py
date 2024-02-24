@@ -258,6 +258,8 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
                     )
 
         logger.debug("finished handling run request with status %s", status.name)
-        return fastapi.Response(content=response.SerializeToString(), media_type="application/proto")
+        return fastapi.Response(
+            content=response.SerializeToString(), media_type="application/proto"
+        )
 
     return app
