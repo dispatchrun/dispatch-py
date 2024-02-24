@@ -36,7 +36,13 @@ class Input:
     This class is intended to be used as read-only.
     """
 
-    __slots__ = ("_has_input", "_input", "_coroutine_state", "_call_results")
+    __slots__ = (
+        "_has_input",
+        "_input",
+        "_coroutine_state",
+        "_call_results",
+        "_poll_error",
+    )
 
     def __init__(self, req: function_pb.RunRequest):
         self._has_input = req.HasField("input")
@@ -54,6 +60,7 @@ class Input:
             self._call_results = [
                 CallResult._from_proto(r) for r in req.poll_result.results
             ]
+            self._poll_error = Error._from_proto(req.poll_result.error) if req.poll_result.HasField("error") else None
 
     @property
     def is_first_call(self) -> bool:
@@ -84,6 +91,11 @@ class Input:
     def call_results(self) -> list[CallResult]:
         self._assert_resume()
         return self._call_results
+
+    @property
+    def poll_error(self) -> Error | None:
+        self._assert_resume()
+        return self._poll_error
 
     def _assert_first_call(self):
         if self.is_resume:

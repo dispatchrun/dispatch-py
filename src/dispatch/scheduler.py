@@ -208,6 +208,10 @@ class OneShotScheduler:
         else:
             state = self._rebuild_state(input)
 
+            poll_error = input.poll_error
+            if poll_error is not None:
+                raise NotImplementedError
+
             logger.debug("dispatching %d call result(s)", len(input.call_results))
             for cr in input.call_results:
                 assert cr.correlation_id is not None
