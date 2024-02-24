@@ -1,5 +1,4 @@
 import unittest
-from pprint import pprint
 from typing import Any, Callable
 
 from dispatch.coroutine import call, gather
@@ -221,6 +220,56 @@ class TestOneShotScheduler(unittest.TestCase):
 
         self.assertEqual(len(correlation_ids), 8)
 
+    def test_poll_error(self):
+        # The purpose of the test is to ensure that when a poll error occurs,
+        # we only abort the calls that were made on the previous yield. Any
+        # other in-flight calls from previous yields are not affected.
+
+        @durable
+        async def c_then_d():
+            c_result = await call_one("c")
+            try:
+                # The poll error will affect this call only.
+                d_result = await call_one("d")
+            except RuntimeError as e:
+                assert str(e) == "too many calls"
+                d_result = 100
+            return c_result + d_result
+
+        @durable
+        async def main(c_then_d):
+            return await gather(
+                call_concurrently("a", "b"),
+                c_then_d(),
+            )
+
+        output = self.start(main, c_then_d)
+        calls = self.assert_poll_call_functions(output, ["a", "b", "c"])
+
+        call_a, call_b, call_c = calls
+        a_result, b_result, c_result = 10, 20, 30
+        output = self.resume(
+            main,
+            output,
+            [CallResult.from_value(c_result, correlation_id=call_c.correlation_id)],
+        )
+        self.assert_poll_call_functions(output, ["d"])
+
+        output = self.resume(
+            main, output, [], poll_error=RuntimeError("too many calls")
+        )
+        self.assert_poll_call_functions(output, [])
+        output = self.resume(
+            main,
+            output,
+            [
+                CallResult.from_value(a_result, correlation_id=call_a.correlation_id),
+                CallResult.from_value(b_result, correlation_id=call_b.correlation_id),
+            ],
+        )
+
+        self.assert_exit_result_value(output, [[a_result, b_result], c_result + 100])
+
     def test_raise_indirect(self):
         @durable
         async def main():
@@ -234,11 +283,18 @@ class TestOneShotScheduler(unittest.TestCase):
         return OneShotScheduler(main).run(input)
 
     def resume(
-        self, main: Callable, prev_output: Output, call_results: list[CallResult]
+        self,
+        main: Callable,
+        prev_output: Output,
+        call_results: list[CallResult],
+        poll_error: Exception | None = None,
     ):
         poll = self.assert_poll(prev_output)
         input = Input.from_poll_results(
-            main.__qualname__, poll.coroutine_state, call_results
+            main.__qualname__,
+            poll.coroutine_state,
+            call_results,
+            Error.from_exception(poll_error) if poll_error else None,
         )
         return OneShotScheduler(main).run(input)
 

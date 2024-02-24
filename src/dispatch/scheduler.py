@@ -37,7 +37,8 @@ class CallResult:
 
 
 class Future(Protocol):
-    def add(self, result: CallResult | CoroutineResult): ...
+    def add_result(self, result: CallResult | CoroutineResult): ...
+    def add_error(self, error: Exception): ...
     def ready(self) -> bool: ...
     def error(self) -> Exception | None: ...
     def value(self) -> Any: ...
@@ -48,17 +49,25 @@ class CallFuture:
     """A future result of a dispatch.coroutine.call() operation."""
 
     result: CallResult | None = None
+    first_error: Exception | None = None
 
-    def add(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: CallResult | CoroutineResult):
         assert isinstance(result, CallResult)
-        self.result = result
+        if self.result is None:
+            self.result = result
+        if result.error is not None and self.first_error is None:
+            self.first_error = result.error
+
+    def add_error(self, error: Exception):
+        if self.first_error is None:
+            self.first_error = error
 
     def ready(self) -> bool:
-        return self.result is not None
+        return self.first_error is not None or self.result is not None
 
     def error(self) -> Exception | None:
-        assert self.result is not None
-        return self.result.error
+        assert self.ready()
+        return self.first_error
 
     def value(self) -> Any:
         assert self.result is not None
@@ -74,7 +83,7 @@ class GatherFuture:
     results: dict[CoroutineID, CoroutineResult]
     first_error: Exception | None = None
 
-    def add(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: CallResult | CoroutineResult):
         assert isinstance(result, CoroutineResult)
 
         try:
@@ -86,6 +95,10 @@ class GatherFuture:
             self.first_error = result.error
 
         self.results[result.coroutine_id] = result
+
+    def add_error(self, error: Exception):
+        if self.first_error is not None:
+            self.first_error = error
 
     def ready(self) -> bool:
         return self.first_error is not None or len(self.waiting) == 0
@@ -133,6 +146,8 @@ class State:
     ready: list[Coroutine]
     next_coroutine_id: int
     next_call_id: int
+
+    prev_calls: list[Coroutine]
 
 
 class OneShotScheduler:
@@ -183,6 +198,7 @@ class OneShotScheduler:
             ready=[Coroutine(id=0, parent_id=None, coroutine=main)],
             next_coroutine_id=1,
             next_call_id=1,
+            prev_calls=[],
         )
 
     def _rebuild_state(self, input: Input):
@@ -203,10 +219,26 @@ class OneShotScheduler:
             raise IncompatibleStateError from e
 
     def _run(self, input: Input) -> Output:
+
         if input.is_first_call:
             state = self._init_state(input)
         else:
             state = self._rebuild_state(input)
+
+            poll_error = input.poll_error
+            if poll_error is not None:
+                error = poll_error.to_exception()
+                logger.debug("dispatching poll error: %s", error)
+                for coroutine in state.prev_calls:
+                    future = coroutine.result
+                    assert future is not None
+                    future.add_error(error)
+                    if future.ready() and coroutine.id in state.suspended:
+                        state.ready.append(coroutine)
+                        del state.suspended[coroutine.id]
+                        logger.debug("coroutine %s is now ready", coroutine)
+
+            state.prev_calls = []
 
             logger.debug("dispatching %d call result(s)", len(input.call_results))
             for cr in input.call_results:
@@ -214,8 +246,10 @@ class OneShotScheduler:
                 coroutine_id = correlation_coroutine_id(cr.correlation_id)
                 call_id = correlation_call_id(cr.correlation_id)
 
-                error = cr.error.to_exception() if cr.error is not None else None
-                call_result = CallResult(call_id=call_id, value=cr.output, error=error)
+                call_error = cr.error.to_exception() if cr.error is not None else None
+                call_result = CallResult(
+                    call_id=call_id, value=cr.output, error=call_error
+                )
 
                 try:
                     owner = state.suspended[coroutine_id]
@@ -226,8 +260,8 @@ class OneShotScheduler:
                     continue
 
                 logger.debug("dispatching %s to %s", call_result, owner)
-                future.add(call_result)
-                if future.ready():
+                future.add_result(call_result)
+                if future.ready() and owner.id in state.suspended:
                     state.ready.append(owner)
                     del state.suspended[owner.id]
                     logger.debug("owner %s is now ready", owner)
@@ -284,8 +318,8 @@ class OneShotScheduler:
                 except (KeyError, AssertionError):
                     logger.warning("discarding %s", coroutine_result)
                 else:
-                    future.add(coroutine_result)
-                    if future.ready():
+                    future.add_result(coroutine_result)
+                    if future.ready() and parent.id in state.suspended:
                         state.ready.insert(0, parent)
                         del state.suspended[parent.id]
                         logger.debug("parent %s is now ready", parent)
@@ -308,6 +342,7 @@ class OneShotScheduler:
                     pending_calls.append(call)
                     coroutine.result = CallFuture()
                     state.suspended[coroutine.id] = coroutine
+                    state.prev_calls.append(coroutine)
 
                 case Gather():
                     gather = coroutine_yield
