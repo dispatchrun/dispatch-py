@@ -121,14 +121,20 @@ class Input:
 
     @classmethod
     def from_poll_results(
-        cls, function: str, coroutine_state: Any, call_results: list[CallResult]
+        cls,
+        function: str,
+        coroutine_state: Any,
+        call_results: list[CallResult],
+        error: Error | None = None,
     ):
         return Input(
             req=function_pb.RunRequest(
+                function=function,
                 poll_result=poll_pb.PollResult(
                     coroutine_state=coroutine_state,
                     results=[result._as_proto() for result in call_results],
-                )
+                    error=error._as_proto() if error else None,
+                ),
             )
         )
 
