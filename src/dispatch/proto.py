@@ -60,7 +60,11 @@ class Input:
             self._call_results = [
                 CallResult._from_proto(r) for r in req.poll_result.results
             ]
-            self._poll_error = Error._from_proto(req.poll_result.error) if req.poll_result.HasField("error") else None
+            self._poll_error = (
+                Error._from_proto(req.poll_result.error)
+                if req.poll_result.HasField("error")
+                else None
+            )
 
     @property
     def is_first_call(self) -> bool:
