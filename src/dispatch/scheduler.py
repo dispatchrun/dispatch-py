@@ -175,7 +175,7 @@ class OneShotScheduler:
         version: str = sys.version,
         poll_min_results: int = 1,
         poll_max_results: int = 10,
-        poll_max_wait_seconds: int = 60,
+        poll_max_wait_seconds: int | None = None,
     ):
         """Initialize the scheduler.
 
@@ -195,7 +195,7 @@ class OneShotScheduler:
                 per request.
 
             poll_max_wait_seconds: Maximum amount of time to suspend coroutines
-                while waiting for call results.
+                while waiting for call results. Optional.
         """
         self.entry_point = entry_point
         self.version = version
