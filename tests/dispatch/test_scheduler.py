@@ -297,26 +297,43 @@ class TestOneShotScheduler(unittest.TestCase):
             return await call_concurrently("a", "b", "c")
 
         output = self.start(main, poll_min_results=1, poll_max_results=10)
-        self.assert_poll_call_functions(output, ["a", "b", "c"], min_results=1, max_results=3)
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=1, max_results=3
+        )
 
         output = self.start(main, poll_min_results=1, poll_max_results=2)
-        self.assert_poll_call_functions(output, ["a", "b", "c"], min_results=1, max_results=2)
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=1, max_results=2
+        )
 
         output = self.start(main, poll_min_results=10, poll_max_results=10)
-        self.assert_poll_call_functions(output, ["a", "b", "c"], min_results=3, max_results=3)
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=3, max_results=3
+        )
 
-    def start(self, main: Callable, *args: Any, poll_min_results=1, poll_max_results=10, poll_max_wait_seconds=None,
-              **kwargs: Any) -> Output:
+    def start(
+        self,
+        main: Callable,
+        *args: Any,
+        poll_min_results=1,
+        poll_max_results=10,
+        poll_max_wait_seconds=None,
+        **kwargs: Any,
+    ) -> Output:
         input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
-        return OneShotScheduler(main, poll_min_results=poll_min_results, poll_max_results=poll_max_results,
-                                poll_max_wait_seconds=poll_max_wait_seconds).run(input)
+        return OneShotScheduler(
+            main,
+            poll_min_results=poll_min_results,
+            poll_max_results=poll_max_results,
+            poll_max_wait_seconds=poll_max_wait_seconds,
+        ).run(input)
 
     def resume(
-            self,
-            main: Callable,
-            prev_output: Output,
-            call_results: list[CallResult],
-            poll_error: Exception | None = None,
+        self,
+        main: Callable,
+        prev_output: Output,
+        call_results: list[CallResult],
+        poll_error: Exception | None = None,
     ):
         poll = self.assert_poll(prev_output)
         input = Input.from_poll_results(
@@ -346,7 +363,7 @@ class TestOneShotScheduler(unittest.TestCase):
         self.assertEqual(expect, any_unpickle(result.output))
 
     def assert_exit_result_error(
-            self, output: Output, expect: type[Exception], message: str | None = None
+        self, output: Output, expect: type[Exception], message: str | None = None
     ):
         result = self.assert_exit_result(output)
         self.assertFalse(result.HasField("output"))
@@ -373,7 +390,7 @@ class TestOneShotScheduler(unittest.TestCase):
         self.assertEqual(len(poll.calls), 0)
 
     def assert_poll_call_functions(
-            self, output: Output, expect: list[str], min_results=None, max_results=None
+        self, output: Output, expect: list[str], min_results=None, max_results=None
     ):
         poll = self.assert_poll(output)
         # Note: we're not testing endpoint/input here.
