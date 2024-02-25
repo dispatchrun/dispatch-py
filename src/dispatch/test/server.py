@@ -19,8 +19,8 @@ class DispatchServer:
     def __init__(
         self,
         service: dispatch_grpc.DispatchServiceServicer,
-        hostname="127.0.0.1",
-        port=0,
+        hostname: str = "127.0.0.1",
+        port: int = 0,
     ):
         self._thread_pool = concurrent.futures.thread.ThreadPoolExecutor()
         self._server = grpc.server(self._thread_pool)

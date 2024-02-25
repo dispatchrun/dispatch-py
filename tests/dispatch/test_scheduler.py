@@ -102,7 +102,10 @@ class TestOneShotScheduler(unittest.TestCase):
         output = self.start(main)
 
         self.assert_poll_call_functions(
-            output, ["a", "b", "c", "d", "e", "f", "g", "h"]
+            output,
+            ["a", "b", "c", "d", "e", "f", "g", "h"],
+            min_results=1,
+            max_results=8,
         )
 
     def test_resume_after_call(self):
@@ -175,7 +178,9 @@ class TestOneShotScheduler(unittest.TestCase):
 
         output = self.start(main)
         # a, b, c, d are called first. e is not because it depends on a.
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+        calls = self.assert_poll_call_functions(
+            output, ["a", "b", "c", "d"], min_results=1, max_results=4
+        )
         correlation_ids.update(call.correlation_id for call in calls)
         results = [
             CallResult.from_value(i, correlation_id=call.correlation_id)
@@ -183,7 +188,9 @@ class TestOneShotScheduler(unittest.TestCase):
         ]
         output = self.resume(main, output, results)
         # e is called next
-        calls = self.assert_poll_call_functions(output, ["e"])
+        calls = self.assert_poll_call_functions(
+            output, ["e"], min_results=1, max_results=1
+        )
         correlation_ids.update(call.correlation_id for call in calls)
         output = self.resume(
             main,
@@ -191,7 +198,9 @@ class TestOneShotScheduler(unittest.TestCase):
             [CallResult.from_value(4, correlation_id=calls[0].correlation_id)],
         )
         # f is called next
-        calls = self.assert_poll_call_functions(output, ["f"])
+        calls = self.assert_poll_call_functions(
+            output, ["f"], min_results=1, max_results=1
+        )
         correlation_ids.update(call.correlation_id for call in calls)
         output = self.resume(
             main,
@@ -199,7 +208,9 @@ class TestOneShotScheduler(unittest.TestCase):
             [CallResult.from_value(5, correlation_id=calls[0].correlation_id)],
         )
         # g, h are called next
-        calls = self.assert_poll_call_functions(output, ["g", "h"])
+        calls = self.assert_poll_call_functions(
+            output, ["g", "h"], min_results=1, max_results=2
+        )
         correlation_ids.update(call.correlation_id for call in calls)
         output = self.resume(
             main,
@@ -244,7 +255,9 @@ class TestOneShotScheduler(unittest.TestCase):
             )
 
         output = self.start(main, c_then_d)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c"])
+        calls = self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=1, max_results=3
+        )
 
         call_a, call_b, call_c = calls
         a_result, b_result, c_result = 10, 20, 30
@@ -253,7 +266,7 @@ class TestOneShotScheduler(unittest.TestCase):
             output,
             [CallResult.from_value(c_result, correlation_id=call_c.correlation_id)],
         )
-        self.assert_poll_call_functions(output, ["d"])
+        self.assert_poll_call_functions(output, ["d"], min_results=1, max_results=3)
 
         output = self.resume(
             main, output, [], poll_error=RuntimeError("too many calls")
@@ -343,7 +356,9 @@ class TestOneShotScheduler(unittest.TestCase):
         poll = self.assert_poll(output)
         self.assertEqual(len(poll.calls), 0)
 
-    def assert_poll_call_functions(self, output: Output, expect: list[str]):
+    def assert_poll_call_functions(
+        self, output: Output, expect: list[str], min_results=None, max_results=None
+    ):
         poll = self.assert_poll(output)
         # Note: we're not testing endpoint/input here.
         # Check function names match:
@@ -355,4 +370,8 @@ class TestOneShotScheduler(unittest.TestCase):
             len(set(correlation_ids)),
             "correlation IDs were not unique",
         )
+        if min_results is not None:
+            self.assertEqual(min_results, poll.min_results)
+        if max_results is not None:
+            self.assertEqual(max_results, poll.max_results)
         return poll.calls

@@ -275,7 +275,7 @@ class Poller:
     function: str
 
     coroutine_state: bytes
-    # TODO: support max_wait/max_results
+    # TODO: support max_wait/min_results/max_results
 
     waiting: dict[DispatchID, call_pb.Call]
     results: dict[DispatchID, call_pb.CallResult]
