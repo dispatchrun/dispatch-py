@@ -1652,8 +1652,10 @@
 <a href="#dispatch.scheduler.OneShotScheduler" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">OneShotScheduler</span><span class="p">(</span>
     <span class="n">entry_point</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
-    <span class="n">poll_max_wait_seconds</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">version</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+    <span class="n">poll_min_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">poll_max_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">poll_max_wait_seconds</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1664,6 +1666,100 @@
 <p>It's a one-shot scheduler because it only runs one round of scheduling.
 When all local coroutines are suspended, the scheduler yields to Dispatch to
 take over scheduling asynchronous calls.</p>
+  
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>entry_point</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Entry point for the main coroutine.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>version</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Version string to attach to scheduler/coroutine state.
+If the scheduler sees a version mismatch, it will respond to
+Dispatch with an INCOMPATIBLE_STATE status code.</p>
+            </div>
+          </td>
+          <td>
+                <code><span title="sys.version">version</span></code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>poll_min_results</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Minimum number of call results to wait for before
+coroutine execution should continue. Dispatch waits until this
+many results are available, or the poll_max_wait_seconds
+timeout is reached, whichever comes first.</p>
+            </div>
+          </td>
+          <td>
+                <code>1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>poll_max_results</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Maximum number of calls to receive from Dispatch
+per request.</p>
+            </div>
+          </td>
+          <td>
+                <code>10</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>poll_max_wait_seconds</code></td>
+          <td>
+                <code>int | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Maximum amount of time to suspend coroutines
+while waiting for call results. Optional.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
 
   
