@@ -150,7 +150,9 @@ class State:
     next_coroutine_id: int
     next_call_id: int
 
-    prev_calls: list[Coroutine]
+    prev_callers: list[Coroutine]
+
+    outstanding_calls: int
 
 
 class OneShotScheduler:
@@ -234,7 +236,8 @@ class OneShotScheduler:
             ready=[Coroutine(id=0, parent_id=None, coroutine=main)],
             next_coroutine_id=1,
             next_call_id=1,
-            prev_calls=[],
+            prev_callers=[],
+            outstanding_calls=0,
         )
 
     def _rebuild_state(self, input: Input):
@@ -265,7 +268,7 @@ class OneShotScheduler:
             if poll_error is not None:
                 error = poll_error.to_exception()
                 logger.debug("dispatching poll error: %s", error)
-                for coroutine in state.prev_calls:
+                for coroutine in state.prev_callers:
                     future = coroutine.result
                     assert future is not None
                     future.add_error(error)
@@ -273,8 +276,9 @@ class OneShotScheduler:
                         state.ready.append(coroutine)
                         del state.suspended[coroutine.id]
                         logger.debug("coroutine %s is now ready", coroutine)
+                    state.outstanding_calls -= 1
 
-            state.prev_calls = []
+            state.prev_callers = []
 
             logger.debug("dispatching %d call result(s)", len(input.call_results))
             for cr in input.call_results:
@@ -301,6 +305,7 @@ class OneShotScheduler:
                     state.ready.append(owner)
                     del state.suspended[owner.id]
                     logger.debug("owner %s is now ready", owner)
+                state.outstanding_calls -= 1
 
         logger.debug(
             "%d/%d coroutines are ready",
@@ -378,7 +383,8 @@ class OneShotScheduler:
                     pending_calls.append(call)
                     coroutine.result = CallFuture()
                     state.suspended[coroutine.id] = coroutine
-                    state.prev_calls.append(coroutine)
+                    state.prev_callers.append(coroutine)
+                    state.outstanding_calls += 1
 
                 case Gather():
                     gather = coroutine_yield
@@ -434,8 +440,8 @@ class OneShotScheduler:
         return Output.poll(
             state=serialized_state,
             calls=pending_calls,
-            min_results=self.poll_min_results,
-            max_results=self.poll_max_results,
+            min_results=max(1, self.poll_min_results),
+            max_results=max(1, min(state.outstanding_calls, self.poll_max_results)),
             max_wait_seconds=self.poll_max_wait_seconds,
         )
 
