@@ -202,7 +202,8 @@ class Output:
         cls,
         state: Any,
         calls: None | list[Call] = None,
-        max_results: int = 1,
+        min_results: int = 1,
+        max_results: int = 10,
         max_wait_seconds: int | None = None,
     ) -> Output:
         """Suspend the function with a set of Calls, instructing the
@@ -216,6 +217,7 @@ class Output:
         )
         poll = poll_pb.Poll(
             coroutine_state=state_bytes,
+            min_results=min_results,
             max_results=max_results,
             max_wait=max_wait,
         )

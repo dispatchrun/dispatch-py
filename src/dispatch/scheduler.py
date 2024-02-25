@@ -12,7 +12,6 @@ from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
 
-
 CallID: TypeAlias = int
 CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
@@ -38,9 +37,13 @@ class CallResult:
 
 class Future(Protocol):
     def add_result(self, result: CallResult | CoroutineResult): ...
+
     def add_error(self, error: Exception): ...
+
     def ready(self) -> bool: ...
+
     def error(self) -> Exception | None: ...
+
     def value(self) -> Any: ...
 
 
@@ -158,13 +161,46 @@ class OneShotScheduler:
     take over scheduling asynchronous calls.
     """
 
-    __slots__ = ("entry_point", "version", "poll_max_wait_seconds")
+    __slots__ = (
+        "entry_point",
+        "version",
+        "poll_min_results",
+        "poll_max_results",
+        "poll_max_wait_seconds",
+    )
 
     def __init__(
-        self, entry_point: Callable, version=sys.version, poll_max_wait_seconds=5
+        self,
+        entry_point: Callable,
+        version: str = sys.version,
+        poll_min_results: int = 1,
+        poll_max_results: int = 10,
+        poll_max_wait_seconds: int = 60,
     ):
+        """Initialize the scheduler.
+
+        Args:
+            entry_point: Entry point for the main coroutine.
+
+            version: Version string to attach to scheduler/coroutine state.
+                If the scheduler sees a version mismatch, it will respond to
+                Dispatch with an INCOMPATIBLE_STATE status code.
+
+            poll_min_results: Minimum number of call results to wait for before
+                coroutine execution should continue. Dispatch waits until this
+                many results are available, or the poll_max_wait_seconds
+                timeout is reached, whichever comes first.
+
+            poll_max_results: Maximum number of calls to receive from Dispatch
+                per request.
+
+            poll_max_wait_seconds: Maximum amount of time to suspend coroutines
+                while waiting for call results.
+        """
         self.entry_point = entry_point
         self.version = version
+        self.poll_min_results = poll_min_results
+        self.poll_max_results = poll_max_results
         self.poll_max_wait_seconds = poll_max_wait_seconds
         logger.debug(
             "booting coroutine scheduler with entry point '%s' version '%s'",
@@ -398,9 +434,8 @@ class OneShotScheduler:
         return Output.poll(
             state=serialized_state,
             calls=pending_calls,
-            max_results=1,
-            # FIXME: use min_results + max_results + max_wait to balance latency/throughput
-            # max_results=len(max_results),
+            min_results=self.poll_min_results,
+            max_results=self.poll_max_results,
             max_wait_seconds=self.poll_max_wait_seconds,
         )
 
