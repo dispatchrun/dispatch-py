@@ -291,9 +291,42 @@ class TestOneShotScheduler(unittest.TestCase):
         output = self.start(main)
         self.assert_exit_result_error(output, ValueError, "oops")
 
-    def start(self, main: Callable, *args: Any, **kwargs: Any) -> Output:
+    def test_min_max_results_clamping(self):
+        @durable
+        async def main():
+            return await call_concurrently("a", "b", "c")
+
+        output = self.start(main, poll_min_results=1, poll_max_results=10)
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=1, max_results=3
+        )
+
+        output = self.start(main, poll_min_results=1, poll_max_results=2)
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=1, max_results=2
+        )
+
+        output = self.start(main, poll_min_results=10, poll_max_results=10)
+        self.assert_poll_call_functions(
+            output, ["a", "b", "c"], min_results=3, max_results=3
+        )
+
+    def start(
+        self,
+        main: Callable,
+        *args: Any,
+        poll_min_results=1,
+        poll_max_results=10,
+        poll_max_wait_seconds=None,
+        **kwargs: Any,
+    ) -> Output:
         input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
-        return OneShotScheduler(main).run(input)
+        return OneShotScheduler(
+            main,
+            poll_min_results=poll_min_results,
+            poll_max_results=poll_max_results,
+            poll_max_wait_seconds=poll_max_wait_seconds,
+        ).run(input)
 
     def resume(
         self,
