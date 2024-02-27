@@ -1,11 +1,14 @@
+<p align="center">
+<img src="https://github.com/stealthrocket/dispatch-sdk-protobuf/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
+</p>
+
+# Dispatch SDK for Python
+
 [![Docs](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/docs.yml)
 [![PyPI](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml)
 [![Test](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/dispatch-functions.svg)](https://badge.fury.io/py/dispatch-functions)
 [![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.stealthrocket.cloud/main/reference/dispatch/)
-<img align="right" src="https://github.com/stealthrocket/dispatch-sdk-protobuf/assets/865510/87162355-e184-4058-a733-650eee53f333" width="200"/>
-
-# Dispatch SDK for Python
 
 This package implements the Dispatch SDK for Python.
 
