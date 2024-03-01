@@ -35,24 +35,24 @@ test: typecheck unittest
 .proto:
 	mkdir -p $@
 
-.proto/dispatch-sdk: .proto
-	buf export buf.build/stealthrocket/dispatch-sdk --output=.proto/dispatch-sdk
+.proto/dispatch-proto: .proto
+	buf export buf.build/stealthrocket/dispatch-proto --output=.proto/dispatch-proto
 
 update-proto:
 	$(MAKE) clean
 	find . -type f -name '*_pb2*.py*' -exec rm  {} \;
 	$(MAKE) generate
 
-generate: .proto/dispatch-sdk
+generate: .proto/dispatch-proto
 	buf generate --template buf.gen.yaml
 	cd src && find . -type d | while IFS= read -r dir; do touch $$dir/__init__.py; done
 	rm src/__init__.py
 	$(MAKE) fmt
 
 clean:
-	$(RM) -rf dist .proto .coverage .coverage-html
-	find . -type f -name '*.pyc' -exec rm {} \;
-	find . -type d -name '__pycache__' -exec rm -rf {} \;
+	$(RM) -r dist .proto .coverage .coverage-html
+	find . -type f -name '*.pyc' | xargs $(RM) -r
+	find . -type d -name '__pycache__' | xargs $(RM) -r
 
 build:
 	$(PYTHON) -m build

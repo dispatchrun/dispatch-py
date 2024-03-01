@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/stealthrocket/dispatch-sdk-protobuf/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
+<img src="https://github.com/stealthrocket/dispatch-proto/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
 </p>
 
 # Dispatch SDK for Python
