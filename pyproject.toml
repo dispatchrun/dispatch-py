@@ -3,8 +3,8 @@ requires = ["setuptools >= 61.0", "wheel", "setuptools-git-versioning<2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dispatch-functions"
-description = "Python SDK for Dispatch Stateful Functions"
+name = "dispatch-py"
+description = "Develop reliable distributed systems on the Dispatch platform."
 readme = "README.md"
 dynamic = ["version"]
 requires-python = ">= 3.11"
