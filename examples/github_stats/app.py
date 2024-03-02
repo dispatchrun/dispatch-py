@@ -24,21 +24,27 @@ app = FastAPI()
 dispatch = Dispatch(app)
 
 
+def get_gh_api(url):
+    print(f"GET {url}")
+    response = httpx.get(url)
+    X_RateLimit_Remaining = response.headers.get("X-RateLimit-Remaining")
+    if response.status_code == 403 and X_RateLimit_Remaining == "0":
+        raise EOFError("Rate limit exceeded")
+    response.raise_for_status()
+    return response.json()
+
+
 @dispatch.function
 async def get_repo_info(repo_owner: str, repo_name: str):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
-    api_response = httpx.get(url)
-    api_response.raise_for_status()
-    repo_info = api_response.json()
+    repo_info = get_gh_api(url)
     return repo_info
 
 
 @dispatch.function
 async def get_contributors(repo_info: dict):
-    contributors_url = repo_info["contributors_url"]
-    response = httpx.get(contributors_url)
-    response.raise_for_status()
-    contributors = response.json()
+    url = repo_info["contributors_url"]
+    contributors = get_gh_api(url)
     return contributors
 
 
