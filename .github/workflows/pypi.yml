@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/dispatch-functions
+      url: https://pypi.org/p/dispatch-py
     permissions:
       contents: read
       id-token: write

@@ -2,19 +2,19 @@
 <img src="https://github.com/stealthrocket/dispatch-proto/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
 </p>
 
-# Dispatch SDK for Python
+# dispatch-py
 
-[![Docs](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/docs.yml)
-[![PyPI](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/pypi.yml)
-[![Test](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-sdk-python/actions/workflows/test.yml)
-[![PyPI version](https://badge.fury.io/py/dispatch-functions.svg)](https://badge.fury.io/py/dispatch-functions)
+[![Docs](https://github.com/stealthrocket/dispatch-py/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/docs.yml)
+[![PyPI](https://github.com/stealthrocket/dispatch-py/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/pypi.yml)
+[![Test](https://github.com/stealthrocket/dispatch-py/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/test.yml)
+[![PyPI version](https://badge.fury.io/py/dispatch-py.svg)](https://badge.fury.io/py/dispatch-py)
 [![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.stealthrocket.cloud/main/reference/dispatch/)
 
-This package implements the Dispatch SDK for Python.
+Python package to develop applications with the Dispatch platform.
 
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
 [ngrok]:   https://ngrok.com/
-[pypi]:    https://pypi.org/project/dispatch-functions/
+[pypi]:    https://pypi.org/project/dispatch-py/
 [signup]:  https://docs.stealthrocket.cloud/stateful-functions/getting-started
 
 - [What is Dispatch?](#what-is-dispatch)
@@ -39,9 +39,9 @@ To get started, follow the instructions to [sign up for Dispatch][signup] 🚀.
 
 ## Installation
 
-This package is published on [PyPI][pypi] as **dispatch-functions**, to install:
+This package is published on [PyPI][pypi] as **dispatch-py**, to install:
 ```sh
-pip install dispatch-functions
+pip install dispatch-py
 ```
 
 ## Usage

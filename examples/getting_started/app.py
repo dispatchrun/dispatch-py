@@ -28,7 +28,7 @@ Note the forwarding address.
 
 ## Install dependencies
 
-pip install dispatch-functions[fastapi] requests uvicorn[standard]
+pip install dispatch-py[fastapi] requests uvicorn[standard]
 
 # Launch the example
 
