@@ -4,7 +4,17 @@ import inspect
 import logging
 from functools import wraps
 from types import CoroutineType
-from typing import Any, Callable, Dict, Generic, ParamSpec, TypeAlias, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    Generic,
+    ParamSpec,
+    TypeAlias,
+    TypeVar,
+    overload,
+)
 
 import dispatch.coroutine
 from dispatch.client import Client
@@ -40,21 +50,17 @@ class Function(Generic[P, T]):
         client: Client,
         name: str,
         primitive_func: PrimitiveFunctionType,
-        func: Callable[P, T] | None,
-        coroutine: bool = False,
+        func: Callable[..., Any] | None,
     ):
         self._endpoint = endpoint
         self._client = client
         self._name = name
         self._primitive_func = primitive_func
-        if func:
-            self._func: Callable[P, T] | None = (
-                durable(self._call_async) if coroutine else func
-            )
-        else:
-            self._func = None
+        self._func: Callable[P, Coroutine[Any, Any, T]] | None = (
+            durable(self._call_async) if func else None
+        )
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Coroutine[Any, Any, T]:
         if self._func is None:
             raise ValueError("cannot call a primitive function directly")
         return self._func(*args, **kwargs)
@@ -145,46 +151,38 @@ class Registry:
         self._endpoint = endpoint
         self._client = client
 
-    def function(self, func: Callable[P, T]) -> Function[P, T]:
+    @overload
+    def function(self, func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
+
+    @overload
+    def function(self, func: Callable[P, T]) -> Function[P, T]: ...
+
+    def function(self, func):
         """Decorator that registers functions."""
-        if inspect.iscoroutinefunction(func):
-            return self._register_coroutine(func)
-        return self._register_function(func)
+        if not inspect.iscoroutinefunction(func):
+            logger.info("registering function: %s", func.__qualname__)
+            return self._register_function(func)
+
+        logger.info("registering coroutine: %s", func.__qualname__)
+        return self._register_coroutine(func)
 
     def primitive_function(self, func: PrimitiveFunctionType) -> Function:
         """Decorator that registers primitive functions."""
         return self._register_primitive_function(func)
 
     def _register_function(self, func: Callable[P, T]) -> Function[P, T]:
-        logger.info("registering function: %s", func.__qualname__)
-
-        # Register the function with the experimental.durable package, in case
-        # it's referenced from a coroutine.
         func = durable(func)
 
         @wraps(func)
-        def primitive_func(input: Input) -> Output:
-            try:
-                try:
-                    args, kwargs = input.input_arguments()
-                except ValueError:
-                    raise ValueError("incorrect input for function")
-                raw_output = func(*args, **kwargs)
-            except Exception as e:
-                logger.exception(
-                    f"@dispatch.function: '{func.__name__}' raised an exception"
-                )
-                return Output.error(Error.from_exception(e))
-            else:
-                return Output.value(raw_output)
+        async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            return func(*args, **kwargs)
 
-        primitive_func.__qualname__ = f"{func.__qualname__}_primitive"
-        primitive_func = durable(primitive_func)
+        async_wrapper.__qualname__ = f"{func.__qualname__}_async"
 
-        return self._register(primitive_func, func, coroutine=False)
+        return self._register_coroutine(async_wrapper)
 
     def _register_coroutine(
-        self, func: Callable[P, CoroutineType[Any, Any, T]]
+        self, func: Callable[P, Coroutine[Any, Any, T]]
     ) -> Function[P, T]:
         logger.info("registering coroutine: %s", func.__qualname__)
 
@@ -197,30 +195,26 @@ class Registry:
         primitive_func.__qualname__ = f"{func.__qualname__}_primitive"
         primitive_func = durable(primitive_func)
 
-        return self._register(primitive_func, func, coroutine=True)
+        return self._register(primitive_func, func)
 
     def _register_primitive_function(
         self, primitive_func: PrimitiveFunctionType
     ) -> Function[P, T]:
         logger.info("registering primitive function: %s", primitive_func.__qualname__)
-        return self._register(primitive_func, func=None, coroutine=False)
+        return self._register(primitive_func, func=None)
 
     def _register(
         self,
         primitive_func: PrimitiveFunctionType,
-        func: Callable[P, T] | None,
-        coroutine: bool,
+        func: Callable[P, Coroutine[Any, Any, T]] | None,
     ) -> Function[P, T]:
-        if func:
-            name = func.__qualname__
-        else:
-            name = primitive_func.__qualname__
+        name = func.__qualname__ if func else primitive_func.__qualname__
         if name in self._functions:
             raise ValueError(
                 f"function or coroutine already registered with name '{name}'"
             )
         wrapped_func = Function[P, T](
-            self._endpoint, self._client, name, primitive_func, func, coroutine
+            self._endpoint, self._client, name, primitive_func, func
         )
         self._functions[name] = wrapped_func
         return wrapped_func
