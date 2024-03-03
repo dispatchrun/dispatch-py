@@ -3,8 +3,8 @@ from __future__ import annotations
 import inspect
 import logging
 from functools import wraps
-from types import FunctionType
-from typing import Any, Callable, Dict, TypeAlias
+from types import CoroutineType
+from typing import Any, Callable, Dict, Generic, ParamSpec, TypeAlias, TypeVar
 
 import dispatch.coroutine
 from dispatch.client import Client
@@ -23,29 +23,11 @@ exceptions.
 """
 
 
-# https://stackoverflow.com/questions/653368/how-to-create-a-decorator-that-can-be-used-either-with-or-without-parameters
-def decorator(f):
-    """This decorator is intended to declare decorators that can be used with
-    or without parameters. If the decorated function is called with a single
-    callable argument, it is assumed to be a function and the decorator is
-    applied to it. Otherwise, the decorator is called with the arguments
-    provided and the result is returned.
-    """
-
-    @wraps(f)
-    def method(self, *args, **kwargs):
-        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
-            return f(self, args[0])
-
-        def wrapper(func):
-            return f(self, func, *args, **kwargs)
-
-        return wrapper
-
-    return method
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
-class Function:
+class Function(Generic[P, T]):
     """Callable wrapper around a function meant to be used throughout the
     Dispatch Python SDK.
     """
@@ -58,18 +40,23 @@ class Function:
         client: Client,
         name: str,
         primitive_func: PrimitiveFunctionType,
-        func: Callable,
+        func: Callable[P, T] | None,
         coroutine: bool = False,
     ):
         self._endpoint = endpoint
         self._client = client
         self._name = name
         self._primitive_func = primitive_func
-        # FIXME: is there a way to decorate the function at the definition
-        #  without making it a class method?
-        self._func = durable(self._call_async) if coroutine else func
+        if func:
+            self._func: Callable[P, T] | None = (
+                durable(self._call_async) if coroutine else func
+            )
+        else:
+            self._func = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs):
+        if self._func is None:
+            raise ValueError("cannot call a primitive function directly")
         return self._func(*args, **kwargs)
 
     def _primitive_call(self, input: Input) -> Output:
@@ -83,7 +70,7 @@ class Function:
     def name(self) -> str:
         return self._name
 
-    def dispatch(self, *args: Any, **kwargs: Any) -> DispatchID:
+    def dispatch(self, *args: P.args, **kwargs: P.kwargs) -> DispatchID:
         """Dispatch a call to the function.
 
         The Registry this function was registered with must be initialized
@@ -105,14 +92,14 @@ class Function:
         [dispatch_id] = self._client.dispatch([self._build_primitive_call(input)])
         return dispatch_id
 
-    async def _call_async(self, *args, **kwargs) -> Any:
+    async def _call_async(self, *args: P.args, **kwargs: P.kwargs) -> T:
         """Asynchronously call the function from a @dispatch.function."""
         return await dispatch.coroutine.call(
             self.build_call(*args, **kwargs, correlation_id=None)
         )
 
     def build_call(
-        self, *args: Any, correlation_id: int | None = None, **kwargs: Any
+        self, *args: P.args, correlation_id: int | None = None, **kwargs: P.kwargs
     ) -> Call:
         """Create a Call for this function with the provided input. Useful to
         generate calls when using the Client.
@@ -158,24 +145,21 @@ class Registry:
         self._endpoint = endpoint
         self._client = client
 
-    @decorator
-    def function(self, func: Callable) -> Function:
-        """Returns a decorator that registers functions."""
-        return self._register_function(func)
-
-    @decorator
-    def primitive_function(self, func: Callable) -> Function:
-        """Returns a decorator that registers primitive functions."""
-        return self._register_primitive_function(func)
-
-    def _register_function(self, func: Callable) -> Function:
+    def function(self, func: Callable[P, T]) -> Function[P, T]:
+        """Decorator that registers functions."""
         if inspect.iscoroutinefunction(func):
             return self._register_coroutine(func)
+        return self._register_function(func)
 
+    def primitive_function(self, func: PrimitiveFunctionType) -> Function:
+        """Decorator that registers primitive functions."""
+        return self._register_primitive_function(func)
+
+    def _register_function(self, func: Callable[P, T]) -> Function[P, T]:
         logger.info("registering function: %s", func.__qualname__)
 
         # Register the function with the experimental.durable package, in case
-        # it's referenced from a @dispatch.coroutine.
+        # it's referenced from a coroutine.
         func = durable(func)
 
         @wraps(func)
@@ -199,7 +183,9 @@ class Registry:
 
         return self._register(primitive_func, func, coroutine=False)
 
-    def _register_coroutine(self, func: Callable) -> Function:
+    def _register_coroutine(
+        self, func: Callable[P, CoroutineType[Any, Any, T]]
+    ) -> Function[P, T]:
         logger.info("registering coroutine: %s", func.__qualname__)
 
         func = durable(func)
@@ -213,19 +199,27 @@ class Registry:
 
         return self._register(primitive_func, func, coroutine=True)
 
-    def _register_primitive_function(self, func: PrimitiveFunctionType) -> Function:
-        logger.info("registering primitive function: %s", func.__qualname__)
-        return self._register(func, func, coroutine=inspect.iscoroutinefunction(func))
+    def _register_primitive_function(
+        self, primitive_func: PrimitiveFunctionType
+    ) -> Function[P, T]:
+        logger.info("registering primitive function: %s", primitive_func.__qualname__)
+        return self._register(primitive_func, func=None, coroutine=False)
 
     def _register(
-        self, primitive_func: PrimitiveFunctionType, func: Callable, coroutine: bool
-    ) -> Function:
-        name = func.__qualname__
+        self,
+        primitive_func: PrimitiveFunctionType,
+        func: Callable[P, T] | None,
+        coroutine: bool,
+    ) -> Function[P, T]:
+        if func:
+            name = func.__qualname__
+        else:
+            name = primitive_func.__qualname__
         if name in self._functions:
             raise ValueError(
                 f"function or coroutine already registered with name '{name}'"
             )
-        wrapped_func = Function(
+        wrapped_func = Function[P, T](
             self._endpoint, self._client, name, primitive_func, func, coroutine
         )
         self._functions[name] = wrapped_func

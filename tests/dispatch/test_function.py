@@ -11,7 +11,7 @@ class TestFunction(unittest.TestCase):
         self.dispatch = Registry(endpoint="http://example.com", client=self.client)
 
     def test_serializable(self):
-        @self.dispatch.function()
+        @self.dispatch.function
         def my_function():
             pass
 
