@@ -783,15 +783,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#dispatch.function.decorator" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decorator
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1402,15 +1393,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#dispatch.function.decorator" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;decorator
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1488,12 +1470,14 @@ exceptions.</p>
     <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.client.Client" href="../client/#dispatch.client.Client">Client</a></span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">primitive_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">,</span>
-    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">,</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">coroutine</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Generic">Generic</span>[<span title="dispatch.function.P">P</span>, <span title="dispatch.function.T">T</span>]</code></p>
 
   
       <p>Callable wrapper around a function meant to be used throughout the
@@ -1522,7 +1506,7 @@ Dispatch Python SDK.</p>
 
 
 <a href="#dispatch.function.Function.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1547,7 +1531,7 @@ with a Client / api_key for this call facility to be available.</p>
         <tr>
           <td><code>*args</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><span title="dispatch.function.P.args">args</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1561,7 +1545,7 @@ with a Client / api_key for this call facility to be available.</p>
         <tr>
           <td><code>**kwargs</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><span title="dispatch.function.P.kwargs">kwargs</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1638,9 +1622,9 @@ with a Client / api_key for this call facility to be available.</p>
 
 <a href="#dispatch.function.Function.build_call" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">build_call</span><span class="p">(</span>
-    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span>
     <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span>
 </code></pre></div>
 
@@ -1665,7 +1649,7 @@ generate calls when using the Client.</p>
         <tr>
           <td><code>*args</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><span title="dispatch.function.P.args">args</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1694,7 +1678,7 @@ match this call to a call result.</p>
         <tr>
           <td><code>**kwargs</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><span title="dispatch.function.P.kwargs">kwargs</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1831,12 +1815,12 @@ local functions.</p>
 
 
 <a href="#dispatch.function.Registry.function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Returns a decorator that registers functions.</p>
+      <p>Decorator that registers functions.</p>
 
   </div>
 
@@ -1852,12 +1836,12 @@ local functions.</p>
 
 
 <a href="#dispatch.function.Registry.primitive_function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Returns a decorator that registers primitive functions.</p>
+      <p>Decorator that registers primitive functions.</p>
 
   </div>
 
@@ -1893,31 +1877,6 @@ local functions.</p>
 
 </div>
 
-
-
-<div class="doc doc-object doc-function">
-
-
-
-<h2 id="dispatch.function.decorator" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>          <span class="doc doc-object-name doc-function-name">decorator</span>
-
-
-<a href="#dispatch.function.decorator" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">decorator</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>This decorator is intended to declare decorators that can be used with
-or without parameters. If the decorated function is called with a single
-callable argument, it is assumed to be a function and the decorator is
-applied to it. Otherwise, the decorator is called with the arguments
-provided and the result is returned.</p>
-
-  </div>
-
-</div>
 
 
 
