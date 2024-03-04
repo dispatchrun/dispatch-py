@@ -719,6 +719,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#dispatch.function.Function.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dispatch.function.Function.dispatch" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;dispatch
@@ -1329,6 +1338,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#dispatch.function.Function.__call__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__call__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dispatch.function.Function.dispatch" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;dispatch
@@ -1470,14 +1488,13 @@ exceptions.</p>
     <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.client.Client" href="../client/#dispatch.client.Client">Client</a></span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">primitive_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">,</span>
-    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">coroutine</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Generic">Generic</span>[<span title="dispatch.function.P">P</span>, <span title="dispatch.function.T">T</span>]</code></p>
+            Bases: <code><span title="dispatch.function.PrimitiveFunction">PrimitiveFunction</span></code>, <code><span title="typing.Generic">Generic</span>[<span title="dispatch.function.P">P</span>, <span title="dispatch.function.T">T</span>]</code></p>
 
   
       <p>Callable wrapper around a function meant to be used throughout the
@@ -1501,6 +1518,30 @@ Dispatch Python SDK.</p>
 
 
 
+<h3 id="dispatch.function.Function.__call__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">__call__</span>
+
+
+<a href="#dispatch.function.Function.__call__" class="headerlink" title="Permanent link">¤</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="fm">__call__</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Coroutine">Coroutine</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Call the function asynchronously (through Dispatch), and return a
+coroutine that can be awaited to retrieve the call result.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
 <h3 id="dispatch.function.Function.dispatch" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">dispatch</span>
 
@@ -1511,7 +1552,8 @@ Dispatch Python SDK.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Dispatch a call to the function.</p>
+      <p>Dispatch an asynchronous call to the function without
+waiting for a result.</p>
 <p>The Registry this function was registered with must be initialized
 with a Client / api_key for this call facility to be available.</p>
 
@@ -1815,7 +1857,7 @@ local functions.</p>
 
 
 <a href="#dispatch.function.Registry.function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1836,7 +1878,9 @@ local functions.</p>
 
 
 <a href="#dispatch.function.Registry.primitive_function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">(</span>
+    <span class="n">primitive_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="dispatch.function.PrimitiveFunction">PrimitiveFunction</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
