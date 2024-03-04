@@ -8,7 +8,7 @@
 [![PyPI](https://github.com/stealthrocket/dispatch-py/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/pypi.yml)
 [![Test](https://github.com/stealthrocket/dispatch-py/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/dispatch-py.svg)](https://badge.fury.io/py/dispatch-py)
-[![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.stealthrocket.cloud/main/reference/dispatch/)
+[![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.dispatch.run/main/reference/dispatch/)
 
 Python package to develop applications with the Dispatch platform.
 
