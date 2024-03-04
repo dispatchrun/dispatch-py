@@ -15,7 +15,7 @@ Python package to develop applications with the Dispatch platform.
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
 [ngrok]:   https://ngrok.com/
 [pypi]:    https://pypi.org/project/dispatch-py/
-[signup]:  https://docs.stealthrocket.cloud/stateful-functions/getting-started
+[signup]:  https://docs.dispatch.run/stateful-functions/getting-started
 
 - [What is Dispatch?](#what-is-dispatch)
 - [Installation](#installation)

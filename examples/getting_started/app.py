@@ -3,7 +3,7 @@
 This is the most basic example to get started with Dispatch Functions.
 
 Follow along with the tutorial at:
-https://docs.stealthrocket.cloud/dispatch/stateful-functions/getting-started/
+https://docs.dispatch.run/dispatch/stateful-functions/getting-started/
 
 The program starts a FastAPI server and initializes the Dispatch SDK that
 registers one function. This function makes a dummy but durable HTTP request.
@@ -15,7 +15,7 @@ the durable function.
 ## Get a Dispatch API key
 
 Sign up for Dispatch and generate a new API key:
-https://docs.stealthrocket.cloud/stateful-functions/getting-started#creating-an-api-key
+https://docs.dispatch.run/stateful-functions/getting-started#creating-an-api-key
 
 ## Create a local tunnel
 
@@ -41,7 +41,7 @@ export "DISPATCH_VERIFICATION_KEY=`curl -s \
     -d '{}' \
     -H "Authorization: Bearer $DISPATCH_API_KEY" \
     -H "Content-Type: application/json" \
-    https://api.stealthrocket.cloud/dispatch.v1.SigningKeyService/CreateSigningKey | \
+    https://api.dispatch.run/dispatch.v1.SigningKeyService/CreateSigningKey | \
         jq -r .key.asymmetricKey.publicKey`"
 
 2. Start the server:

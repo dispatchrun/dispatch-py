@@ -15,7 +15,7 @@ from dispatch.proto import Call
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_API_URL = "https://api.stealthrocket.cloud"
+DEFAULT_API_URL = "https://api.dispatch.run"
 
 
 class Client:
