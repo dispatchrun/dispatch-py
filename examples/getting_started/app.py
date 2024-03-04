@@ -41,7 +41,7 @@ export "DISPATCH_VERIFICATION_KEY=`curl -s \
     -d '{}' \
     -H "Authorization: Bearer $DISPATCH_API_KEY" \
     -H "Content-Type: application/json" \
-    https://api.stealthrocket.cloud/dispatch.v1.SigningKeyService/CreateSigningKey | \
+    https://api.dispatch.run/dispatch.v1.SigningKeyService/CreateSigningKey | \
         jq -r .key.asymmetricKey.publicKey`"
 
 2. Start the server:
