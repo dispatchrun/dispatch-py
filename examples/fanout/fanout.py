@@ -55,8 +55,7 @@ async def fanout():
     # Using gather, we fan-out the four following requests.
     repos = await gather(
         get_repo("stealthrocket", "coroutine"),
-        get_repo("stealthrocket", "timecraft"),
-        get_repo("stealthrocket", "dispatch-sdk-python"),
+        get_repo("stealthrocket", "dispatch-py"),
         get_repo("stealthrocket", "wzprof"),
     )
 
