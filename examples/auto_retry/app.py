@@ -3,7 +3,7 @@
 This example demonstrates how stateful functions automatically retry on failure.
 
 Make sure to follow the setup instructions at
-https://docs.stealthrocket.cloud/dispatch/stateful-functions/getting-started/
+https://docs.dispatch.run/dispatch/stateful-functions/getting-started/
 
 Run with:
 
