@@ -21,11 +21,11 @@ import base64
 import logging
 import os
 from datetime import timedelta
+from urllib.parse import urlparse
 
 import fastapi
 import fastapi.responses
 from http_message_signatures import InvalidSignature
-from httpx import _urlparse
 
 from dispatch.client import Client
 from dispatch.function import Registry
@@ -116,7 +116,7 @@ class Dispatch(Registry):
 
         logger.info("configuring Dispatch endpoint %s", endpoint)
 
-        parsed_url = _urlparse.urlparse(endpoint)
+        parsed_url = urlparse(endpoint)
         if not parsed_url.netloc or not parsed_url.scheme:
             raise ValueError(
                 f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
