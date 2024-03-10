@@ -203,22 +203,24 @@ async def transform(msg):
 
 ### Serialization
 
-Dispatch uses the [dill] library to serialize coroutines, which is
-an extension of [pickle] from the standard library.
+Serialization of coroutines is enabled by a CPython extension that
+exposes internal details about stack frames.
+
+Dispatch then uses the [dill] library to serialize these stack frames.
+Note that `dill` is an extension of [pickle] from the standard library.
 
 [dill]: https://dill.readthedocs.io/en/latest/
 [pickle]: https://docs.python.org/3/library/pickle.html
 
-Serialization of coroutines is enabled by a CPython extension.
-
 The user must ensure that the contents of their stack frames are
-serializable. That is, users should avoid using variables inside
-coroutines that cannot be pickled.
+serializable. That is, users should either avoid using variables inside
+coroutines that cannot be pickled, or should wrap them in a container
+that is serializable.
 
 If a serialization error is encountered, tracing can be enabled with the
 `DISPATCH_TRACE=1` environment variable. The object graph, and the stacks
-of coroutines and generators, will be printed to stdout before any
-serialization is attempted.
+of coroutines and generators, will be printed to stdout before serialization
+is attempted. This allows users to pinpoint where serialization issues occur.
 
 For help with a serialization issues, please submit a [GitHub issue][issues].
 
