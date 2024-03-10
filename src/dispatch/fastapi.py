@@ -53,7 +53,7 @@ class Dispatch(Registry):
         self,
         app: fastapi.FastAPI,
         endpoint: str | None = None,
-        verification_key: Ed25519PublicKey | None = None,
+        verification_key: Ed25519PublicKey | str | bytes | None = None,
         api_key: str | None = None,
         api_url: str | None = None,
     ):
@@ -70,7 +70,7 @@ class Dispatch(Registry):
 
             verification_key: Key to use when verifying signed requests. Uses
                 the value of the DISPATCH_VERIFICATION_KEY environment variable
-                by default. The environment variable is expected to carry an
+                if omitted. The environment variable is expected to carry an
                 Ed25519 public key in base64 or PEM format.
                 If not set, request signature verification is disabled (a warning
                 will be logged by the constructor).
