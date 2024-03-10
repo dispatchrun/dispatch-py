@@ -1,8 +1,12 @@
 import logging
+import os
 import pickle
 import sys
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol, TypeAlias
+
+import dill  # type: ignore
+import dill.detect  # type: ignore
 
 from dispatch.coroutine import Gather
 from dispatch.error import IncompatibleStateError
@@ -245,7 +249,7 @@ class OneShotScheduler:
             "resuming scheduler with %d bytes of state", len(input.coroutine_state)
         )
         try:
-            state = pickle.loads(input.coroutine_state)
+            state = deserialize(input.coroutine_state)
             if not isinstance(state, State):
                 raise ValueError("invalid state")
             if state.version != self.version:
@@ -421,7 +425,7 @@ class OneShotScheduler:
         # Serialize coroutines and scheduler state.
         logger.debug("serializing state")
         try:
-            serialized_state = pickle.dumps(state)
+            serialized_state = serialize(state)
         except pickle.PickleError as e:
             logger.exception("state could not be serialized")
             return Output.error(Error.from_exception(e, status=Status.PERMANENT_ERROR))
@@ -444,6 +448,20 @@ class OneShotScheduler:
             max_results=max(1, min(state.outstanding_calls, self.poll_max_results)),
             max_wait_seconds=self.poll_max_wait_seconds,
         )
+
+
+TRACE = os.getenv("DISPATCH_TRACE")
+
+
+def serialize(obj: Any) -> bytes:
+    if TRACE:
+        with dill.detect.trace():
+            return dill.dumps(obj, byref=True)
+    return dill.dumps(obj, byref=True)
+
+
+def deserialize(state: bytes) -> Any:
+    return dill.loads(state)
 
 
 def correlation_id(coroutine_id: CoroutineID, call_id: CallID) -> CorrelationID:

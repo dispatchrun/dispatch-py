@@ -15,6 +15,7 @@ dependencies = [
     "grpc-stubs >= 1.53.0.5",
     "http-message-signatures >= 0.4.4",
     "tblib >= 3.0.0",
+    "dill >= 0.3.8"
 ]
 
 [project.optional-dependencies]
