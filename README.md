@@ -214,7 +214,7 @@ serializable. That is, users should avoid using variables inside
 coroutines that cannot be pickled.
 
 If a pickle error is encountered, serialization tracing can be enabled
-with the `DURABLE_TRACE=1` environment variable to debug the issue. The
+with the `DISPATCH_TRACE=1` environment variable to debug the issue. The
 stacks of coroutines and generators will be printed to stdout before
 the pickle library attempts serialization.
 

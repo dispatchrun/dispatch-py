@@ -14,7 +14,7 @@ from typing import Any, Callable, Coroutine, Generator, TypeVar, Union, cast
 from . import frame as ext
 from .registry import RegisteredFunction, lookup_function, register_function
 
-TRACE = os.getenv("DURABLE_TRACE", False)
+TRACE = os.getenv("DISPATCH_TRACE", False)
 
 FRAME_CLEARED = 4
 
@@ -114,7 +114,7 @@ class Serializable:
             ip, sp, stack = None, None, None
 
         if TRACE:
-            print(f"\n[DURABLE] Serializing {self}:")
+            print(f"\n[DISPATCH] Serializing {self}:")
             print(f"function = {rfn.fn.__qualname__} ({rfn.filename}:{rfn.lineno})")
             print(f"code hash = {rfn.hash}")
             print(f"args = {self.args}")
