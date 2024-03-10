@@ -201,6 +201,28 @@ async def transform(msg):
     ...
 ```
 
+### Serialization
+
+Dispatch uses the [pickle] library to serialize coroutines.
+
+[pickle]: https://docs.python.org/3/library/pickle.html
+
+Serialization of coroutines is enabled by a CPython extension.
+
+The user must ensure that the contents of their stack frames are
+serializable. That is, users should avoid using variables inside
+coroutines that cannot be pickled.
+
+If a pickle error is encountered, serialization tracing can be enabled
+with the `DURABLE_TRACE=1` environment variable to debug the issue. The
+stacks of coroutines and generators will be printed to stdout before
+the pickle library attempts serialization.
+
+For help with a serialization issues, please submit a [GitHub issue][issues].
+
+[issues]: https://github.com/stealthrocket/dispatch-py/issues
+
+
 ## Examples
 
 Check out the [examples](examples/) directory for code samples to help you get
