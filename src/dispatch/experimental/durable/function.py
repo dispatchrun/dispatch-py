@@ -52,7 +52,8 @@ def durable(fn: Callable) -> Callable:
     """Returns a "durable" function that creates serializable
     generators or coroutines."""
     if isinstance(fn, MethodType):
-        return MethodType(DurableFunction(fn.__func__), fn.__self__)
+        static_fn = cast(FunctionType, fn.__func__)
+        return MethodType(DurableFunction(static_fn), fn.__self__)
     elif isinstance(fn, FunctionType):
         return DurableFunction(fn)
     else:
