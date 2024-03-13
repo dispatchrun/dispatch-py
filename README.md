@@ -15,7 +15,7 @@ Python package to develop applications with the Dispatch platform.
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
 [ngrok]:   https://ngrok.com/
 [pypi]:    https://pypi.org/project/dispatch-py/
-[signup]:  https://docs.dispatch.run/stateful-functions/getting-started
+[signup]:  https://console.dispatch.run/
 
 - [What is Dispatch?](#what-is-dispatch)
 - [Installation](#installation)
@@ -23,17 +23,21 @@ Python package to develop applications with the Dispatch platform.
   - [Configuration](#configuration)
   - [Integration with FastAPI](#integration-with-fastapi)
   - [Local testing with ngrok](#local-testing-with-ngrok)
-  - [Durable coroutines for Python](#durable-coroutines-for-python)
+  - [Distributed coroutines for Python](#distributed-coroutines-for-python)
 - [Examples](#examples)
 - [Contributing](#contributing)
 
 ## What is Dispatch?
 
-Dispatch is a platform for developing reliable distributed systems. Dispatch
-provides a simple programming model based on durable coroutines to manage the
-scheduling of function calls across a fleet of service instances. Orchestration
-of function calls is managed by Dispatch, providing **fair scheduling**,
-transparent **retry of failed operations**, and **durability**.
+Dispatch is a platform for developing scalable & reliable distributed systems.
+
+Dispatch provides a simple programming model based on *Distributed Coroutines*,
+allowing complex, dynamic workflows to be expressed with regular code and
+control flow.
+
+Dispatch schedules function calls across a fleet of service instances,
+incorporating **fair scheduling**, transparent **retry of failed operations**,
+and **durability**.
 
 To get started, follow the instructions to [sign up for Dispatch][signup] 🚀.
 
@@ -46,32 +50,34 @@ pip install dispatch-py
 
 ## Usage
 
-The SDK allows Python applications to declare *Stateful Functions* that the
-Dispatch scheduler can orchestrate. This is the bare minimum structure used
-to declare stateful functions:
+The SDK allows Python applications to declare functions that Dispatch can
+orchestrate:
+
 ```python
 @dispatch.function
 def action(msg):
     ...
 ```
-The **@dispatch.function** decorator declares a function that can be run by
-the Dispatch scheduler. The call has durable execution semantics; if the
-function fails with a temporary error, it is automatically retried, even if
-the program is restarted, or if multiple instances are deployed.
 
-In this example, the decorator adds a method to the `action` object, allowing
-the program to dispatch an asynchronous invocation of the function; for example:
+The **@dispatch.function** decorator declares a function that can be run by
+Dispatch. The call has durable execution semantics; if the function fails
+with a temporary error, it is automatically retried, even if the program is
+restarted, or if multiple instances are deployed.
+
+The SDK adds a method to the `action` object, allowing the program to
+dispatch an asynchronous invocation of the function; for example:
+
 ```python
 action.dispatch('hello')
 ```
 
 ### Configuration
 
-To interact with stateful functions, the SDK needs to be configured with the
-address at which the server can be reached. The Dispatch API Key must also be
-set, and optionally, a public signing key should be configured to verify that
-requests received by the stateful functions originated from the Dispatch
-scheduler. These configuration options can be passed as arguments to the
+In order for Dispatch to interact with functions remotely, the SDK needs to be
+configured with the address at which the server can be reached. The Dispatch
+API Key must also be set, and optionally, a public signing key should be
+configured to verify that requests originated from Dispatch. These
+configuration options can be passed as arguments to the
 the `Dispatch` constructor, but by default they will be loaded from environment
 variables:
 
@@ -82,7 +88,7 @@ variables:
 | `DISPATCH_VERIFICATION_KEY` | `-----BEGIN PUBLIC KEY-----...`    |
 
 Finally, the `Dispatch` instance needs to mount a route on a HTTP server in to
-receive requests from the scheduler. At this time, the SDK integrates with
+receive requests from Dispatch. At this time, the SDK integrates with
 FastAPI; adapters for other popular Python frameworks will be added in the
 future.
 
@@ -111,12 +117,11 @@ def root():
 ```
 
 In this example, GET requests on the HTTP server dispatch calls to the
-`publish` stateful function. The function runs concurrently to the rest of the
-program, driven by the Dispatch scheduler.
+`publish` function. The function runs concurrently to the rest of the
+program, driven by the Dispatch SDK.
 
 The instantiation of the `Dispatch` object on the `FastAPI` application
-automatically installs the HTTP route needed for the scheduler to run stateful
-functions.
+automatically installs the HTTP route needed for Dispatch to invoke functions.
 
 ### Local testing with ngrok
 
@@ -149,13 +154,13 @@ different value, but in this example it would be:
 export DISPATCH_ENDPOINT_URL="https://f441-2600-1700-2802-e01f-6861-dbc9-d551-ecfb.ngrok-free.app"
 ```
 
-### Durable coroutines for Python
+### Distributed Coroutines for Python
 
 The `@dispatch.function` decorator can also be applied to Python coroutines
-(a.k.a. *async* functions), in which case each await point on another
-stateful function becomes a durability step in the execution: if the awaited
-operation fails, it is automatically retried and the parent function is paused
-until the result becomes available, or a permanent error is raised.
+(a.k.a. *async* functions), in which case each `await` point becomes a
+durability step in the execution. If the awaited operation fails, it is
+automatically retried, and the parent function is paused until the result are
+available or a permanent error is raised.
 
 ```python
 @dispatch.function
@@ -185,8 +190,7 @@ async def transform2(msg):
 ```
 
 This model is composable and can be used to create fan-out/fan-in control flows.
-`gather` can be used to wait on multiple concurrent calls to stateful functions,
-for example:
+`gather` can be used to wait on multiple concurrent calls:
 
 ```python
 from dispatch import gather
@@ -200,6 +204,9 @@ async def process(msgs):
 async def transform(msg):
     ...
 ```
+
+Dispatch converts Python coroutines to *Distributed Coroutines*, which can be
+suspended and resumed on any instance of a service across a fleet.
 
 ### Serialization
 
