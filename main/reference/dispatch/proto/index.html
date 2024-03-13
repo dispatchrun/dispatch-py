@@ -1630,7 +1630,8 @@ between the two cases.</p>
   </span>
 
 <a href="#dispatch.proto.Arguments" class="headerlink" title="Permanent link">¤</a></h2>
-
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">Arguments</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">tuple</span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
 
@@ -1857,7 +1858,13 @@ call results are ready.</p>
   </span>
 
 <a href="#dispatch.proto.Call" class="headerlink" title="Permanent link">¤</a></h2>
-
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">Call</span><span class="p">(</span>
+    <span class="n">function</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
 
@@ -1901,7 +1908,12 @@ with_call method of a Function instead.</p>
   </span>
 
 <a href="#dispatch.proto.CallResult" class="headerlink" title="Permanent link">¤</a></h2>
-
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">CallResult</span><span class="p">(</span>
+    <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">output</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">error</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Error" href="#dispatch.proto.Error">Error</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
 
