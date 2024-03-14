@@ -30,6 +30,9 @@ dev = [
     "coverage >= 7.4.1",
     "requests >= 2.31.0",
     "types-requests >= 2.31.0.20240125",
+    "docopt >= 0.6.2",
+    "types-docopt >= 0.6.11.4",
+    "uvicorn >= 0.28.0"
 ]
 
 docs = [
