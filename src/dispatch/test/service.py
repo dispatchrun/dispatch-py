@@ -1,6 +1,7 @@
 import logging
 import os
 import threading
+import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import TypeAlias
@@ -113,7 +114,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 if value == expected:
                     return
                 logger.warning(
-                    "a client attempted to dispatch a function call with an incorrect API key. Check the client's DISPATCH_API_KEY."
+                    "a client attempted to dispatch a function call with an incorrect API key. Is the client's DISPATCH_API_KEY correct?"
                 )
                 context.abort(
                     grpc.StatusCode.UNAUTHENTICATED,
@@ -137,12 +138,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
             try:
                 response = self.endpoint_client.run(request)
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 403:
-                    logger.error(
-                        "error dispatching function call to endpoint (403). Check the endpoint's DISPATCH_VERIFICATION_KEY."
-                    )
-                    continue
+            except:
+                self.queue.extend(_next_queue)
+                self.queue.append((dispatch_id, request))  # retry
                 raise
 
             if self.roundtrips is not None:
@@ -264,7 +262,28 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             if self._stop_event.is_set():
                 break
 
-            self.dispatch_calls()
+            ok = False
+            try:
+                self.dispatch_calls()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 403:
+                    logger.error(
+                        "error dispatching function call to endpoint (403). Is the endpoint's DISPATCH_VERIFICATION_KEY correct?"
+                    )
+                else:
+                    logger.exception(e)
+            except httpx.ConnectError as e:
+                logger.error(
+                    "error connecting to the endpoint. Is it running and accessible from DISPATCH_ENDPOINT_URL?"
+                )
+            except Exception as e:
+                logger.exception(e)
+            else:
+                ok = True
+            if not ok:
+                # Introduce an artificial delay between errors to
+                # avoid busy-loops.
+                time.sleep(1.0)
 
     def __enter__(self):
         self.start()
