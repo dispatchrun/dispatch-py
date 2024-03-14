@@ -68,7 +68,6 @@ def main():
             print(f'  export DISPATCH_ENDPOINT_URL="{endpoint}"')
             print(f'  export DISPATCH_VERIFICATION_KEY="{verification_key}"')
             print()
-            print(f"Listening on {hostname}:{port}")
 
             server.wait()
 
