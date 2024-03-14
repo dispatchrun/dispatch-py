@@ -42,7 +42,10 @@ def main():
         print(f"error: invalid port: {port_str}", file=sys.stderr)
         exit(1)
 
-    signing_key = Ed25519PrivateKey.generate()
+    # This private key was generated randomly.
+    signing_key = Ed25519PrivateKey.from_private_bytes(
+        b"\x0e\xca\xfb\xc9\xa9Gc'fR\xe4\x97y\xf0\xae\x90\x01\xe8\xd9\x94\xa6\xd4@\xf6\xa7!\x90b\\!z!"
+    )
     verification_key = base64.b64encode(
         signing_key.public_key().public_bytes_raw()
     ).decode()
