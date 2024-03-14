@@ -59,7 +59,8 @@ def main():
 
     with DispatchService(endpoint_client, api_key=api_key) as service:
         with DispatchServer(service, hostname=hostname, port=port) as server:
-            print(f"Spawned a mock Dispatch server on {hostname}:{port}.")
+            print(f"Spawned a mock Dispatch server on {hostname}:{port} to dispatch")
+            print(f"function calls to the endpoint at {endpoint}.")
             print()
             print("The Dispatch SDK can be configured with:")
             print()
