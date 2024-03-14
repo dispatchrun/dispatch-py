@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 import grpc
+import httpx
 
 import dispatch.sdk.v1.call_pb2 as call_pb
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
@@ -93,9 +94,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         with self._work_signal:
             for call in request.calls:
                 dispatch_id = self._make_dispatch_id()
-                logger.debug(
-                    "enqueueing call to function %s as %s", call.function, dispatch_id
-                )
+                logger.debug("enqueueing call to function: %s", call.function)
                 resp.dispatch_ids.append(dispatch_id)
                 run_request = function_pb.RunRequest(
                     function=call.function,
@@ -113,6 +112,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             if key == "authorization":
                 if value == expected:
                     return
+                logger.warning(
+                    "a client attempted to dispatch a function call with an incorrect API key. Check the client's DISPATCH_API_KEY."
+                )
                 context.abort(
                     grpc.StatusCode.UNAUTHENTICATED,
                     f"Invalid authorization header. Expected '{expected}', got {value!r}",
@@ -131,11 +133,17 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         while self.queue:
             dispatch_id, request = self.queue.pop(0)
 
-            logger.debug(
-                "dispatching call to function %s (%s)", request.function, dispatch_id
-            )
+            logger.info("dispatching call to function: %s", request.function)
 
-            response = self.endpoint_client.run(request)
+            try:
+                response = self.endpoint_client.run(request)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 403:
+                    logger.error(
+                        "error dispatching function call to endpoint (403). Check the endpoint's DISPATCH_VERIFICATION_KEY."
+                    )
+                    continue
+                raise
 
             if self.roundtrips is not None:
                 try:
@@ -147,9 +155,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 self.roundtrips[dispatch_id] = roundtrips
 
             if Status(response.status) in self.retry_on_status:
-                logger.debug(
-                    "retrying call to function %s (%s)", request.function, dispatch_id
-                )
+                logger.info("retrying call to function: %s", request.function)
                 _next_queue.append((dispatch_id, request))
 
             elif response.HasField("poll"):
@@ -182,9 +188,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 if response.exit.HasField("tail_call"):
                     tail_call = response.exit.tail_call
                     logger.debug(
-                        "enqueueing tail call to %s (%s)",
+                        "enqueueing tail call to function: %s",
                         tail_call.function,
-                        dispatch_id,
                     )
                     tail_call_request = function_pb.RunRequest(
                         function=tail_call.function,

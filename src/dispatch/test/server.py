@@ -39,6 +39,10 @@ class DispatchServer:
         """Start the server."""
         self._server.start()
 
+    def wait(self):
+        """Block until the server terminates."""
+        self._server.wait_for_termination()
+
     def stop(self):
         """Stop the server."""
         self._server.stop(0)
