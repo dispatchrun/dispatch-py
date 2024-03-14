@@ -16,6 +16,7 @@ Options:
 
 import base64
 import logging
+import os
 import sys
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -42,16 +43,20 @@ def main():
         print(f"error: invalid port: {port_str}", file=sys.stderr)
         exit(1)
 
+    if not os.getenv("NO_COLOR"):
+        logging.addLevelName(logging.WARNING, f"\033[1;33mWARN\033[1;0m")
+        logging.addLevelName(logging.ERROR, "\033[1;31mERROR\033[1;0m")
+
     logger = logging.getLogger()
     if args["--verbose"]:
         logger.setLevel(logging.DEBUG)
-        fmt = '%(asctime)s [%(levelname)s] %(name)s - %(message)s'
+        fmt = "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
     else:
         logger.setLevel(logging.INFO)
-        fmt = '%(asctime)s [%(levelname)s] %(message)s'
+        fmt = "%(asctime)s [%(levelname)s] %(message)s"
         logging.getLogger("httpx").disabled = True
 
-    log_formatter = logging.Formatter(fmt=fmt, datefmt='%Y-%m-%d %H:%M:%S')
+    log_formatter = logging.Formatter(fmt=fmt, datefmt="%Y-%m-%d %H:%M:%S")
     log_handler = logging.StreamHandler(sys.stderr)
     log_handler.setFormatter(log_formatter)
     logger.addHandler(log_handler)

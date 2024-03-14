@@ -329,8 +329,8 @@ class OneShotScheduler:
                     coroutine_id=coroutine.id, value=e.value
                 )
             except Exception as e:
-                logger.exception(
-                    f"@dispatch.function: '{coroutine}' raised an exception"
+                logger.debug(
+                    f"@dispatch.function: '{coroutine}' raised an exception", exc_info=e
                 )
                 coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
 

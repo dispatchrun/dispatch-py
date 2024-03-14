@@ -30,6 +30,12 @@ class Status(int, enum.Enum):
 
     _proto: status_pb.Status
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
 
 # Maybe we should find a better way to define that enum. It's that way to please
 # Mypy and provide documentation for the enum values.
