@@ -42,6 +42,20 @@ def main():
         print(f"error: invalid port: {port_str}", file=sys.stderr)
         exit(1)
 
+    logger = logging.getLogger()
+    if args["--verbose"]:
+        logger.setLevel(logging.DEBUG)
+        fmt = '%(asctime)s [%(levelname)s] %(name)s - %(message)s'
+    else:
+        logger.setLevel(logging.INFO)
+        fmt = '%(asctime)s [%(levelname)s] %(message)s'
+        logging.getLogger("httpx").disabled = True
+
+    log_formatter = logging.Formatter(fmt=fmt, datefmt='%Y-%m-%d %H:%M:%S')
+    log_handler = logging.StreamHandler(sys.stderr)
+    log_handler.setFormatter(log_formatter)
+    logger.addHandler(log_handler)
+
     # This private key was generated randomly.
     signing_key = Ed25519PrivateKey.from_private_bytes(
         b"\x0e\xca\xfb\xc9\xa9Gc'fR\xe4\x97y\xf0\xae\x90\x01\xe8\xd9\x94\xa6\xd4@\xf6\xa7!\x90b\\!z!"
@@ -50,17 +64,13 @@ def main():
         signing_key.public_key().public_bytes_raw()
     ).decode()
 
-    log_level = logging.DEBUG if args["--verbose"] else logging.INFO
-    logging.basicConfig(
-        level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
     endpoint_client = EndpointClient.from_url(endpoint, signing_key=signing_key)
 
     with DispatchService(endpoint_client, api_key=api_key) as service:
         with DispatchServer(service, hostname=hostname, port=port) as server:
-            print(f"Spawned a mock Dispatch server on {hostname}:{port} to dispatch")
-            print(f"function calls to the endpoint at {endpoint}.")
+            print(f"Spawned a mock Dispatch server on {hostname}:{port}")
+            print()
+            print(f"Dispatching function calls to the endpoint at {endpoint}")
             print()
             print("The Dispatch SDK can be configured with:")
             print()
