@@ -123,10 +123,46 @@ program, driven by the Dispatch SDK.
 The instantiation of the `Dispatch` object on the `FastAPI` application
 automatically installs the HTTP route needed for Dispatch to invoke functions.
 
-### Local testing with ngrok
+### Local Testing
 
-To enable local testing, a common approach consists of using [ngrok][ngrok] to
-setup a public endpoint that forwards to the server running on localhost.
+## Mock Dispatch Server
+
+The SDK ships with a mock Dispatch server. It can be used to quickly test your
+local functions, without requiring internet access.
+
+Note that the mock Dispatch server has very limited scheduling capabilities.
+
+```console
+python -m dispatch.test $DISPATCH_ENDPOINT_URL
+```
+
+The command will start a mock Dispatch server and print the configuration
+for the SDK.
+
+For example, if your functions were exposed through a local endpoint
+listening on `http://127.0.0.1:8000`, you could run:
+
+```console
+$ python -m dispatch.test http://127.0.0.1:8000
+Spawned a mock Dispatch server on 127.0.0.1:4450
+
+Dispatching function calls to the endpoint at http://127.0.0.1:8000
+
+The Dispatch SDK can be configured with:
+
+  export DISPATCH_API_URL="http://127.0.0.1:4450"
+  export DISPATCH_API_KEY="test"
+  export DISPATCH_ENDPOINT_URL="http://127.0.0.1:8000"
+  export DISPATCH_VERIFICATION_KEY="Z+nTe2VRcw8t8Ihx++D+nXtbO28nwjWIOTLRgzrelYs="
+```
+
+## Production Dispatch
+
+To test local functions with the production instance of Dispatch, it needs
+to be able to access your local endpoint.
+
+A common approach consists of using [ngrok][ngrok] to setup a public endpoint
+that forwards to the server running on localhost.
 
 For example, assuming the server is running on port 8000 (which is the default
 with FastAPI), the command to create a ngrok tunnel is:
