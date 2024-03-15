@@ -125,7 +125,7 @@ automatically installs the HTTP route needed for Dispatch to invoke functions.
 
 ### Local Testing
 
-## Mock Dispatch Server
+#### Mock Dispatch
 
 The SDK ships with a mock Dispatch server. It can be used to quickly test your
 local functions, without requiring internet access.
@@ -156,7 +156,7 @@ The Dispatch SDK can be configured with:
   export DISPATCH_VERIFICATION_KEY="Z+nTe2VRcw8t8Ihx++D+nXtbO28nwjWIOTLRgzrelYs="
 ```
 
-## Production Dispatch
+#### Real Dispatch
 
 To test local functions with the production instance of Dispatch, it needs
 to be able to access your local endpoint.
