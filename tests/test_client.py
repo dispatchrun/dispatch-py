@@ -67,7 +67,7 @@ class TestClient(unittest.TestCase):
 
         pending_calls = self.dispatch_service.queue
         self.assertEqual(len(pending_calls), 1)
-        dispatch_id, call = pending_calls[0]
+        dispatch_id, call, _ = pending_calls[0]
         self.assertEqual(dispatch_id, dispatch_ids[0])
         self.assertEqual(call.function, "my-function")
         self.assertEqual(any_unpickle(call.input), 42)

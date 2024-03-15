@@ -1,11 +1,14 @@
+import enum
 import logging
 import os
 import threading
+import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import TypeAlias
 
 import grpc
+import httpx
 
 import dispatch.sdk.v1.call_pb2 as call_pb
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
@@ -32,6 +35,14 @@ logger = logging.getLogger(__name__)
 
 RoundTrip: TypeAlias = tuple[function_pb.RunRequest, function_pb.RunResponse]
 """A request to a Dispatch endpoint, and the response that was received."""
+
+
+class CallType(enum.Enum):
+    """Type of function call."""
+
+    CALL = 0
+    RESUME = 1
+    RETRY = 2
 
 
 class DispatchService(dispatch_grpc.DispatchServiceServicer):
@@ -70,7 +81,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
         self._next_dispatch_id = 1
 
-        self.queue: list[tuple[DispatchID, function_pb.RunRequest]] = []
+        self.queue: list[tuple[DispatchID, function_pb.RunRequest, CallType]] = []
 
         self.pollers: dict[DispatchID, Poller] = {}
         self.parents: dict[DispatchID, Poller] = {}
@@ -93,15 +104,13 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         with self._work_signal:
             for call in request.calls:
                 dispatch_id = self._make_dispatch_id()
-                logger.debug(
-                    "enqueueing call to function %s as %s", call.function, dispatch_id
-                )
+                logger.debug("enqueueing call to function: %s", call.function)
                 resp.dispatch_ids.append(dispatch_id)
                 run_request = function_pb.RunRequest(
                     function=call.function,
                     input=call.input,
                 )
-                self.queue.append((dispatch_id, run_request))
+                self.queue.append((dispatch_id, run_request, CallType.CALL))
 
             self._work_signal.notify()
 
@@ -113,6 +122,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             if key == "authorization":
                 if value == expected:
                     return
+                logger.warning(
+                    "a client attempted to dispatch a function call with an incorrect API key. Is the client's DISPATCH_API_KEY correct?"
+                )
                 context.abort(
                     grpc.StatusCode.UNAUTHENTICATED,
                     f"Invalid authorization header. Expected '{expected}', got {value!r}",
@@ -129,13 +141,23 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         configured endpoint."""
         _next_queue = []
         while self.queue:
-            dispatch_id, request = self.queue.pop(0)
+            dispatch_id, request, call_type = self.queue.pop(0)
 
-            logger.debug(
-                "dispatching call to function %s (%s)", request.function, dispatch_id
-            )
+            match call_type:
+                case CallType.CALL:
+                    logger.info("calling function %s", request.function)
+                case CallType.RESUME:
+                    logger.info("resuming function %s", request.function)
+                case CallType.RETRY:
+                    logger.info("retrying function %s", request.function)
 
-            response = self.endpoint_client.run(request)
+            try:
+                response = self.endpoint_client.run(request)
+            except:
+                logger.warning("call to function %s failed", request.function)
+                self.queue.extend(_next_queue)
+                self.queue.append((dispatch_id, request, CallType.RETRY))
+                raise
 
             if self.roundtrips is not None:
                 try:
@@ -146,16 +168,26 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 roundtrips.append((request, response))
                 self.roundtrips[dispatch_id] = roundtrips
 
-            if Status(response.status) in self.retry_on_status:
-                logger.debug(
-                    "retrying call to function %s (%s)", request.function, dispatch_id
+            status = Status(response.status)
+            if status == Status.OK:
+                logger.info("call to function %s succeeded", request.function)
+            else:
+                logger.warning(
+                    "call to function %s failed (%s)",
+                    request.function,
+                    status,
                 )
-                _next_queue.append((dispatch_id, request))
+
+            if status in self.retry_on_status:
+                _next_queue.append((dispatch_id, request, CallType.RETRY))
 
             elif response.HasField("poll"):
                 assert not response.HasField("exit")
 
+                logger.info("suspending function %s", request.function)
+
                 logger.debug("registering poller %s", dispatch_id)
+
                 assert dispatch_id not in self.pollers
                 poller = Poller(
                     id=dispatch_id,
@@ -172,7 +204,10 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                         function=call.function,
                         input=call.input,
                     )
-                    _next_queue.append((child_dispatch_id, child_request))
+
+                    _next_queue.append(
+                        (child_dispatch_id, child_request, CallType.CALL)
+                    )
                     self.parents[child_dispatch_id] = poller
                     poller.waiting[child_dispatch_id] = call
 
@@ -182,15 +217,14 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 if response.exit.HasField("tail_call"):
                     tail_call = response.exit.tail_call
                     logger.debug(
-                        "enqueueing tail call to %s (%s)",
+                        "enqueueing tail call for %s",
                         tail_call.function,
-                        dispatch_id,
                     )
                     tail_call_request = function_pb.RunRequest(
                         function=tail_call.function,
                         input=tail_call.input,
                     )
-                    _next_queue.append((dispatch_id, tail_call_request))
+                    _next_queue.append((dispatch_id, tail_call_request, CallType.CALL))
 
                 elif dispatch_id in self.parents:
                     result = response.exit.result
@@ -226,7 +260,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                             ),
                         )
                         del self.pollers[poller.id]
-                        _next_queue.append((poller.id, poll_results_request))
+                        _next_queue.append(
+                            (poller.id, poll_results_request, CallType.RESUME)
+                        )
 
         self.queue = _next_queue
 
@@ -259,7 +295,32 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             if self._stop_event.is_set():
                 break
 
-            self.dispatch_calls()
+            try:
+                self.dispatch_calls()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 403:
+                    logger.error(
+                        "error dispatching function call to endpoint (403). Is the endpoint's DISPATCH_VERIFICATION_KEY correct?"
+                    )
+                else:
+                    logger.exception(e)
+            except httpx.ConnectError as e:
+                logger.error(
+                    "error connecting to the endpoint. Is it running and accessible from DISPATCH_ENDPOINT_URL?"
+                )
+            except Exception as e:
+                logger.exception(e)
+
+            # Introduce an artificial delay before continuing with
+            # follow-up work (retries, dispatching nested calls).
+            # This serves two purposes. Firstly, this is just a mock
+            # Dispatch server providing the bare minimum of functionality.
+            # Since there's no adaptive concurrency control, and no backoff
+            # between call attempts, the mock server may busy-loop without
+            # some sort of delay. Secondly, a bit of latency mimics the
+            # latency you would see in a production system and makes the
+            # log output easier to parse.
+            time.sleep(0.15)
 
     def __enter__(self):
         self.start()
