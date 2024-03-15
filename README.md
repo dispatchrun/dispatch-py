@@ -22,8 +22,9 @@ Python package to develop applications with the Dispatch platform.
 - [Usage](#usage)
   - [Configuration](#configuration)
   - [Integration with FastAPI](#integration-with-fastapi)
-  - [Local testing with ngrok](#local-testing-with-ngrok)
-  - [Distributed coroutines for Python](#distributed-coroutines-for-python)
+  - [Local Testing](#local-testing)
+  - [Distributed Coroutines for Python](#distributed-coroutines-for-python)
+  - [Serialization](#serialization)
 - [Examples](#examples)
 - [Contributing](#contributing)
 
