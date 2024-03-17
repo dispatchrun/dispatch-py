@@ -71,3 +71,28 @@ class TestClient(unittest.TestCase):
         self.assertEqual(dispatch_id, dispatch_ids[0])
         self.assertEqual(call.function, "my-function")
         self.assertEqual(any_unpickle(call.input), 42)
+
+    def test_batch(self):
+        batch = self.dispatch_client.batch()
+
+        batch.add(Call(function="my-function", input=42)).add(
+            Call(function="my-function", input=23)
+        ).add(Call(function="my-function2", input=11))
+
+        dispatch_ids = batch.dispatch()
+        self.assertEqual(len(dispatch_ids), 3)
+
+        pending_calls = self.dispatch_service.queue
+        self.assertEqual(len(pending_calls), 3)
+        dispatch_id0, call0, _ = pending_calls[0]
+        dispatch_id1, call1, _ = pending_calls[1]
+        dispatch_id2, call2, _ = pending_calls[2]
+        self.assertListEqual(dispatch_ids, [dispatch_id0, dispatch_id1, dispatch_id2])
+        self.assertEqual(call0.function, "my-function")
+        self.assertEqual(any_unpickle(call0.input), 42)
+        self.assertEqual(call1.function, "my-function")
+        self.assertEqual(any_unpickle(call1.input), 23)
+        self.assertEqual(call2.function, "my-function2")
+        self.assertEqual(any_unpickle(call2.input), 11)
+
+        self.assertEqual(len(batch.dispatch()), 0)  # batch was reset

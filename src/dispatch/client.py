@@ -146,6 +146,9 @@ class Batch:
             Identifiers for the function calls, in the same order they
             were added.
         """
+        if not self.calls:
+            return []
+
         dispatch_ids = self.client.dispatch(self.calls)
         self.reset()
         return dispatch_ids
