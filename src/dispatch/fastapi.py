@@ -27,8 +27,7 @@ import fastapi
 import fastapi.responses
 from http_message_signatures import InvalidSignature
 
-from dispatch.client import Batch, Client
-from dispatch.function import Registry
+from dispatch.function import Batch, Client, Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
