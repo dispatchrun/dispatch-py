@@ -84,6 +84,11 @@ class Client:
 
         self._stub = dispatch_grpc.DispatchServiceStub(channel)
 
+    def batch(self) -> Batch:
+        """Returns a Batch instance that can be used to build
+        a set of calls to dispatch."""
+        return Batch(self)
+
     def dispatch(self, calls: Iterable[Call]) -> list[DispatchID]:
         """Dispatch function calls.
 
@@ -116,3 +121,35 @@ class Client:
                 ", ".join(dispatch_ids),
             )
         return dispatch_ids
+
+
+class Batch:
+    """A batch of calls to dispatch."""
+
+    __slots__ = ("client", "calls")
+
+    def __init__(self, client: Client):
+        self.client = client
+        self.calls: list[Call] = []
+
+    def add(self, call: Call) -> Batch:
+        """Add a call to the batch."""
+        self.calls.append(call)
+        return self
+
+    def dispatch(self) -> list[DispatchID]:
+        """Dispatch dispatches the calls asynchronously.
+
+        The batch is reset when the calls are dispatched successfully.
+
+        Returns:
+            Identifiers for the function calls, in the same order they
+            were added.
+        """
+        dispatch_ids = self.client.dispatch(self.calls)
+        self.reset()
+        return dispatch_ids
+
+    def reset(self):
+        """Reset the batch."""
+        self.calls = []

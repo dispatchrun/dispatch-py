@@ -27,7 +27,7 @@ import fastapi
 import fastapi.responses
 from http_message_signatures import InvalidSignature
 
-from dispatch.client import Client
+from dispatch.client import Batch, Client
 from dispatch.function import Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 class Dispatch(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
-    __slots__ = ()
+    __slots__ = ("client",)
 
     def __init__(
         self,
@@ -116,11 +116,16 @@ class Dispatch(Registry):
                 "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
             )
 
-        client = Client(api_key=api_key, api_url=api_url)
-        super().__init__(endpoint, client)
+        self.client = Client(api_key=api_key, api_url=api_url)
+        super().__init__(endpoint, self.client)
 
         function_service = _new_app(self, verification_key)
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
+
+    def batch(self) -> Batch:
+        """Returns a Batch instance that can be used to build
+        a set of calls to dispatch."""
+        return self.client.batch()
 
 
 def parse_verification_key(
