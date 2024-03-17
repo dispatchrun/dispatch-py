@@ -75,9 +75,9 @@ class TestClient(unittest.TestCase):
     def test_batch(self):
         batch = self.dispatch_client.batch()
 
-        batch.add(Call(function="my-function", input=42)).add(
+        batch.add_call(Call(function="my-function", input=42)).add_call(
             Call(function="my-function", input=23)
-        ).add(Call(function="my-function2", input=11))
+        ).add_call(Call(function="my-function2", input=11))
 
         dispatch_ids = batch.dispatch()
         self.assertEqual(len(dispatch_ids), 3)

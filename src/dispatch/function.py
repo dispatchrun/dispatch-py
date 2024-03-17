@@ -359,8 +359,12 @@ class Batch:
         self.client = client
         self.calls: list[Call] = []
 
-    def add(self, call: Call) -> Batch:
-        """Add a call to the batch."""
+    def add(self, func: Function[P, T], *args: P.args, **kwargs: P.kwargs) -> Batch:
+        """Add a call to the specified function to the batch."""
+        return self.add_call(func.build_call(*args, correlation_id=None, **kwargs))
+
+    def add_call(self, call: Call) -> Batch:
+        """Add a Call to the batch."""
         self.calls.append(call)
         return self
 
