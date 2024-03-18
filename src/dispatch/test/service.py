@@ -16,7 +16,7 @@ import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
 import dispatch.sdk.v1.function_pb2 as function_pb
 import dispatch.sdk.v1.poll_pb2 as poll_pb
 from dispatch.id import DispatchID
-from dispatch.proto import Status
+from dispatch.proto import CallResult, Error, Status
 from dispatch.test import EndpointClient
 
 _default_retry_on_status = {
@@ -172,11 +172,27 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
             if status == Status.OK:
                 logger.info("call to function %s succeeded", request.function)
             else:
-                logger.warning(
-                    "call to function %s failed (%s)",
-                    request.function,
-                    status,
-                )
+                exc = None
+                if response.HasField("exit"):
+                    if response.exit.HasField("result"):
+                        result = response.exit.result
+                        if result.HasField("error"):
+                            exc = Error._from_proto(result.error).to_exception()
+
+                if exc is not None:
+                    logger.warning(
+                        "call to function %s failed (%s => %s: %s)",
+                        request.function,
+                        status,
+                        exc.__class__.__name__,
+                        str(exc),
+                    )
+                else:
+                    logger.warning(
+                        "call to function %s failed (%s)",
+                        request.function,
+                        status,
+                    )
 
             if status in self.retry_on_status:
                 _next_queue.append((dispatch_id, request, CallType.RETRY))
