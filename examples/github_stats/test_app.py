@@ -8,7 +8,7 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
-from dispatch.client import Client
+from dispatch.function import Client
 from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 

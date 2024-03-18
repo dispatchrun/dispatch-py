@@ -1,8 +1,7 @@
 import pickle
 import unittest
 
-from dispatch.client import Client
-from dispatch.function import Registry
+from dispatch.function import Client, Registry
 
 
 class TestFunction(unittest.TestCase):
