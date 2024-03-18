@@ -182,28 +182,28 @@ class Registry:
 
     def function(self, func):
         """Decorator that registers functions."""
+        name = func.__qualname__
         if not inspect.iscoroutinefunction(func):
-            logger.info("registering function: %s", func.__qualname__)
-            return self._register_function(func)
+            logger.info("registering function: %s", name)
+            return self._register_function(name, func)
 
-        logger.info("registering coroutine: %s", func.__qualname__)
-        return self._register_coroutine(func)
+        logger.info("registering coroutine: %s", name)
+        return self._register_coroutine(name, func)
 
-    def _register_function(self, func: Callable[P, T]) -> Function[P, T]:
+    def _register_function(self, name: str, func: Callable[P, T]) -> Function[P, T]:
         func = durable(func)
 
         @wraps(func)
         async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             return func(*args, **kwargs)
 
-        async_wrapper.__qualname__ = f"{func.__qualname__}_async"
+        async_wrapper.__qualname__ = f"{name}_async"
 
-        return self._register_coroutine(async_wrapper)
+        return self._register_coroutine(name, async_wrapper)
 
     def _register_coroutine(
-        self, func: Callable[P, Coroutine[Any, Any, T]]
+        self, name: str, func: Callable[P, Coroutine[Any, Any, T]]
     ) -> Function[P, T]:
-        name = func.__qualname__
         logger.info("registering coroutine: %s", name)
 
         func = durable(func)
