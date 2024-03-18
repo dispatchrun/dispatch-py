@@ -59,6 +59,9 @@ class TestFullFastapi(unittest.TestCase):
         def my_function(name: str) -> str:
             return f"Hello world: {name}"
 
+        call = my_function.build_call(52)
+        self.assertEqual(call.function.split(".")[-1], "my_function")
+
         # The client.
         [dispatch_id] = self.dispatch_client.dispatch([my_function.build_call(52)])
 
@@ -73,10 +76,13 @@ class TestFullFastapi(unittest.TestCase):
 
     def test_simple_missing_signature(self):
         @self.dispatch.function
-        def my_function(name: str) -> str:
+        async def my_function(name: str) -> str:
             return f"Hello world: {name}"
 
-        [dispatch_id] = self.dispatch_client.dispatch([my_function.build_call(52)])
+        call = my_function.build_call(52)
+        self.assertEqual(call.function.split(".")[-1], "my_function")
+
+        [dispatch_id] = self.dispatch_client.dispatch([call])
 
         self.dispatch_service.endpoint_client = EndpointClient.from_app(
             self.endpoint_app
