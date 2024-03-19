@@ -15,6 +15,8 @@ dependencies = [
     "grpc-stubs >= 1.53.0.5",
     "http-message-signatures >= 0.4.4",
     "tblib >= 3.0.0",
+    "docopt >= 0.6.2",
+    "types-docopt >= 0.6.11.4"
 ]
 
 [project.optional-dependencies]
@@ -30,8 +32,6 @@ dev = [
     "coverage >= 7.4.1",
     "requests >= 2.31.0",
     "types-requests >= 2.31.0.20240125",
-    "docopt >= 0.6.2",
-    "types-docopt >= 0.6.11.4",
     "uvicorn >= 0.28.0"
 ]
 
