@@ -20,6 +20,9 @@ Example:
 import base64
 import logging
 import os
+import threading
+import time
+from typing import Any
 from datetime import timedelta
 from urllib.parse import urlparse
 
@@ -46,7 +49,7 @@ logger = logging.getLogger(__name__)
 class Dispatch(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
-    __slots__ = ("client",)
+    __slots__ = ("client", "_api_key_provided", "_app")
 
     def __init__(
         self,
@@ -89,14 +92,23 @@ class Dispatch(Registry):
                 "missing FastAPI app as first argument of the Dispatch constructor"
             )
 
+        self._app = app
+        self._api_key_provided = api_key is not None
+
         endpoint_from = "endpoint argument"
         if not endpoint:
             endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
             endpoint_from = "DISPATCH_ENDPOINT_URL"
         if not endpoint:
-            raise ValueError(
-                "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
-            )
+            if not api_key:
+                logger.warning("Application endpoint not provided. Running in local development mode. Set DISPATCH_ENDPOINT_URL and DISPATCH_API_KEY in production.")
+                endpoint = "http://localhost:0"
+                endpoint_from = "local fallback endpoint"
+                api_key = "invalid_key"
+            else:
+                raise ValueError(
+                    "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
+                )
 
         logger.info("configuring Dispatch endpoint %s", endpoint)
 
@@ -125,6 +137,113 @@ class Dispatch(Registry):
         """Returns a Batch instance that can be used to build
         a set of calls to dispatch."""
         return self.client.batch()
+
+    def run(self, uvicorn_args:dict[str, Any]|None=None):
+        """Run the FastAPI application that uses this Dispatch instance.
+
+        It is equivalent to uvicorn.run(app). If the Dispatch API key is not
+        provided, a local development server is automatically spun up.
+
+        """
+        logger.setLevel(logging.INFO)
+        logger.addHandler(logging.StreamHandler())
+
+        # Import here because user may not be using run() and may be using a
+        # different server than uvicorn.
+        import uvicorn
+
+        if uvicorn_args is None:
+            uvicorn_args = {}
+
+        if self._api_key_provided:
+            uvicorn.run(self._app, **uvicorn_args)
+            return
+
+        # If the Dispatch API key was not provided to this object, start a local
+        # instance of the mock Dispatch API server.
+        #
+        # By default, bind the uvicorn server to port 0 to not force the user to
+        # make a choice. This is useful for local development. As a result, the
+        # uvicorn server needs to be started first to know the port that ends up
+        # being bound to figure out the endpoint URL. However, since all
+        # dispatch functions use the endpoint URL as part of their name, and
+        # their name is calculated at the time of definition, we need to remap
+        # all the functions in this registry to update their endpoint.
+
+
+        uvicorn_args["port"] = 0
+        uv_config = uvicorn.Config(self._app, **uvicorn_args)
+        uv_server = uvicorn.Server(uv_config)
+
+        uv_thread = threading.Thread(target=uv_server.run)
+        uv_thread.start()
+
+        max_seconds = 5
+        start = time.monotonic_ns()
+        while True:
+            now = time.monotonic_ns()
+            if now - start >= 10e9 * max_seconds:
+                raise RuntimeError(f"uvicorn server has not started in {max_seconds}s")
+            if not uv_thread.is_alive():
+                raise RuntimeError("uvicorn server crashed")
+            if uv_server.started:
+                break
+            time.sleep(0.01)
+
+        host, port = uv_server.servers[0].sockets[0].getsockname()
+        endpoint = f"http://{host}:{port}"
+        logger.info("Spawned uvicorn server at %s", endpoint)
+
+        api_url = None
+        cv = threading.Condition()
+
+        api_key = "this_is_a_local_server_api_key"
+
+        def start_test_server():
+            from dispatch.test import DispatchServer, DispatchService, EndpointClient
+
+
+            endpoint_client = EndpointClient.from_url(endpoint)
+
+            logger.debug("Starting the dispatch service")
+            with DispatchService(endpoint_client, api_key=api_key) as service:
+                with DispatchServer(service) as server:
+                    logger.debug("Dispatch server ready")
+                    with cv:
+                        nonlocal api_url
+                        api_url = server.url
+                        cv.notify_all()
+                    server.wait()
+
+        api_thread = threading.Thread(target=start_test_server, daemon=True)
+        api_thread.start()
+
+        timeout_s = 10.0
+        with cv:
+            if cv.wait_for(lambda: api_url is not None, timeout_s) is False:
+                raise RuntimeError(f"Failed to start the test server in {timeout_s}s")
+        logger.info("Spawned a mock Dispatch server at %s", api_url)
+
+        # At this point, both the local Dispatch API server and the uvicorn
+        # server are ready. Recreate the client and re-name all the known
+        # functions.
+        self.client = Client(api_key=api_key, api_url=api_url)
+        self._client = self.client
+        self._endpoint = endpoint
+
+        for fn in self._functions.values():
+            fn._client = self._client
+            fn._endpoint = self._endpoint
+
+        logger.info(f"""
+🚀 Dispatch ready.
+
+Example use:
+
+    curl {endpoint}
+""")
+
+        uv_thread.join()
 
 
 def parse_verification_key(
