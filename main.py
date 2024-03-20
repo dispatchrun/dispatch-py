@@ -1,10 +1,10 @@
-from fastapi import FastAPI
 import logging
+
 from cloudevents.http import CloudEvent
+from fastapi import FastAPI
 
+from dispatch import call, gather
 from dispatch.app import Dispatch
-from dispatch import gather, call
-
 
 dispatch = Dispatch()
 
@@ -42,13 +42,12 @@ async def concurrent(event: CloudEvent):
 @dispatch.function
 async def handler(event: CloudEvent):
     logging.info("handling event", event)
-    #await gather(
-    #        sequence(event),
-    #        concurrent(event),
-    #)
+    await gather(
+           sequence(event),
+           concurrent(event),
+    )
     #await call(archive.build_call(event))
     await archive(event)
-    
 
 
 if __name__ == "__main__":

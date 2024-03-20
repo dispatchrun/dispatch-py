@@ -1,6 +1,6 @@
 import requests
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 
 from dispatch.fastapi import Dispatch
 
@@ -30,5 +30,5 @@ def root():
     return "OK"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     dispatch.run()

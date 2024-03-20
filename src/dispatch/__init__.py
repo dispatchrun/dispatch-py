@@ -9,7 +9,6 @@ from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
 from dispatch.status import Status
 
-
 __all__ = [
     "Client",
     "DispatchID",
@@ -20,5 +19,5 @@ __all__ = [
     "Error",
     "Status",
     "call",
-    "gather"
+    "gather",
 ]

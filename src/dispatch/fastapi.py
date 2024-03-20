@@ -23,8 +23,8 @@ import os
 import sys
 import threading
 import time
-from typing import Any
 from datetime import timedelta
+from typing import Any
 from urllib.parse import urlparse
 
 import fastapi
@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 class Dispatch(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
-    __slots__ = ("client", "_api_key_provided", "_app")
+    __slots__ = ("client", "_api_key_provided", "_app", "_ready", "_should_stop")
 
     def __init__(
         self,
@@ -95,6 +95,8 @@ class Dispatch(Registry):
 
         self._app = app
         self._api_key_provided = api_key is not None
+        self._ready = False
+        self._should_stop = False
 
         endpoint_from = "endpoint argument"
         if not endpoint:
@@ -102,7 +104,9 @@ class Dispatch(Registry):
             endpoint_from = "DISPATCH_ENDPOINT_URL"
         if not endpoint:
             if not api_key:
-                logger.warning("Application endpoint not provided. Running in local development mode. Set DISPATCH_ENDPOINT_URL and DISPATCH_API_KEY in production.")
+                logger.warning(
+                    "Application endpoint not provided. Running in local development mode. Set DISPATCH_ENDPOINT_URL and DISPATCH_API_KEY in production."
+                )
                 endpoint = "http://localhost:0"
                 endpoint_from = "local fallback endpoint"
                 api_key = "invalid_key"
@@ -139,7 +143,7 @@ class Dispatch(Registry):
         a set of calls to dispatch."""
         return self.client.batch()
 
-    def run(self, uvicorn_args:dict[str, Any]|None=None):
+    def run(self, uvicorn_args: dict[str, Any] | None = None):
         """Run the FastAPI application that uses this Dispatch instance.
 
         It is equivalent to uvicorn.run(app). If the Dispatch API key is not
@@ -171,7 +175,6 @@ class Dispatch(Registry):
         # their name is calculated at the time of definition, we need to remap
         # all the functions in this registry to update their endpoint.
 
-
         uvicorn_args["port"] = 0
         uv_config = uvicorn.Config(self._app, **uvicorn_args)
         uv_server = uvicorn.Server(uv_config)
@@ -202,7 +205,6 @@ class Dispatch(Registry):
 
         def start_test_server():
             from dispatch.test import DispatchServer, DispatchService, EndpointClient
-
 
             endpoint_client = EndpointClient.from_url(endpoint)
 
@@ -236,22 +238,25 @@ class Dispatch(Registry):
             fn._client = self._client
             fn._endpoint = self._endpoint
 
-        logger.info(f"""
+        logger.info(
+            f"""
 🚀 Dispatch ready.
 
 Example use:
 
     curl {endpoint}
-""")
-
+"""
+        )
+        self._ready = True
 
         try:
-            while True:
+            while not self._should_stop:
                 if not uv_thread.is_alive() or not api_thread.is_alive():
                     break
                 time.sleep(0.01)
         except KeyboardInterrupt:
-            sys.exit(0)
+            pass
+        logger.info("Terminated")
 
 
 def parse_verification_key(
