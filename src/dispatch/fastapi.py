@@ -20,6 +20,7 @@ Example:
 import base64
 import logging
 import os
+import sys
 import threading
 import time
 from typing import Any
@@ -175,7 +176,7 @@ class Dispatch(Registry):
         uv_config = uvicorn.Config(self._app, **uvicorn_args)
         uv_server = uvicorn.Server(uv_config)
 
-        uv_thread = threading.Thread(target=uv_server.run)
+        uv_thread = threading.Thread(target=uv_server.run, daemon=True)
         uv_thread.start()
 
         max_seconds = 5
@@ -243,7 +244,14 @@ Example use:
     curl {endpoint}
 """)
 
-        uv_thread.join()
+
+        try:
+            while True:
+                if not uv_thread.is_alive() or not api_thread.is_alive():
+                    break
+                time.sleep(0.01)
+        except KeyboardInterrupt:
+            sys.exit(0)
 
 
 def parse_verification_key(
