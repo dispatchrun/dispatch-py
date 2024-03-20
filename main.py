@@ -43,10 +43,10 @@ async def concurrent(event: CloudEvent):
 async def handler(event: CloudEvent):
     logging.info("handling event", event)
     await gather(
-           sequence(event),
-           concurrent(event),
+        sequence(event),
+        concurrent(event),
     )
-    #await call(archive.build_call(event))
+    # await call(archive.build_call(event))
     await archive(event)
 
 

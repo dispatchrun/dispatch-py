@@ -1,6 +1,7 @@
 import threading
 
 from fastapi import FastAPI
+
 from dispatch.fastapi import Dispatch as FastAPIDispatch
 from dispatch.function import Function, Registry
 from dispatch.proto import Input, Output
@@ -18,19 +19,16 @@ class Dispatch(FastAPIDispatch):
     def run(self, function: Function, *args):
         def primitive_root(input: Input) -> Output:
             if input.is_first_call:
-                return Output.poll(state=None, calls=[
-                    input.input
-                ])
+                return Output.poll(state=None, calls=[input.input])
             self.stop()
             return Output.value(0)
-
 
         wrapped_root = self.primitive_function(primitive_root)
 
         thread = threading.Thread(target=super().run)
         thread.start()
 
-        while True: # TODO: timeout? condition variable?
+        while True:  # TODO: timeout? condition variable?
             if self._ready:
                 break
 
