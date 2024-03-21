@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 # Automatically register error and output types from
 # commonly used libraries.
-integrations = ("httpx", "requests")
+integrations = ("httpx", "requests", "slack")
 for name in integrations:
     try:
         importlib.import_module(f"dispatch.integrations.{name}")
