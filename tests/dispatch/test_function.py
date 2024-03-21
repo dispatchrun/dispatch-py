@@ -6,8 +6,11 @@ from dispatch.function import Client, Registry
 
 class TestFunction(unittest.TestCase):
     def setUp(self):
-        self.client = Client(api_url="http://dispatch.com", api_key="foobar")
-        self.dispatch = Registry(endpoint="http://example.com", client=self.client)
+        self.dispatch = Registry(
+            endpoint="http://example.com",
+            api_url="http://dispatch.com",
+            api_key="foobar",
+        )
 
     def test_serializable(self):
         @self.dispatch.function

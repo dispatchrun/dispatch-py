@@ -100,7 +100,6 @@ class Function(PrimitiveFunction, Generic[P, T]):
         client: Client,
         name: str,
         primitive_func: PrimitiveFunctionType,
-        func: Callable,
     ):
         PrimitiveFunction.__init__(self, endpoint, client, name, primitive_func)
 
@@ -158,21 +157,30 @@ class Function(PrimitiveFunction, Generic[P, T]):
 
 
 class Registry:
-    """Registry of local functions."""
+    """Registry of functions."""
 
-    __slots__ = ("_functions", "_endpoint", "_client")
+    __slots__ = ("functions", "endpoint", "client")
 
-    def __init__(self, endpoint: str, client: Client):
-        """Initialize a local function registry.
+    def __init__(
+        self, endpoint: str, api_key: str | None = None, api_url: str | None = None
+    ):
+        """Initialize a function registry.
 
         Args:
             endpoint: URL of the endpoint that the function is accessible from.
-            client: Client for the Dispatch API. Used to dispatch calls to
-                local functions.
+
+            api_key: Dispatch API key to use for authentication when
+                dispatching calls to functions. Uses the value of the
+                DISPATCH_API_KEY environment variable by default.
+
+            api_url: The URL of the Dispatch API to use when dispatching calls
+                to functions. Uses the value of the DISPATCH_API_URL environment
+                variable if set, otherwise defaults to the public Dispatch API
+                (DEFAULT_API_URL).
         """
-        self._functions: Dict[str, PrimitiveFunction] = {}
-        self._endpoint = endpoint
-        self._client = client
+        self.functions: Dict[str, PrimitiveFunction] = {}
+        self.endpoint = endpoint
+        self.client = Client(api_key=api_key, api_url=api_url)
 
     @overload
     def function(self, func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
@@ -215,9 +223,7 @@ class Registry:
         primitive_func.__qualname__ = f"{name}_primitive"
         primitive_func = durable(primitive_func)
 
-        wrapped_func = Function[P, T](
-            self._endpoint, self._client, name, primitive_func, func
-        )
+        wrapped_func = Function[P, T](self.endpoint, self.client, name, primitive_func)
         self._register(name, wrapped_func)
         return wrapped_func
 
@@ -228,20 +234,20 @@ class Registry:
         name = primitive_func.__qualname__
         logger.info("registering primitive function: %s", name)
         wrapped_func = PrimitiveFunction(
-            self._endpoint, self._client, name, primitive_func
+            self.endpoint, self.client, name, primitive_func
         )
         self._register(name, wrapped_func)
         return wrapped_func
 
     def _register(self, name: str, wrapped_func: PrimitiveFunction):
-        if name in self._functions:
+        if name in self.functions:
             raise ValueError(f"function already registered with name '{name}'")
-        self._functions[name] = wrapped_func
+        self.functions[name] = wrapped_func
 
     def set_client(self, client: Client):
-        """Set the Client instance used to dispatch calls to local functions."""
-        self._client = client
-        for fn in self._functions.values():
+        """Set the Client instance used to dispatch calls to registered functions."""
+        self.client = client
+        for fn in self.functions.values():
             fn._client = client
 
 

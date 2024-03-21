@@ -115,8 +115,7 @@ class Dispatch(Registry):
                 "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
             )
 
-        self.client = Client(api_key=api_key, api_url=api_url)
-        super().__init__(endpoint, self.client)
+        super().__init__(endpoint, api_key=api_key, api_url=api_url)
 
         function_service = _new_app(self, verification_key)
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
@@ -225,7 +224,7 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
             raise _ConnectError(400, "invalid_argument", "function is required")
 
         try:
-            func = function_registry._functions[req.function]
+            func = function_registry.functions[req.function]
         except KeyError:
             logger.debug("function '%s' not found", req.function)
             raise _ConnectError(
