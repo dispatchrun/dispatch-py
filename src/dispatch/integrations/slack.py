@@ -1,6 +1,6 @@
-import slack_sdk
-import slack_sdk.errors
-import slack_sdk.web
+import slack_sdk  # type: ignore
+import slack_sdk.errors  # type: ignore
+import slack_sdk.web  # type: ignore
 
 from dispatch.integrations.http import http_response_code_status
 from dispatch.status import Status, register_error_type, register_output_type
