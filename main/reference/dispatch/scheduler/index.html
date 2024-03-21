@@ -941,9 +941,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dispatch.scheduler.GatherFuture" class="md-nav__link">
+  <a href="#dispatch.scheduler.AllFuture" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GatherFuture
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AllFuture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.scheduler.AnyFuture" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AnyFuture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.scheduler.RaceFuture" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RaceFuture
     </span>
   </a>
   
@@ -1339,9 +1357,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dispatch.scheduler.GatherFuture" class="md-nav__link">
+  <a href="#dispatch.scheduler.AllFuture" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GatherFuture
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AllFuture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.scheduler.AnyFuture" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AnyFuture
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.scheduler.RaceFuture" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;RaceFuture
     </span>
   </a>
   
@@ -1556,19 +1592,19 @@
 
 
 
-<h2 id="dispatch.scheduler.GatherFuture" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">GatherFuture</span>
+<h2 id="dispatch.scheduler.AllFuture" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">AllFuture</span>
 
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-<a href="#dispatch.scheduler.GatherFuture" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">GatherFuture</span><span class="p">(</span>
-    <span class="n">order</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">],</span>
-    <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">],</span>
-    <span class="n">results</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span><span class="p">],</span>
+<a href="#dispatch.scheduler.AllFuture" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AllFuture</span><span class="p">(</span>
+    <span class="n">order</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span>
+    <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+    <span class="n">results</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
     <span class="n">first_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -1576,7 +1612,103 @@
   <div class="doc doc-contents ">
 
   
-      <p>A future result of a dispatch.coroutine.gather() operation.</p>
+      <p>A future result of a dispatch.coroutine.all() operation.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dispatch.scheduler.AnyFuture" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">AnyFuture</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dispatch.scheduler.AnyFuture" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyFuture</span><span class="p">(</span>
+    <span class="n">order</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span>
+    <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+    <span class="n">first_result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">errors</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span> <span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="n">generic_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A future result of a dispatch.coroutine.any() operation.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dispatch.scheduler.RaceFuture" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">RaceFuture</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dispatch.scheduler.RaceFuture" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">RaceFuture</span><span class="p">(</span>
+    <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+    <span class="n">first_result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">first_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A future result of a dispatch.coroutine.race() operation.</p>
 
 
   
