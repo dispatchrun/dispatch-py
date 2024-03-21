@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dispatch.integrations
-from dispatch.coroutine import call, gather
+from dispatch.coroutine import all, any, call, gather, race
 from dispatch.function import DEFAULT_API_URL, Client
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
@@ -20,4 +20,7 @@ __all__ = [
     "Status",
     "call",
     "gather",
+    "all",
+    "any",
+    "race",
 ]

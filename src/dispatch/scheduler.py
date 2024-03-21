@@ -1,10 +1,10 @@
 import logging
 import pickle
 import sys
-from dataclasses import dataclass
-from typing import Any, Callable, Protocol, TypeAlias
+from dataclasses import dataclass, field
+from typing import Any, Awaitable, Callable, Protocol, TypeAlias
 
-from dispatch.coroutine import Gather
+from dispatch.coroutine import AllDirective, AnyDirective, AnyException, RaceDirective
 from dispatch.error import IncompatibleStateError
 from dispatch.experimental.durable.function import DurableCoroutine, DurableGenerator
 from dispatch.proto import Call, Error, Input, Output
@@ -73,17 +73,18 @@ class CallFuture:
         return self.first_error
 
     def value(self) -> Any:
+        assert self.first_error is None
         assert self.result is not None
         return self.result.value
 
 
 @dataclass(slots=True)
-class GatherFuture:
-    """A future result of a dispatch.coroutine.gather() operation."""
+class AllFuture:
+    """A future result of a dispatch.coroutine.all() operation."""
 
-    order: list[CoroutineID]
-    waiting: set[CoroutineID]
-    results: dict[CoroutineID, CoroutineResult]
+    order: list[CoroutineID] = field(default_factory=list)
+    waiting: set[CoroutineID] = field(default_factory=set)
+    results: dict[CoroutineID, CoroutineResult] = field(default_factory=dict)
     first_error: Exception | None = None
 
     def add_result(self, result: CallResult | CoroutineResult):
@@ -94,13 +95,15 @@ class GatherFuture:
         except KeyError:
             return
 
-        if result.error is not None and self.first_error is None:
-            self.first_error = result.error
+        if result.error is not None:
+            if self.first_error is None:
+                self.first_error = result.error
+            return
 
         self.results[result.coroutine_id] = result
 
     def add_error(self, error: Exception):
-        if self.first_error is not None:
+        if self.first_error is None:
             self.first_error = error
 
     def ready(self) -> bool:
@@ -113,7 +116,106 @@ class GatherFuture:
     def value(self) -> list[Any]:
         assert self.ready()
         assert len(self.waiting) == 0
+        assert self.first_error is None
         return [self.results[id].value for id in self.order]
+
+
+@dataclass(slots=True)
+class AnyFuture:
+    """A future result of a dispatch.coroutine.any() operation."""
+
+    order: list[CoroutineID] = field(default_factory=list)
+    waiting: set[CoroutineID] = field(default_factory=set)
+    first_result: CoroutineResult | None = None
+    errors: dict[CoroutineID, Exception] = field(default_factory=dict)
+    generic_error: Exception | None = None
+
+    def add_result(self, result: CallResult | CoroutineResult):
+        assert isinstance(result, CoroutineResult)
+
+        try:
+            self.waiting.remove(result.coroutine_id)
+        except KeyError:
+            return
+
+        if result.error is None:
+            if self.first_result is None:
+                self.first_result = result
+            return
+
+        self.errors[result.coroutine_id] = result.error
+
+    def add_error(self, error: Exception):
+        if self.generic_error is None:
+            self.generic_error = error
+
+    def ready(self) -> bool:
+        return (
+            self.generic_error is not None
+            or self.first_result is not None
+            or len(self.waiting) == 0
+        )
+
+    def error(self) -> Exception | None:
+        assert self.ready()
+        if self.generic_error is not None:
+            return self.generic_error
+        if self.first_result is not None or len(self.errors) == 0:
+            return None
+        match len(self.errors):
+            case 0:
+                return None
+            case 1:
+                return self.errors[self.order[0]]
+            case _:
+                return AnyException([self.errors[id] for id in self.order])
+
+    def value(self) -> Any:
+        assert self.ready()
+        if len(self.order) == 0:
+            return None
+        assert self.first_result is not None
+        return self.first_result.value
+
+
+@dataclass(slots=True)
+class RaceFuture:
+    """A future result of a dispatch.coroutine.race() operation."""
+
+    waiting: set[CoroutineID] = field(default_factory=set)
+    first_result: CoroutineResult | None = None
+    first_error: Exception | None = None
+
+    def add_result(self, result: CallResult | CoroutineResult):
+        assert isinstance(result, CoroutineResult)
+
+        if result.error is not None:
+            if self.first_error is None:
+                self.first_error = result.error
+        else:
+            if self.first_result is None:
+                self.first_result = result
+
+        self.waiting.remove(result.coroutine_id)
+
+    def add_error(self, error: Exception):
+        if self.first_error is None:
+            self.first_error = error
+
+    def ready(self) -> bool:
+        return (
+            self.first_error is not None
+            or self.first_result is not None
+            or len(self.waiting) == 0
+        )
+
+    def error(self) -> Exception | None:
+        assert self.ready()
+        return self.first_error
+
+    def value(self) -> Any:
+        assert self.first_error is None
+        return self.first_result.value if self.first_result else None
 
 
 @dataclass(slots=True)
@@ -386,30 +488,35 @@ class OneShotScheduler:
                     state.prev_callers.append(coroutine)
                     state.outstanding_calls += 1
 
-                case Gather():
-                    gather = coroutine_yield
-
-                    children = []
-                    for awaitable in gather.awaitables:
-                        g = awaitable.__await__()
-                        if not isinstance(g, DurableGenerator):
-                            raise ValueError(
-                                "gather awaitable is not a @dispatch.function"
-                            )
-                        child_id = state.next_coroutine_id
-                        state.next_coroutine_id += 1
-                        child = Coroutine(
-                            id=child_id, parent_id=coroutine.id, coroutine=g
-                        )
-                        logger.debug("enqueuing %s for %s", child, coroutine)
-                        children.append(child)
-
-                    # Prepend children to get a depth-first traversal of coroutines.
-                    state.ready = children + state.ready
+                case AllDirective():
+                    children = spawn_children(
+                        state, coroutine, coroutine_yield.awaitables
+                    )
 
                     child_ids = [child.id for child in children]
-                    coroutine.result = GatherFuture(
-                        order=child_ids, waiting=set(child_ids), results={}
+                    coroutine.result = AllFuture(
+                        order=child_ids, waiting=set(child_ids)
+                    )
+                    state.suspended[coroutine.id] = coroutine
+
+                case AnyDirective():
+                    children = spawn_children(
+                        state, coroutine, coroutine_yield.awaitables
+                    )
+
+                    child_ids = [child.id for child in children]
+                    coroutine.result = AnyFuture(
+                        order=child_ids, waiting=set(child_ids)
+                    )
+                    state.suspended[coroutine.id] = coroutine
+
+                case RaceDirective():
+                    children = spawn_children(
+                        state, coroutine, coroutine_yield.awaitables
+                    )
+
+                    coroutine.result = RaceFuture(
+                        waiting={child.id for child in children}
                     )
                     state.suspended[coroutine.id] = coroutine
 
@@ -444,6 +551,26 @@ class OneShotScheduler:
             max_results=max(1, min(state.outstanding_calls, self.poll_max_results)),
             max_wait_seconds=self.poll_max_wait_seconds,
         )
+
+
+def spawn_children(
+    state: State, coroutine: Coroutine, awaitables: tuple[Awaitable[Any], ...]
+) -> list[Coroutine]:
+    children = []
+    for awaitable in awaitables:
+        g = awaitable.__await__()
+        if not isinstance(g, DurableGenerator):
+            raise TypeError("awaitable is not a @dispatch.function")
+        child_id = state.next_coroutine_id
+        state.next_coroutine_id += 1
+        child = Coroutine(id=child_id, parent_id=coroutine.id, coroutine=g)
+        logger.debug("enqueuing %s for %s", child, coroutine)
+        children.append(child)
+
+    # Prepend children to get a depth-first traversal of coroutines.
+    state.ready = children + state.ready
+
+    return children
 
 
 def correlation_id(coroutine_id: CoroutineID, call_id: CallID) -> CorrelationID:
