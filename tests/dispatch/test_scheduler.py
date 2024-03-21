@@ -1,11 +1,11 @@
 import unittest
 from typing import Any, Callable
 
-from dispatch.coroutine import call, gather
+from dispatch.coroutine import AnyException, any, call, gather
 from dispatch.experimental.durable import durable
 from dispatch.proto import Call, CallResult, Error, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
-from dispatch.scheduler import OneShotScheduler
+from dispatch.scheduler import AllFuture, AnyFuture, CoroutineResult, OneShotScheduler
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import exit_pb2 as exit_pb
 from dispatch.sdk.v1 import poll_pb2 as poll_pb
@@ -14,6 +14,11 @@ from dispatch.sdk.v1 import poll_pb2 as poll_pb
 @durable
 async def call_one(function):
     return await call(Call(function=function))
+
+
+@durable
+async def call_any(*functions):
+    return await any(*[call_one(function) for function in functions])
 
 
 @durable
@@ -161,6 +166,40 @@ class TestOneShotScheduler(unittest.TestCase):
                 self.assert_empty_poll(output)
 
         self.assert_exit_result_value(output, 0 + 1 + 2 + 3)
+
+    def test_resume_after_any_result(self):
+        @durable
+        async def main():
+            return await call_any("a", "b", "c", "d")
+
+        output = self.start(main)
+        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+
+        output = self.resume(
+            main,
+            output,
+            [CallResult.from_value(23, correlation_id=calls[1].correlation_id)],
+        )
+        self.assert_exit_result_value(output, 23)
+
+    def test_resume_after_all_errors(self):
+        @durable
+        async def main():
+            return await call_any("a", "b", "c", "d")
+
+        output = self.start(main)
+        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+        results = [
+            CallResult.from_error(
+                Error.from_exception(RuntimeError(f"oops{i}")),
+                correlation_id=call.correlation_id,
+            )
+            for i, call in enumerate(calls)
+        ]
+        output = self.resume(main, output, results)
+        self.assert_exit_result_error(
+            output, AnyException, "4 coroutine(s) failed with an exception"
+        )
 
     def test_dag(self):
         @durable
@@ -408,3 +447,156 @@ class TestOneShotScheduler(unittest.TestCase):
         if max_results is not None:
             self.assertEqual(max_results, poll.max_results)
         return poll.calls
+
+
+class TestAllFuture(unittest.TestCase):
+    def test_empty(self):
+        future = AllFuture()
+
+        self.assertTrue(future.ready())
+        self.assertListEqual(future.value(), [])
+        self.assertIsNone(future.error())
+
+    def test_one_result_value(self):
+        future = AllFuture(order=[10], waiting={10})
+
+        self.assertFalse(future.ready())
+        future.add_result(CoroutineResult(coroutine_id=10, value="foobar"))
+
+        self.assertTrue(future.ready())
+        self.assertIsNone(future.error())
+        self.assertListEqual(future.value(), ["foobar"])
+
+    def test_one_result_error(self):
+        future = AllFuture(order=[10], waiting={10})
+
+        self.assertFalse(future.ready())
+        error = RuntimeError("oops")
+        future.add_result(CoroutineResult(coroutine_id=10, error=error))
+
+        self.assertTrue(future.ready())
+        self.assertIs(future.error(), error)
+
+        with self.assertRaises(AssertionError):
+            future.value()
+
+    def test_one_generic_error(self):
+        future = AllFuture(order=[10], waiting={10})
+
+        self.assertFalse(future.ready())
+        error = RuntimeError("oops")
+        future.add_error(error)
+
+        self.assertTrue(future.ready())
+        self.assertIs(future.error(), error)
+
+        with self.assertRaises(AssertionError):
+            future.value()
+
+    def test_two_result_values(self):
+        future = AllFuture(order=[10, 20], waiting={10, 20})
+
+        self.assertFalse(future.ready())
+        future.add_result(CoroutineResult(coroutine_id=20, value="bar"))
+        self.assertFalse(future.ready())
+        future.add_result(CoroutineResult(coroutine_id=10, value="foo"))
+
+        self.assertTrue(future.ready())
+        self.assertIsNone(future.error())
+        self.assertListEqual(future.value(), ["foo", "bar"])
+
+    def test_two_result_errors(self):
+        future = AllFuture(order=[10, 20], waiting={10, 20})
+
+        self.assertFalse(future.ready())
+        error1 = RuntimeError("oops1")
+        error2 = RuntimeError("oops2")
+        future.add_result(CoroutineResult(coroutine_id=20, error=error2))
+
+        self.assertTrue(future.ready())
+        self.assertIs(future.error(), error2)
+
+        future.add_result(CoroutineResult(coroutine_id=10, error=error1))
+        self.assertIs(future.error(), error2)
+
+        future.add_error(error1)
+        self.assertIs(future.error(), error2)
+
+        with self.assertRaises(AssertionError):
+            future.value()
+
+
+class TestAnyFuture(unittest.TestCase):
+    def test_empty(self):
+        future = AnyFuture()
+
+        self.assertTrue(future.ready())
+        self.assertIsNone(future.value())
+        self.assertIsNone(future.error())
+
+    def test_one_result_value(self):
+        future = AnyFuture(order=[10], waiting={10})
+
+        self.assertFalse(future.ready())
+        future.add_result(CoroutineResult(coroutine_id=10, value="foobar"))
+
+        self.assertTrue(future.ready())
+        self.assertIsNone(future.error())
+        self.assertEqual(future.value(), "foobar")
+
+    def test_one_result_error(self):
+        future = AnyFuture(order=[10], waiting={10})
+
+        self.assertFalse(future.ready())
+        error = RuntimeError("oops")
+        future.add_result(CoroutineResult(coroutine_id=10, error=error))
+
+        self.assertTrue(future.ready())
+        self.assertIs(future.error(), error)
+
+        with self.assertRaises(AssertionError):
+            future.value()
+
+    def test_one_generic_error(self):
+        future = AnyFuture(order=[10], waiting={10})
+
+        self.assertFalse(future.ready())
+        error = RuntimeError("oops")
+        future.add_error(error)
+
+        self.assertTrue(future.ready())
+        self.assertIs(future.error(), error)
+
+        with self.assertRaises(AssertionError):
+            future.value()
+
+    def test_two_result_values(self):
+        future = AnyFuture(order=[10, 20], waiting={10, 20})
+
+        self.assertFalse(future.ready())
+
+        future.add_result(CoroutineResult(coroutine_id=20, value="bar"))
+        self.assertTrue(future.ready())
+        self.assertIsNone(future.error())
+        self.assertEqual(future.value(), "bar")
+
+        future.add_result(CoroutineResult(coroutine_id=10, value="foo"))
+        self.assertTrue(future.ready())
+        self.assertIsNone(future.error())
+        self.assertEqual(future.value(), "bar")
+
+    def test_two_result_errors(self):
+        future = AnyFuture(order=[10, 20], waiting={10, 20})
+
+        self.assertFalse(future.ready())
+        error1 = RuntimeError("oops1")
+        error2 = RuntimeError("oops2")
+        future.add_result(CoroutineResult(coroutine_id=20, error=error2))
+
+        self.assertFalse(future.ready())
+        future.add_result(CoroutineResult(coroutine_id=10, error=error1))
+        self.assertTrue(future.ready())
+        self.assertEqual(repr(future.error()), repr(AnyException([error1, error2])))
+
+        with self.assertRaises(AssertionError):
+            future.value()
