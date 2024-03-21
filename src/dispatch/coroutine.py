@@ -17,12 +17,19 @@ def call(call: Call) -> Any:
 @coroutine
 @durable
 def gather(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+    """Alias for all."""
+    return all(*awaitables)
+
+
+@coroutine
+@durable
+def all(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
     """Concurrently run a set of coroutines and block until all
     results are available. If any coroutine fails with an uncaught
     exception, it will be re-raised when awaiting a result here."""
-    return (yield Gather(awaitables))
+    return (yield All(awaitables))
 
 
 @dataclass(slots=True)
-class Gather:
+class All:
     awaitables: tuple[Awaitable[Any], ...]

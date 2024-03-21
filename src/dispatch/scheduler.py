@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol, TypeAlias
 
-from dispatch.coroutine import Gather
+from dispatch.coroutine import All
 from dispatch.error import IncompatibleStateError
 from dispatch.experimental.durable.function import DurableCoroutine, DurableGenerator
 from dispatch.proto import Call, Error, Input, Output
@@ -78,8 +78,8 @@ class CallFuture:
 
 
 @dataclass(slots=True)
-class GatherFuture:
-    """A future result of a dispatch.coroutine.gather() operation."""
+class AllFuture:
+    """A future result of a dispatch.coroutine.all() operation."""
 
     order: list[CoroutineID]
     waiting: set[CoroutineID]
@@ -386,11 +386,9 @@ class OneShotScheduler:
                     state.prev_callers.append(coroutine)
                     state.outstanding_calls += 1
 
-                case Gather():
-                    gather = coroutine_yield
-
+                case All():
                     children = []
-                    for awaitable in gather.awaitables:
+                    for awaitable in coroutine_yield.awaitables:
                         g = awaitable.__await__()
                         if not isinstance(g, DurableGenerator):
                             raise ValueError(
@@ -408,7 +406,7 @@ class OneShotScheduler:
                     state.ready = children + state.ready
 
                     child_ids = [child.id for child in children]
-                    coroutine.result = GatherFuture(
+                    coroutine.result = AllFuture(
                         order=child_ids, waiting=set(child_ids), results={}
                     )
                     state.suspended[coroutine.id] = coroutine
