@@ -1679,7 +1679,6 @@ exceptions.</p>
     <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">primitive_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">,</span>
-    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1971,13 +1970,17 @@ match this call to a call result.</p>
 
 
 <a href="#dispatch.function.Registry" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Registry</span><span class="p">(</span><span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">Registry</span><span class="p">(</span>
+    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_url</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
 
   
-      <p>Registry of local functions.</p>
+      <p>Registry of functions.</p>
   
 
 
@@ -2008,18 +2011,36 @@ match this call to a call result.</p>
           </td>
         </tr>
         <tr>
-          <td><code>client</code></td>
+          <td><code>api_key</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></code>
+                <code>str | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Client for the Dispatch API. Used to dispatch calls to
-local functions.</p>
+              <p>Dispatch API key to use for authentication when
+dispatching calls to functions. Uses the value of the
+DISPATCH_API_KEY environment variable by default.</p>
             </div>
           </td>
           <td>
-              <em>required</em>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>api_url</code></td>
+          <td>
+                <code>str | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The URL of the Dispatch API to use when dispatching calls
+to functions. Uses the value of the DISPATCH_API_URL environment
+variable if set, otherwise defaults to the public Dispatch API
+(DEFAULT_API_URL).</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
           </td>
         </tr>
     </tbody>
@@ -2097,7 +2118,7 @@ local functions.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Set the Client instance used to dispatch calls to local functions.</p>
+      <p>Set the Client instance used to dispatch calls to registered functions.</p>
 
   </div>
 
