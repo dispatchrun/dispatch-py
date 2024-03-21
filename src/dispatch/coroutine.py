@@ -25,7 +25,7 @@ def gather(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
 @durable
 def all(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
     """Concurrently run a set of coroutines, blocking until all coroutines
-    return or any coroutine raises an error. If a coroutine fails with an
+    return or any coroutine raises an error. If any coroutine fails with an
     uncaught exception, the exception will be re-raised here."""
     return (yield AllDirective(awaitables))
 
@@ -35,8 +35,17 @@ def all(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
 def any(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
     """Concurrently run a set of coroutines, blocking until any coroutine
     returns or all coroutines raises an error. If all coroutines fail with
-    uncaught exceptions, an AnyException will be re-raised here."""
+    uncaught exceptions, the exception(s) will be re-raised here."""
     return (yield AnyDirective(awaitables))
+
+
+@coroutine
+@durable
+def race(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+    """Concurrently run a set of coroutines, blocking until any coroutine
+    returns or raises an error. If any coroutine fails with an uncaught
+    exception, the exception will be re-raised here."""
+    return (yield RaceDirective(awaitables))
 
 
 @dataclass(slots=True)
@@ -46,6 +55,11 @@ class AllDirective:
 
 @dataclass(slots=True)
 class AnyDirective:
+    awaitables: tuple[Awaitable[Any], ...]
+
+
+@dataclass(slots=True)
+class RaceDirective:
     awaitables: tuple[Awaitable[Any], ...]
 
 

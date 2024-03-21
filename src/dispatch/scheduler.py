@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Protocol, TypeAlias
 
-from dispatch.coroutine import AllDirective, AnyDirective, AnyException
+from dispatch.coroutine import AllDirective, AnyDirective, AnyException, RaceDirective
 from dispatch.error import IncompatibleStateError
 from dispatch.experimental.durable.function import DurableCoroutine, DurableGenerator
 from dispatch.proto import Call, Error, Input, Output
@@ -176,6 +176,46 @@ class AnyFuture:
             return None
         assert self.first_result is not None
         return self.first_result.value
+
+
+@dataclass(slots=True)
+class RaceFuture:
+    """A future result of a dispatch.coroutine.race() operation."""
+
+    waiting: set[CoroutineID] = field(default_factory=set)
+    first_result: CoroutineResult | None = None
+    first_error: Exception | None = None
+
+    def add_result(self, result: CallResult | CoroutineResult):
+        assert isinstance(result, CoroutineResult)
+
+        if result.error is not None:
+            if self.first_error is None:
+                self.first_error = result.error
+        else:
+            if self.first_result is None:
+                self.first_result = result
+
+        self.waiting.remove(result.coroutine_id)
+
+    def add_error(self, error: Exception):
+        if self.first_error is None:
+            self.first_error = error
+
+    def ready(self) -> bool:
+        return (
+            self.first_error is not None
+            or self.first_result is not None
+            or len(self.waiting) == 0
+        )
+
+    def error(self) -> Exception | None:
+        assert self.ready()
+        return self.first_error
+
+    def value(self) -> Any:
+        assert self.first_error is None
+        return self.first_result.value if self.first_result else None
 
 
 @dataclass(slots=True)
@@ -467,6 +507,16 @@ class OneShotScheduler:
                     child_ids = [child.id for child in children]
                     coroutine.result = AnyFuture(
                         order=child_ids, waiting=set(child_ids)
+                    )
+                    state.suspended[coroutine.id] = coroutine
+
+                case RaceDirective():
+                    children = spawn_children(
+                        state, coroutine, coroutine_yield.awaitables
+                    )
+
+                    coroutine.result = RaceFuture(
+                        waiting={child.id for child in children}
                     )
                     state.suspended[coroutine.id] = coroutine
 
