@@ -57,14 +57,14 @@ curl http://localhost:8000/
 import requests
 from fastapi import FastAPI
 
-from dispatch.fastapi import Dispatch
+from dispatch.fastapi import Endpoint
 
 # Create the FastAPI app like you normally would.
 app = FastAPI()
 
 # Create a Dispatch instance and pass the FastAPI app to it. It automatically
 # sets up the necessary routes and handlers.
-dispatch = Dispatch(app)
+dispatch = Endpoint(app)
 
 
 # Use the `dispatch.function` decorator declare a stateful function.

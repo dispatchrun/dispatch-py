@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from fastapi.testclient import TestClient
 
 from dispatch.experimental.durable.registry import clear_functions
-from dispatch.fastapi import Dispatch, parse_verification_key
+from dispatch.fastapi import Endpoint, parse_verification_key
 from dispatch.function import Arguments, Error, Function, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
@@ -30,7 +30,7 @@ public_key_b64 = base64.b64encode(public_key_bytes)
 
 
 def create_dispatch_instance(app, endpoint):
-    return Dispatch(
+    return Endpoint(
         app,
         endpoint=endpoint,
         api_key="0000000000000000",

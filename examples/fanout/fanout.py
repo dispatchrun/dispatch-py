@@ -15,11 +15,11 @@ import httpx
 from fastapi import FastAPI
 
 from dispatch import gather
-from dispatch.fastapi import Dispatch
+from dispatch.fastapi import Endpoint
 
 app = FastAPI()
 
-dispatch = Dispatch(app)
+dispatch = Endpoint(app)
 
 
 @dispatch.function

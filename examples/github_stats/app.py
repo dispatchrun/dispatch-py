@@ -17,11 +17,11 @@ Logs will show a pipeline of functions being called and their results.
 import httpx
 from fastapi import FastAPI
 
-from dispatch.fastapi import Dispatch
+from dispatch.fastapi import Endpoint
 
 app = FastAPI()
 
-dispatch = Dispatch(app)
+dispatch = Endpoint(app)
 
 
 def get_gh_api(url):

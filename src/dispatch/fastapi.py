@@ -3,10 +3,10 @@
 Example:
 
     import fastapi
-    from dispatch.fastapi import Dispatch
+    from dispatch.fastapi import Endpoint
 
     app = fastapi.FastAPI()
-    dispatch = Dispatch(app, api_key="test-key")
+    dispatch = Endpoint(app, api_key="test-key")
 
     @dispatch.function()
     def my_function():
@@ -27,7 +27,7 @@ import fastapi
 import fastapi.responses
 from http_message_signatures import InvalidSignature
 
-from dispatch.function import Batch, Client, Registry
+from dispatch.function import Batch, Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
@@ -43,7 +43,7 @@ from dispatch.status import Status
 logger = logging.getLogger(__name__)
 
 
-class Dispatch(Registry):
+class Endpoint(Registry):
     """A Dispatch programmable endpoint, powered by FastAPI."""
 
     __slots__ = ("client",)
@@ -126,6 +126,10 @@ class Dispatch(Registry):
         return self.client.batch()
 
 
+Dispatch = Endpoint
+"""An alias for Endpoint, provided for backward compatibility."""
+
+
 def parse_verification_key(
     verification_key: Ed25519PublicKey | str | bytes | None,
 ) -> Ed25519PublicKey | None:
@@ -174,7 +178,7 @@ class _ConnectError(fastapi.HTTPException):
         self.message = message
 
 
-def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | None):
+def _new_app(endpoint: Endpoint, verification_key: Ed25519PublicKey | None):
     app = fastapi.FastAPI()
 
     @app.exception_handler(_ConnectError)
@@ -224,7 +228,7 @@ def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | N
             raise _ConnectError(400, "invalid_argument", "function is required")
 
         try:
-            func = function_registry.functions[req.function]
+            func = endpoint.functions[req.function]
         except KeyError:
             logger.debug("function '%s' not found", req.function)
             raise _ConnectError(

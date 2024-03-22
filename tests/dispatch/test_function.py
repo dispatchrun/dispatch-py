@@ -1,12 +1,12 @@
 import pickle
 import unittest
 
-from dispatch.function import Client, Registry
+from dispatch.remote import Endpoint
 
 
 class TestFunction(unittest.TestCase):
     def setUp(self):
-        self.dispatch = Registry(
+        self.dispatch = Endpoint(
             endpoint="http://example.com",
             api_url="http://dispatch.com",
             api_key="foobar",

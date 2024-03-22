@@ -4,7 +4,7 @@ import fastapi
 import httpx
 
 import dispatch
-from dispatch.fastapi import Dispatch
+from dispatch.fastapi import Endpoint
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.signature import private_key_from_pem, public_key_from_pem
 from dispatch.test import DispatchServer, DispatchService, EndpointClient
@@ -40,7 +40,7 @@ class TestFullFastapi(unittest.TestCase):
             api_key, api_url=self.dispatch_server.url
         )
 
-        self.dispatch = Dispatch(
+        self.dispatch = Endpoint(
             self.endpoint_app,
             endpoint="http://function-service",  # unused
             verification_key=verification_key,

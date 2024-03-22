@@ -22,7 +22,7 @@ import random
 import requests
 from fastapi import FastAPI
 
-from dispatch.fastapi import Dispatch
+from dispatch.fastapi import Endpoint
 
 # Create the FastAPI app like you normally would.
 app = FastAPI()
@@ -32,7 +32,7 @@ rng = random.Random(2)
 
 # Create a Dispatch instance and pass the FastAPI app to it. It automatically
 # sets up the necessary routes and handlers.
-dispatch = Dispatch(app)
+dispatch = Endpoint(app)
 
 
 def third_party_api_call(x):

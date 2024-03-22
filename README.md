@@ -100,11 +100,11 @@ The following code snippet is a complete example showing how to install a
 
 ```python
 from fastapi import FastAPI
-from dispatch.fastapi import Dispatch
+from dispatch.fastapi import Endpoint
 import requests
 
 app = FastAPI()
-dispatch = Dispatch(app)
+dispatch = Endpoint(app)
 
 @dispatch.function
 def publish(url, payload):
