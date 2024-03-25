@@ -408,9 +408,24 @@ static int valid_frame_state(int fs) {
 #endif
 }
 
+static int get_frame_stacktop_limit(Frame *frame) {
+    PyCodeObject *code = get_frame_code(frame);
+#if PY_MINOR_VERSION == 10
+    return code->co_stacksize + code->co_nlocals;
+#elif PY_MINOR_VERSION == 11
+    return code->co_stacksize + code->co_nlocalsplus;
+#elif PY_MINOR_VERSION == 12
+    return code->co_stacksize + code->co_nlocalsplus;
+#elif PY_MINOR_VERSION == 13
+    return code->co_stacksize + code->co_nlocalsplus;
+#endif
+}
+
 static int get_frame_stacktop(Frame *frame) {
 #if PY_MINOR_VERSION == 10
-#  error TODO
+    assert(frame->f_localsplus);
+    assert(frame->f_valuestack);
+    int stacktop = (int)(frame->f_valuestack - frame->f_localsplus) + frame->f_stackdepth;
 #elif PY_MINOR_VERSION == 11
     int stacktop = frame->stacktop;
 #elif PY_MINOR_VERSION == 12
@@ -418,16 +433,17 @@ static int get_frame_stacktop(Frame *frame) {
 #elif PY_MINOR_VERSION == 13
     int stacktop = frame->stacktop;
 #endif
-    PyCodeObject *code = get_frame_code(frame);
-    int limit = code->co_stacksize + code->co_nlocalsplus;
-    (void)limit; // if NDEBUG
-    assert(stacktop >= 0 && stacktop < limit);
+    assert(stacktop >= 0 && stacktop < get_frame_stacktop_limit(frame));
     return stacktop;
 }
 
 static void set_frame_stacktop(Frame *frame, int stacktop) {
 #if PY_MINOR_VERSION == 10
-#  error TODO
+    assert(frame->f_localsplus);
+    assert(frame->f_valuestack);
+    int base = (int)(frame->f_valuestack - frame->f_localsplus);
+    assert(stacktop >= base);
+    frame->f_stackdepth = stacktop - base;
 #elif PY_MINOR_VERSION == 11
     frame->stacktop = stacktop;
 #elif PY_MINOR_VERSION == 12
@@ -439,14 +455,16 @@ static void set_frame_stacktop(Frame *frame, int stacktop) {
 
 static PyObject **get_frame_localsplus(Frame *frame) {
 #if PY_MINOR_VERSION == 10
-    return frame->f_localsplus;
+    PyObject **localsplus = frame->f_localsplus;
 #elif PY_MINOR_VERSION == 11
-    return frame->localsplus;
+    PyObject **localsplus = frame->localsplus;
 #elif PY_MINOR_VERSION == 12
-    return frame->localsplus;
+    PyObject **localsplus = frame->localsplus;
 #elif PY_MINOR_VERSION == 13
-    return frame->localsplus;
+    PyObject **localsplus = frame->localsplus;
 #endif
+    assert(localsplus);
+    return localsplus;
 }
 
 static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
@@ -580,8 +598,7 @@ static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    PyCodeObject *code = get_frame_code(frame);
-    int limit = code->co_stacksize + code->co_nlocalsplus;
+    int limit = get_frame_stacktop_limit(frame);
     if (sp < 0 || sp >= limit) {
         PyErr_SetString(PyExc_IndexError, "Stack pointer out of bounds");
         return NULL;
