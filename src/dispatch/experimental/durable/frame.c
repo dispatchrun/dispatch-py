@@ -408,6 +408,35 @@ static int valid_frame_state(int fs) {
 #endif
 }
 
+static int get_frame_stacktop(Frame *frame) {
+#if PY_MINOR_VERSION == 10
+#  error TODO
+#elif PY_MINOR_VERSION == 11
+    int stacktop = frame->stacktop;
+#elif PY_MINOR_VERSION == 12
+    int stacktop = frame->stacktop;
+#elif PY_MINOR_VERSION == 13
+    int stacktop = frame->stacktop;
+#endif
+    PyCodeObject *code = get_frame_code(frame);
+    int limit = code->co_stacksize + code->co_nlocalsplus;
+    (void)limit; // if NDEBUG
+    assert(stacktop >= 0 && stacktop < limit);
+    return stacktop;
+}
+
+static void set_frame_stacktop(Frame *frame, int stacktop) {
+#if PY_MINOR_VERSION == 10
+#  error TODO
+#elif PY_MINOR_VERSION == 11
+    frame->stacktop = stacktop;
+#elif PY_MINOR_VERSION == 12
+    frame->stacktop = stacktop;
+#elif PY_MINOR_VERSION == 13
+    frame->stacktop = stacktop;
+#endif
+}
+
 static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
     PyObject *arg;
     if (!PyArg_ParseTuple(args, "O", &arg)) {
@@ -459,8 +488,7 @@ static PyObject *ext_get_frame_sp(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-    int sp = frame->stacktop;
+    int sp = get_frame_stacktop(frame);
     return PyLong_FromLong((long)sp);
 }
 
@@ -482,10 +510,8 @@ static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-    PyCodeObject *code = get_frame_code(frame);
-    int limit = code->co_stacksize + code->co_nlocalsplus;
-    if (index < 0 || index >= limit) {
+    int sp = get_frame_stacktop(frame);
+    if (index < 0 || index >= sp) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
     }
@@ -541,21 +567,19 @@ static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
     PyCodeObject *code = get_frame_code(frame);
     int limit = code->co_stacksize + code->co_nlocalsplus;
     if (sp < 0 || sp >= limit) {
         PyErr_SetString(PyExc_IndexError, "Stack pointer out of bounds");
         return NULL;
     }
-
-    if (sp > frame->stacktop) {
-        for (int i = frame->stacktop; i < sp; i++) {
+    int current_sp = get_frame_stacktop(frame);
+    if (sp > current_sp) {
+        for (int i = current_sp; i < sp; i++) {
             frame->localsplus[i] = NULL;
         }
     }
-
-    frame->stacktop = sp;
+    set_frame_stacktop(frame, sp);
     Py_RETURN_NONE;
 }
 
@@ -613,14 +637,11 @@ static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-    PyCodeObject *code = get_frame_code(frame);
-    int limit = code->co_stacksize + code->co_nlocalsplus;
-    if (index < 0 || index >= limit) {
+    int sp = get_frame_stacktop(frame);
+    if (index < 0 || index >= sp) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
     }
-
     PyObject *prev = frame->localsplus[index];
     if (Py_IsTrue(unset)) {
         frame->localsplus[index] = NULL;
@@ -628,11 +649,7 @@ static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
         Py_INCREF(stack_obj);
         frame->localsplus[index] = stack_obj;
     }
-
-    if (index < frame->stacktop) {
-        Py_XDECREF(prev);
-    }
-
+    Py_XDECREF(prev);
     Py_RETURN_NONE;
 }
 
