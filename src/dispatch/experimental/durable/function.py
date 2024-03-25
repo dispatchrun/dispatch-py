@@ -249,7 +249,7 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
 
     @property
     def cr_suspended(self) -> bool:
-        return self.coroutine.cr_suspended
+        return getattr(self.coroutine, "cr_suspended", False)
 
     @property
     def cr_code(self) -> CodeType:
@@ -315,7 +315,7 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
 
     @property
     def gi_suspended(self) -> bool:
-        return self.generator.gi_suspended
+        return getattr(self.generator, "gi_suspended", False)
 
     @property
     def gi_code(self) -> CodeType:

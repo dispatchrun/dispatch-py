@@ -97,7 +97,10 @@ class TestCoroutine(unittest.TestCase):
 
         def check():
             self.assertEqual(c.cr_running, underlying.cr_running)
-            self.assertEqual(c.cr_suspended, underlying.cr_suspended)
+            try:
+                self.assertEqual(c.cr_suspended, underlying.cr_suspended)
+            except AttributeError:
+                pass
             self.assertEqual(c.cr_origin, underlying.cr_origin)
             self.assertIs(c.cr_await, underlying.cr_await)
 
