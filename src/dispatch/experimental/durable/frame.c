@@ -20,15 +20,15 @@ typedef struct _PyTryBlock {
     int b_level;
 } PyTryBlock;
 
-// This is a redefinition of the private/opaque PyInterpreterFrame.
+// This is a redefinition of the private/opaque frame object.
 // In Python 3.10 and prior, `struct _frame` is both the PyFrameObject and
-// PyInterpreterFrame. From Python 3.11 onwards, the two were split with
-// PyFrameObject pointing to PyInterpreterFrame.
-typedef struct InterpreterFrame {
+// PyFrame. From Python 3.11 onwards, the two were split with the
+// PyFrameObject (struct _frame) pointing to struct _PyInterpreterFrame.
+typedef struct Frame {
 #if PY_MINOR_VERSION == 10
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
     PyObject_VAR_HEAD
-    struct InterpreterFrame *f_back; // struct _frame
+    struct Frame *f_back; // struct _frame
     PyCodeObject *f_code;
     PyObject *f_builtins;
     PyObject *f_globals;
@@ -53,7 +53,7 @@ typedef struct InterpreterFrame {
     PyObject *f_locals;
     PyCodeObject *f_code;
     PyFrameObject *frame_obj;
-    struct _PyInterpreterFrame *previous;
+    struct Frame *previous; // struct _PyInterpreterFrame
     _Py_CODEUNIT *prev_instr;
     int stacktop;
     bool is_entry;
@@ -62,7 +62,7 @@ typedef struct InterpreterFrame {
 #elif PY_MINOR_VERSION == 12
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L51
     PyCodeObject *f_code;
-    struct _PyInterpreterFrame *previous;
+    struct Frame *previous; // struct _PyInterpreterFrame
     PyObject *f_funcobj;
     PyObject *f_globals;
     PyObject *f_builtins;
@@ -76,7 +76,7 @@ typedef struct InterpreterFrame {
 #elif PY_MINOR_VERSION == 13
 // https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L57
     PyObject *f_executable;
-    struct _PyInterpreterFrame *previous;
+    struct Frame *previous; // struct _PyInterpreterFrame
     PyObject *f_funcobj;
     PyObject *f_globals;
     PyObject *f_builtins;
@@ -88,7 +88,7 @@ typedef struct InterpreterFrame {
     char owner;
     PyObject *localsplus[1];
 #endif
-} InterpreterFrame;
+} Frame;
 
 // This is a redefinition of private frame state constants:
 typedef enum _framestate {
@@ -138,13 +138,15 @@ typedef struct {
 
 /*
 // This is the definition of PyFrameObject (aka. struct _frame) for reference
-// to developers working on the extension.
+// to developers working on the extension. As noted above, the contents of
+// struct _frame changed over time, with some fields moving in Python >= 3.11
+// to a separate struct _PyInterpreterFrame.
 //
 typedef struct {
 #if PY_MINOR_VERSION == 10
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
     PyObject_VAR_HEAD
-    struct InterpreterFrame *f_back; // struct _frame
+    struct _frame *f_back;
     PyCodeObject *f_code;
     PyObject *f_builtins;
     PyObject *f_globals;
@@ -302,21 +304,21 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
     return NULL;
 }
 
-static InterpreterFrame *get_interpreter_frame(PyGenObject *gen_like) {
+static Frame *get_frame(PyGenObject *gen_like) {
 #if PY_MINOR_VERSION == 10
-    InterpreterFrame *frame = (InterpreterFrame *)(gen_like->gi_frame);
+    Frame *frame = (Frame *)(gen_like->gi_frame);
 #elif PY_MINOR_VERSION == 11
-    InterpreterFrame *frame = (InterpreterFrame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
+    Frame *frame = (Frame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
 #elif PY_MINOR_VERSION == 12
-    InterpreterFrame *frame = (InterpreterFrame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
+    Frame *frame = (Frame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
 #elif PY_MINOR_VERSION == 13
-    InterpreterFrame *frame = (InterpreterFrame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
+    Frame *frame = (Frame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
 #endif
     assert(frame);
     return frame;
 }
 
-static PyCodeObject *get_frame_code(InterpreterFrame *frame) {
+static PyCodeObject *get_frame_code(Frame *frame) {
 #if PY_MINOR_VERSION == 10
     PyCodeObject *code = frame->f_code;
 #elif PY_MINOR_VERSION == 11
@@ -330,7 +332,7 @@ static PyCodeObject *get_frame_code(InterpreterFrame *frame) {
     return code;
 }
 
-static int get_frame_lasti(InterpreterFrame *frame) {
+static int get_frame_lasti(Frame *frame) {
 #if PY_MINOR_VERSION == 10
     return frame->f_lasti;
 #elif PY_MINOR_VERSION == 11
@@ -351,7 +353,7 @@ static int get_frame_lasti(InterpreterFrame *frame) {
 #endif
 }
 
-void set_frame_lasti(InterpreterFrame *frame, int lasti) {
+void set_frame_lasti(Frame *frame, int lasti) {
 #if PY_MINOR_VERSION == 10
     frame->f_lasti = lasti;
 #elif PY_MINOR_VERSION == 11
@@ -371,7 +373,7 @@ void set_frame_lasti(InterpreterFrame *frame, int lasti) {
 
 static int get_frame_state(PyGenObject *gen_like) {
 #if PY_MINOR_VERSION == 10
-    return get_interpreter_frame(gen_like)->f_state;
+    return get_frame(gen_like)->f_state;
 #elif PY_MINOR_VERSION == 11
     return gen_like->gi_frame_state;
 #elif PY_MINOR_VERSION == 12
@@ -383,7 +385,7 @@ static int get_frame_state(PyGenObject *gen_like) {
 
 static void set_frame_state(PyGenObject *gen_like, int fs) {
 #if PY_MINOR_VERSION == 10
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     frame->f_state = (PyFrameState)fs;
 #elif PY_MINOR_VERSION == 11
     gen_like->gi_frame_state = (int8_t)fs;
@@ -432,7 +434,7 @@ static PyObject *ext_get_frame_ip(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -453,7 +455,7 @@ static PyObject *ext_get_frame_sp(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -476,7 +478,7 @@ static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -513,7 +515,7 @@ static PyObject *ext_set_frame_ip(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -535,7 +537,7 @@ static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -575,7 +577,7 @@ static PyObject *ext_set_frame_state(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
@@ -607,7 +609,7 @@ static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
