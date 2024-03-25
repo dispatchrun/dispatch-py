@@ -13,6 +13,12 @@ def get_frame_sp(frame: FrameType | Coroutine | Generator | AsyncGenerator) -> i
 def set_frame_sp(frame: FrameType | Coroutine | Generator | AsyncGenerator, sp: int):
     """Set stack pointer of a generator or coroutine."""
 
+def get_frame_bp(frame: FrameType | Coroutine | Generator | AsyncGenerator) -> int:
+    """Get block pointer of a generator or coroutine."""
+
+def set_frame_bp(frame: FrameType | Coroutine | Generator | AsyncGenerator, bp: int):
+    """Set block pointer of a generator or coroutine."""
+
 def get_frame_stack_at(
     frame: FrameType | Coroutine | Generator | AsyncGenerator, index: int
 ) -> Tuple[bool, Any]:

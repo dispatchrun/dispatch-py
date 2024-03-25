@@ -438,6 +438,7 @@ static int get_frame_stacktop(Frame *frame) {
 }
 
 static void set_frame_stacktop(Frame *frame, int stacktop) {
+    assert(stacktop >= 0 && stacktop < get_frame_stacktop_limit(frame));
 #if PY_MINOR_VERSION == 10
     assert(frame->f_localsplus);
     assert(frame->f_valuestack);
@@ -465,6 +466,27 @@ static PyObject **get_frame_localsplus(Frame *frame) {
 #endif
     assert(localsplus);
     return localsplus;
+}
+
+static int get_frame_iblock_limit(Frame *frame) {
+#if PY_MINOR_VERSION == 10
+    return CO_MAXBLOCKS;
+#endif
+    return 1; // not applicable >= 3.11
+}
+
+static int get_frame_iblock(Frame *frame) {
+#if PY_MINOR_VERSION == 10
+    return frame->f_iblock;
+#endif
+    return 0; // not applicable >= 3.11
+}
+
+void set_frame_iblock(Frame *frame, int iblock) {
+    assert(iblock >= 0 && iblock < get_frame_iblock_limit(frame));
+#if PY_MINOR_VERSION == 10
+    frame->f_iblock = iblock;
+#endif
 }
 
 static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
@@ -520,6 +542,27 @@ static PyObject *ext_get_frame_sp(PyObject *self, PyObject *args) {
     }
     int sp = get_frame_stacktop(frame);
     return PyLong_FromLong((long)sp);
+}
+
+static PyObject *ext_get_frame_bp(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int bp = get_frame_iblock(frame);
+    return PyLong_FromLong((long)bp);
 }
 
 static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
@@ -614,6 +657,33 @@ static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+static PyObject *ext_set_frame_bp(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    int bp;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &bp)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int limit = get_frame_iblock_limit(frame);
+    if (bp < 0 || bp >= limit) {
+        PyErr_SetString(PyExc_IndexError, "Block pointer out of bounds");
+        return NULL;
+    }
+    set_frame_iblock(frame, bp);
+    Py_RETURN_NONE;
+}
+
 static PyObject *ext_set_frame_state(PyObject *self, PyObject *args) {
     PyObject *obj;
     int fs;
@@ -690,6 +760,8 @@ static PyMethodDef methods[] = {
         {"set_frame_ip",  ext_set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
         {"get_frame_sp",  ext_get_frame_sp, METH_VARARGS, "Get stack pointer of a generator or coroutine."},
         {"set_frame_sp",  ext_set_frame_sp, METH_VARARGS, "Set stack pointer of a generator or coroutine."},
+        {"get_frame_bp",  ext_get_frame_bp, METH_VARARGS, "Get block pointer of a generator or coroutine."},
+        {"set_frame_bp",  ext_set_frame_bp, METH_VARARGS, "Set block pointer of a generator or coroutine."},
         {"get_frame_stack_at",  ext_get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
         {"set_frame_stack_at",  ext_set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
         {"get_frame_state",  ext_get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
