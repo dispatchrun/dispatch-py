@@ -80,24 +80,7 @@ typedef struct InterpreterFrame {
 #endif
 } InterpreterFrame;
 
-// This is a redefinition of the private PyFrameObject (aka. struct _frame):
-// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
-// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L15
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L16
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L20
-typedef struct FrameObject {
-    PyObject_HEAD
-    PyFrameObject *f_back;
-    struct _PyInterpreterFrame *f_frame;
-    PyObject *f_trace;
-    int f_lineno;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    char f_fast_as_locals;
-    PyObject *_f_frame_data[1];
-} FrameObject;
-
-// This is a redefinition of frame state constants:
+// This is a redefinition of private frame state constants:
 typedef enum _framestate {
 #if PY_MINOR_VERSION == 10
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L10
@@ -142,6 +125,68 @@ typedef struct {
     PyObject_HEAD
     PyCoroObject *cw_coroutine;
 } PyCoroWrapper;
+
+/*
+// This is the definition of PyFrameObject (aka. struct _frame) for reference
+// to developers working on the extension.
+//
+typedef struct {
+#if PY_MINOR_VERSION == 10
+// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
+    PyObject_VAR_HEAD
+    struct InterpreterFrame *f_back; // struct _frame
+    PyCodeObject *f_code;
+    PyObject *f_builtins;
+    PyObject *f_globals;
+    PyObject *f_locals;
+    PyObject **f_valuestack;
+    PyObject *f_trace;
+    int f_stackdepth;
+    char f_trace_lines;
+    char f_trace_opcodes;
+    PyObject *f_gen;
+    int f_lasti;
+    int f_lineno;
+    int f_iblock;
+    PyFrameState f_state;
+    PyTryBlock f_blockstack[CO_MAXBLOCKS];
+    PyObject *f_localsplus[1];
+#elif PY_MINOR_VERSION == 11
+// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L15
+    PyObject_HEAD
+    PyFrameObject *f_back;
+    struct _PyInterpreterFrame *f_frame;
+    PyObject *f_trace;
+    int f_lineno;
+    char f_trace_lines;
+    char f_trace_opcodes;
+    char f_fast_as_locals;
+    PyObject *_f_frame_data[1];
+#elif PY_MINOR_VERSION == 12
+// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L16
+    PyObject_HEAD
+    PyFrameObject *f_back;
+    struct _PyInterpreterFrame *f_frame;
+    PyObject *f_trace;
+    int f_lineno;
+    char f_trace_lines;
+    char f_trace_opcodes;
+    char f_fast_as_locals;
+    PyObject *_f_frame_data[1];
+#elif PY_MINOR_VERSION == 13
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L20
+    PyObject_HEAD
+    PyFrameObject *f_back;
+    struct _PyInterpreterFrame *f_frame;
+    PyObject *f_trace;
+    int f_lineno;
+    char f_trace_lines;
+    char f_trace_opcodes;
+    char f_fast_as_locals;
+    PyObject *_f_frame_data[1];
+#endif
+} PyFrameObject;
+*/
 
 /*
 // This is the definition of PyGenObject for reference to developers
