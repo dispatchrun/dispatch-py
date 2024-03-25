@@ -10,6 +10,16 @@
 # error Python 3.10-3.13 is required
 #endif
 
+// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L20
+typedef int8_t PyFrameState;
+
+// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L22
+typedef struct _PyTryBlock {
+    int b_type;
+    int b_handler;
+    int b_level;
+} PyTryBlock;
+
 // This is a redefinition of the private/opaque PyInterpreterFrame.
 // In Python 3.10 and prior, `struct _frame` is both the PyFrameObject and
 // PyInterpreterFrame. From Python 3.11 onwards, the two were split with
@@ -294,7 +304,7 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
 
 static InterpreterFrame *get_interpreter_frame(PyGenObject *gen_like) {
 #if PY_MINOR_VERSION == 10
-    InterpreterFrame *frame = (InterpreterFrame *)(gen_like->gi_iframe);
+    InterpreterFrame *frame = (InterpreterFrame *)(gen_like->gi_frame);
 #elif PY_MINOR_VERSION == 11
     InterpreterFrame *frame = (InterpreterFrame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
 #elif PY_MINOR_VERSION == 12
@@ -359,6 +369,31 @@ void set_frame_lasti(InterpreterFrame *frame, int lasti) {
 #endif
 }
 
+static int get_frame_state(PyGenObject *gen_like) {
+#if PY_MINOR_VERSION == 10
+    return get_interpreter_frame(gen_like)->f_state;
+#elif PY_MINOR_VERSION == 11
+    return gen_like->gi_frame_state;
+#elif PY_MINOR_VERSION == 12
+    return gen_like->gi_frame_state;
+#elif PY_MINOR_VERSION == 13
+    return gen_like->gi_frame_state;
+#endif
+}
+
+static void set_frame_state(PyGenObject *gen_like, int fs) {
+#if PY_MINOR_VERSION == 10
+    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    frame->f_state = (PyFrameState)fs;
+#elif PY_MINOR_VERSION == 11
+    gen_like->gi_frame_state = (int8_t)fs;
+#elif PY_MINOR_VERSION == 12
+    gen_like->gi_frame_state = (int8_t)fs;
+#elif PY_MINOR_VERSION == 13
+    gen_like->gi_frame_state = (int8_t)fs;
+#endif
+}
+
 static int valid_frame_state(int fs) {
 #if PY_MINOR_VERSION == 10
     return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_EXECUTING || fs == FRAME_RETURNED || fs == FRAME_UNWINDING || fs == FRAME_RAISED || fs == FRAME_CLEARED;
@@ -371,19 +406,20 @@ static int valid_frame_state(int fs) {
 #endif
 }
 
-static PyObject *get_frame_state(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
     PyObject *arg;
     if (!PyArg_ParseTuple(args, "O", &arg)) {
         return NULL;
     }
-    PyGenObject *gen = get_generator_like_object(arg);
-    if (!gen) {
+    PyGenObject *gen_like = get_generator_like_object(arg);
+    if (!gen_like) {
         return NULL;
     }
-    return PyLong_FromLong((long)gen->gi_frame_state); // aka. cr_frame_state / ag_frame_state
+    int fs = get_frame_state(gen_like);
+    return PyLong_FromLong((long)fs);
 }
 
-static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_ip(PyObject *self, PyObject *args) {
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
@@ -392,7 +428,7 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
@@ -404,7 +440,7 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
     return PyLong_FromLong((long)ip);
 }
 
-static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_sp(PyObject *self, PyObject *args) {
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
@@ -413,7 +449,7 @@ static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
@@ -426,7 +462,7 @@ static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
     return PyLong_FromLong((long)sp);
 }
 
-static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
     PyObject *obj;
     int index;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &index)) {
@@ -436,7 +472,7 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
@@ -463,7 +499,7 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
     return PyTuple_Pack(2, is_null, stack_obj);
 }
 
-static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_ip(PyObject *self, PyObject *args) {
     PyObject *obj;
     int ip;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &ip)) {
@@ -473,7 +509,7 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
@@ -485,7 +521,7 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
     PyObject *obj;
     int sp;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &sp)) {
@@ -495,7 +531,7 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
@@ -521,7 +557,7 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject *set_frame_state(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_state(PyObject *self, PyObject *args) {
     PyObject *obj;
     int fs;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &fs)) {
@@ -535,7 +571,7 @@ static PyObject *set_frame_state(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
@@ -547,11 +583,11 @@ static PyObject *set_frame_state(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_ValueError, "Invalid frame state");
         return NULL;
     }
-    gen_like->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
+    set_frame_state(gen_like, fs);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
     PyObject *obj;
     int index;
     PyObject *unset;
@@ -567,7 +603,7 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
@@ -599,14 +635,14 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef methods[] = {
-        {"get_frame_ip",  get_frame_ip, METH_VARARGS, "Get instruction pointer of a generator or coroutine."},
-        {"set_frame_ip",  set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
-        {"get_frame_sp",  get_frame_sp, METH_VARARGS, "Get stack pointer of a generator or coroutine."},
-        {"set_frame_sp",  set_frame_sp, METH_VARARGS, "Set stack pointer of a generator or coroutine."},
-        {"get_frame_stack_at",  get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
-        {"set_frame_stack_at",  set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
-        {"get_frame_state",  get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
-        {"set_frame_state",  set_frame_state, METH_VARARGS, "Set frame state of a generator or coroutine."},
+        {"get_frame_ip",  ext_get_frame_ip, METH_VARARGS, "Get instruction pointer of a generator or coroutine."},
+        {"set_frame_ip",  ext_set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
+        {"get_frame_sp",  ext_get_frame_sp, METH_VARARGS, "Get stack pointer of a generator or coroutine."},
+        {"set_frame_sp",  ext_set_frame_sp, METH_VARARGS, "Set stack pointer of a generator or coroutine."},
+        {"get_frame_stack_at",  ext_get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
+        {"set_frame_stack_at",  ext_set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
+        {"get_frame_state",  ext_get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
+        {"set_frame_state",  ext_set_frame_state, METH_VARARGS, "Set frame state of a generator or coroutine."},
         {NULL, NULL, 0, NULL}
 };
 
