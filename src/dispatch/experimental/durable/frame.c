@@ -11,39 +11,56 @@
 #endif
 
 // This is a redefinition of the private/opaque struct _PyInterpreterFrame:
-// https://github.com/python/cpython/blob/3.12/Include/cpython/pyframe.h#L23
+// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L47
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L51
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L57
 typedef struct InterpreterFrame {
 #if PY_MINOR_VERSION == 11
     PyFunctionObject *f_func;
-#elif PY_MINOR_VERSION >= 12
-    PyCodeObject *f_code; // 3.13: PyObject *f_executable
-    struct _PyInterpreterFrame *previous;
-    PyObject *f_funcobj;
-#endif
     PyObject *f_globals;
     PyObject *f_builtins;
     PyObject *f_locals;
-#if PY_MINOR_VERSION == 11
     PyCodeObject *f_code;
     PyFrameObject *frame_obj;
     struct _PyInterpreterFrame *previous;
     _Py_CODEUNIT *prev_instr;
     int stacktop;
     bool is_entry;
-#elif PY_MINOR_VERSION >= 12
-    PyFrameObject *frame_obj;
-    _Py_CODEUNIT *prev_instr; // 3.13: _Py_CODEUNIT *instr_ptr
-    int stacktop;
-    uint16_t return_offset;
-#endif
     char owner;
     PyObject *localsplus[1];
+#elif PY_MINOR_VERSION == 12
+    PyCodeObject *f_code;
+    struct _PyInterpreterFrame *previous;
+    PyObject *f_funcobj;
+    PyObject *f_globals;
+    PyObject *f_builtins;
+    PyObject *f_locals;
+    PyFrameObject *frame_obj;
+    _Py_CODEUNIT *prev_instr;
+    int stacktop;
+    uint16_t return_offset;
+    char owner;
+    PyObject *localsplus[1];
+#elif PY_MINOR_VERSION == 13
+    PyObject *f_executable;
+    struct _PyInterpreterFrame *previous;
+    PyObject *f_funcobj;
+    PyObject *f_globals;
+    PyObject *f_builtins;
+    PyObject *f_locals;
+    PyFrameObject *frame_obj;
+    _Py_CODEUNIT *instr_ptr;
+    int stacktop;
+    uint16_t return_offset;
+    char owner;
+    PyObject *localsplus[1];
+#endif
 } InterpreterFrame;
 
-// This is a redefinition of the private/opaque PyFrameObject:
-// https://github.com/python/cpython/blob/3.12/Include/pytypedefs.h#L22
+// This is a redefinition of the private/opaque PyFrameObject (aka. struct _frame):
+// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L15
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L16
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L20
 // The definition is the same for Python 3.11-3.13.
 typedef struct FrameObject {
     PyObject_HEAD
@@ -58,29 +75,46 @@ typedef struct FrameObject {
 } FrameObject;
 
 // This is a redefinition of frame state constants:
+// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L33
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L34
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L38
 typedef enum _framestate {
-#if PY_MINOR_VERSION == 13
-    FRAME_CREATED = -3,
-    FRAME_SUSPENDED = -2,
-    FRAME_SUSPENDED_YIELD_FROM = -1,
-#else
+#if PY_MINOR_VERSION == 11
     FRAME_CREATED = -2,
     FRAME_SUSPENDED = -1,
-#endif
     FRAME_EXECUTING = 0,
     FRAME_COMPLETED = 1,
     FRAME_CLEARED = 4
+#elif PY_MINOR_VERSION == 12
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_COMPLETED = 1,
+    FRAME_CLEARED = 4
+#elif PY_MINOR_VERSION == 13
+    FRAME_CREATED = -3,
+    FRAME_SUSPENDED = -2,
+    FRAME_SUSPENDED_YIELD_FROM = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_COMPLETED = 1,
+    FRAME_CLEARED = 4
+#endif
 } FrameState;
 
 // This is a redefinition of the private PyCoroWrapper:
+// https://github.com/python/cpython/blob/3.11/Objects/genobject.c#L1016
+// https://github.com/python/cpython/blob/3.12/Objects/genobject.c#L1003
+// https://github.com/python/cpython/blob/v3.13.0a5/Objects/genobject.c#L985
 typedef struct {
     PyObject_HEAD
     PyCoroObject *cw_coroutine;
 } PyCoroWrapper;
 
 // For reference, PyGenObject is defined as follows after expanding top-most macro:
-// https://github.com/python/cpython/blob/3.12/Include/cpython/genobject.h
+// https://github.com/python/cpython/blob/3.11/Include/cpython/genobject.h#L14
+// https://github.com/python/cpython/blob/3.12/Include/cpython/genobject.h#L14
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/cpython/genobject.h#L14
+//
 // Note that PyCoroObject and PyAsyncGenObject have the same layout in
 // Python 3.11-3.13, however the struct fields have a cr_ and ag_ prefix
 // (respectively) instead of a gi_ prefix.
@@ -122,17 +156,22 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
     if (PyGen_Check(obj) || PyCoro_CheckExact(obj) || PyAsyncGen_CheckExact(obj)) {
         // Note: In Python 3.11-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
         // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
+        // We cast to PyGenObject here so that the remainder of the code can use the gi_
+        // prefix for all three cases.
         return (PyGenObject *)obj;
     }
-    // CPython unfortunately does not export any functions that
-    // check whether an object is a coroutine_wrapper.
-    // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
+    // If the object isn't a PyGenObject, PyCoroObject or PyAsyncGenObject, it may
+    // still be a coroutine, for example a PyCoroWrapper. CPython unfortunately does
+    // not export functions that check whether an object is a coroutine_wrapper; we
+    // need to check the type name string.
     const char *type_name = get_type_name(obj);
     if (!type_name) {
         return NULL;
     }
     if (strcmp(type_name, "coroutine_wrapper") == 0) {
+        // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
         PyCoroWrapper *wrapper = (PyCoroWrapper *)obj;
+        // Cast the inner PyCoroObject to PyGenObject. See the comment above.
         return (PyGenObject *)wrapper->cw_coroutine;
     }
     PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
@@ -143,6 +182,50 @@ static InterpreterFrame *get_interpreter_frame(PyGenObject *gen_like) {
     struct _PyInterpreterFrame *frame = (struct _PyInterpreterFrame *)(gen_like->gi_iframe);
     assert(frame);
     return (InterpreterFrame *)frame;
+}
+
+static PyCodeObject *get_frame_code(InterpreterFrame *frame) {
+#if PY_MINOR_VERSION == 11
+    PyCodeObject *code = frame->f_code;
+#elif PY_MINOR_VERSION == 12
+    PyCodeObject *code = frame->f_code;
+#elif PY_MINOR_VERSION == 13
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+#endif
+    assert(code);
+    return code;
+}
+
+static _Py_CODEUNIT *get_frame_instr_ptr(InterpreterFrame *frame) {
+#if PY_MINOR_VERSION == 11
+    _Py_CODEUNIT *instr_ptr = frame->prev_instr;
+#elif PY_MINOR_VERSION == 12
+    _Py_CODEUNIT *instr_ptr = frame->prev_instr;
+#elif PY_MINOR_VERSION == 13
+    _Py_CODEUNIT *instr_ptr = frame->instr_ptr;
+#endif
+    assert(instr_ptr);
+    return instr_ptr;
+}
+
+void set_frame_instr_ptr(InterpreterFrame *frame, _Py_CODEUNIT *instr_ptr) {
+#if PY_MINOR_VERSION == 11
+    frame->prev_instr = instr_ptr;
+#elif PY_MINOR_VERSION == 12
+    frame->prev_instr = instr_ptr;
+#elif PY_MINOR_VERSION == 13
+    frame->instr_ptr = instr_ptr;
+#endif
+}
+
+static int valid_frame_state(int fs) {
+#if PY_MINOR_VERSION == 11
+    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_EXECUTING || fs == FRAME_COMPLETED || fs == FRAME_CLEARED;
+#elif PY_MINOR_VERSION == 12
+    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_EXECUTING || fs == FRAME_COMPLETED || fs == FRAME_CLEARED;
+#elif PY_MINOR_VERSION == 13
+    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_SUSPENDED_YIELD_FROM || fs == FRAME_EXECUTING || fs == FRAME_COMPLETED || fs == FRAME_CLEARED;
+#endif
 }
 
 static PyObject *get_frame_state(PyObject *self, PyObject *args) {
@@ -174,11 +257,11 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    assert(frame->f_code);
-    assert(frame->prev_instr);
+    _Py_CODEUNIT *instr_ptr = get_frame_instr_ptr(frame);
+    PyCodeObject *code = get_frame_code(frame);
     // See _PyInterpreterFrame_LASTI
     // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    intptr_t ip = (intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(frame->f_code);
+    intptr_t ip = (intptr_t)instr_ptr - (intptr_t)_PyCode_CODE(code);
     return PyLong_FromLong((long)ip);
 }
 
@@ -223,8 +306,8 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
-
-    int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
+    PyCodeObject *code = get_frame_code(frame);
+    int limit = code->co_stacksize + code->co_nlocalsplus;
     if (index < 0 || index >= limit) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
@@ -259,11 +342,10 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    assert(frame->f_code);
-    assert(frame->prev_instr);
+    PyCodeObject *code = get_frame_code(frame);
     // See _PyInterpreterFrame_LASTI
     // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(frame->f_code) + (intptr_t)ip);
+    set_frame_instr_ptr(frame, (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)ip));
     Py_RETURN_NONE;
 }
 
@@ -286,8 +368,8 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
-
-    int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
+    PyCodeObject *code = get_frame_code(frame);
+    int limit = code->co_stacksize + code->co_nlocalsplus;
     if (sp < 0 || sp >= limit) {
         PyErr_SetString(PyExc_IndexError, "Stack pointer out of bounds");
         return NULL;
@@ -325,17 +407,10 @@ static PyObject *set_frame_state(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-#if PY_MINOR_VERSION == 13
-    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_SUSPENDED_YIELD_FROM && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED) {
+    if (!valid_frame_state(fs)) {
         PyErr_SetString(PyExc_ValueError, "Invalid frame state");
         return NULL;
     }
-#else
-    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED) {
-        PyErr_SetString(PyExc_ValueError, "Invalid frame state");
-        return NULL;
-    }
-#endif
     gen_like->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
     Py_RETURN_NONE;
 }
@@ -365,7 +440,8 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
         return NULL;
     }
     assert(frame->stacktop >= 0);
-    int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
+    PyCodeObject *code = get_frame_code(frame);
+    int limit = code->co_stacksize + code->co_nlocalsplus;
     if (index < 0 || index >= limit) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
