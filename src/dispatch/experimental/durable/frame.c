@@ -33,7 +33,7 @@ typedef struct InterpreterFrame {
     int f_lineno;
     int f_iblock;
     PyFrameState f_state;
-    PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
+    PyTryBlock f_blockstack[CO_MAXBLOCKS];
     PyObject *f_localsplus[1];
 #elif PY_MINOR_VERSION == 11
 // https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L47
@@ -80,7 +80,7 @@ typedef struct InterpreterFrame {
 #endif
 } InterpreterFrame;
 
-// This is a redefinition of the private/opaque PyFrameObject:
+// This is a redefinition of the private PyFrameObject (aka. struct _frame):
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
 // https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L15
 // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L16
@@ -152,8 +152,8 @@ typedef struct {
 // (respectively) rather than a gi_ prefix. In Python 3.10, PyCoroObject
 // and PyAsyncGenObject have extra fields compared to PyGenObject. In Python
 // 3.11 onwards, the three objects are identical (except for field name
-// prefixes). Note that the extra fields in Python 3.10 are not applicable to
-// this extension at this time.
+// prefixes). The extra fields in Python 3.10 are not applicable to this
+// extension at this time.
 //
 typedef struct {
     PyObject_HEAD
@@ -223,7 +223,7 @@ static const char *get_type_name(PyObject *obj) {
 
 static PyGenObject *get_generator_like_object(PyObject *obj) {
     if (PyGen_Check(obj) || PyCoro_CheckExact(obj) || PyAsyncGen_CheckExact(obj)) {
-        // Note: In Python 3.11-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
+        // Note: In Python 3.10-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
         // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
         // We cast to PyGenObject here so that the remainder of the code can use the gi_
         // prefix for all three cases.
@@ -231,7 +231,7 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
     }
     // If the object isn't a PyGenObject, PyCoroObject or PyAsyncGenObject, it may
     // still be a coroutine, for example a PyCoroWrapper. CPython unfortunately does
-    // not export functions that check whether an object is a coroutine_wrapper; we
+    // not export a function that checks whether a PyObject is a PyCoroWrapper. We
     // need to check the type name string.
     const char *type_name = get_type_name(obj);
     if (!type_name) {
@@ -240,7 +240,7 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
     if (strcmp(type_name, "coroutine_wrapper") == 0) {
         // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
         PyCoroWrapper *wrapper = (PyCoroWrapper *)obj;
-        // Cast the inner PyCoroObject to PyGenObject. See the comment above.
+        // Cast the inner PyCoroObject to a PyGenObject. See the comment above.
         return (PyGenObject *)wrapper->cw_coroutine;
     }
     PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
@@ -275,29 +275,42 @@ static PyCodeObject *get_frame_code(InterpreterFrame *frame) {
     return code;
 }
 
-static _Py_CODEUNIT *get_frame_instr_ptr(InterpreterFrame *frame) {
+static int get_frame_lasti(InterpreterFrame *frame) {
 #if PY_MINOR_VERSION == 10
-# error TODO
+    return frame->f_lasti;
 #elif PY_MINOR_VERSION == 11
-    _Py_CODEUNIT *instr_ptr = frame->prev_instr;
+// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L69
+    PyCodeObject *code = get_frame_code(frame);
+    assert(frame->prev_instr);
+    return (int)((intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(code));
 #elif PY_MINOR_VERSION == 12
-    _Py_CODEUNIT *instr_ptr = frame->prev_instr;
+// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
+    PyCodeObject *code = get_frame_code(frame);
+    assert(frame->prev_instr);
+    return (int)((intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(code));
 #elif PY_MINOR_VERSION == 13
-    _Py_CODEUNIT *instr_ptr = frame->instr_ptr;
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L73
+    PyCodeObject *code = get_frame_code(frame);
+    assert(frame->instr_ptr);
+    return (int)((intptr_t)frame->instr_ptr - (intptr_t)_PyCode_CODE(code));
 #endif
-    assert(instr_ptr);
-    return instr_ptr;
 }
 
-void set_frame_instr_ptr(InterpreterFrame *frame, _Py_CODEUNIT *instr_ptr) {
+void set_frame_lasti(InterpreterFrame *frame, int lasti) {
 #if PY_MINOR_VERSION == 10
-# error TODO
+    frame->f_lasti = lasti;
 #elif PY_MINOR_VERSION == 11
-    frame->prev_instr = instr_ptr;
+// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L69
+    PyCodeObject *code = get_frame_code(frame);
+    frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)lasti);
 #elif PY_MINOR_VERSION == 12
-    frame->prev_instr = instr_ptr;
+// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
+    PyCodeObject *code = get_frame_code(frame);
+    frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)lasti);
 #elif PY_MINOR_VERSION == 13
-    frame->instr_ptr = instr_ptr;
+// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L73
+    PyCodeObject *code = get_frame_code(frame);
+    frame->instr_ptr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)lasti);
 #endif
 }
 
@@ -342,11 +355,7 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    _Py_CODEUNIT *instr_ptr = get_frame_instr_ptr(frame);
-    PyCodeObject *code = get_frame_code(frame);
-    // See _PyInterpreterFrame_LASTI
-    // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    intptr_t ip = (intptr_t)instr_ptr - (intptr_t)_PyCode_CODE(code);
+    int ip = get_frame_lasti(frame);
     return PyLong_FromLong((long)ip);
 }
 
@@ -427,10 +436,7 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
     if (!frame) {
         return NULL;
     }
-    PyCodeObject *code = get_frame_code(frame);
-    // See _PyInterpreterFrame_LASTI
-    // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    set_frame_instr_ptr(frame, (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)ip));
+    set_frame_lasti(frame, ip);
     Py_RETURN_NONE;
 }
 
