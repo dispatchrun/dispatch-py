@@ -437,6 +437,18 @@ static void set_frame_stacktop(Frame *frame, int stacktop) {
 #endif
 }
 
+static PyObject **get_frame_localsplus(Frame *frame) {
+#if PY_MINOR_VERSION == 10
+    return frame->f_localsplus;
+#elif PY_MINOR_VERSION == 11
+    return frame->localsplus;
+#elif PY_MINOR_VERSION == 12
+    return frame->localsplus;
+#elif PY_MINOR_VERSION == 13
+    return frame->localsplus;
+#endif
+}
+
 static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
     PyObject *arg;
     if (!PyArg_ParseTuple(args, "O", &arg)) {
@@ -519,7 +531,8 @@ static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
     // NULL in C != None in Python. We need to preserve the fact that some items
     // on the stack are NULL (not yet available).
     PyObject *is_null = Py_False;
-    PyObject *stack_obj = frame->localsplus[index];
+    PyObject **localsplus = get_frame_localsplus(frame);
+    PyObject *stack_obj = localsplus[index];
     if (!stack_obj) {
         is_null = Py_True;
         stack_obj = Py_None;
@@ -573,10 +586,11 @@ static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_IndexError, "Stack pointer out of bounds");
         return NULL;
     }
+    PyObject **localsplus = get_frame_localsplus(frame);
     int current_sp = get_frame_stacktop(frame);
     if (sp > current_sp) {
         for (int i = current_sp; i < sp; i++) {
-            frame->localsplus[i] = NULL;
+            localsplus[i] = NULL;
         }
     }
     set_frame_stacktop(frame, sp);
@@ -642,12 +656,13 @@ static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
     }
-    PyObject *prev = frame->localsplus[index];
+    PyObject **localsplus = get_frame_localsplus(frame);
+    PyObject *prev = localsplus[index];
     if (Py_IsTrue(unset)) {
-        frame->localsplus[index] = NULL;
+        localsplus[index] = NULL;
     } else {
         Py_INCREF(stack_obj);
-        frame->localsplus[index] = stack_obj;
+        localsplus[index] = stack_obj;
     }
     Py_XDECREF(prev);
     Py_RETURN_NONE;
