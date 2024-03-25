@@ -110,9 +110,10 @@ class Serializable:
             ip = ext.get_frame_ip(g)
             sp = ext.get_frame_sp(g)
             bp = ext.get_frame_bp(g)
-            stack = [ext.get_frame_stack_at(g, i) for i in range(ext.get_frame_sp(g))]
+            stack = [ext.get_frame_stack_at(g, i) for i in range(sp)]
+            blocks = [ext.get_frame_block_at(g, i) for i in range(bp)]
         else:
-            ip, sp, bp, stack = None, None, None, None
+            ip, sp, bp, stack, blocks = None, None, None, None, None
 
         if TRACE:
             print(f"\n[DISPATCH] Serializing {self}:")
@@ -125,12 +126,14 @@ class Serializable:
             if frame_state < FRAME_CLEARED:
                 print(f"IP = {ip}")
                 print(f"SP = {sp}")
-                print(f"BP = {bp}")
                 for i, (is_null, value) in enumerate(stack):
                     if is_null:
                         print(f"stack[{i}] = NULL")
                     else:
                         print(f"stack[{i}] = {value}")
+                print(f"BP = {bp}")
+                for i, block in enumerate(blocks):
+                    print(f"block[{i}] = {block}")
             print()
 
         state = {
@@ -148,6 +151,7 @@ class Serializable:
                 "sp": sp,
                 "bp": bp,
                 "stack": stack,
+                "blocks": blocks,
                 "state": frame_state,
             },
         }
@@ -188,9 +192,11 @@ class Serializable:
             # Restore the frame.
             ext.set_frame_ip(g, frame_state["ip"])
             ext.set_frame_sp(g, frame_state["sp"])
-            ext.set_frame_bp(g, frame_state["bp"])
             for i, (is_null, obj) in enumerate(frame_state["stack"]):
                 ext.set_frame_stack_at(g, i, is_null, obj)
+            ext.set_frame_bp(g, frame_state["bp"])
+            for i, block in enumerate(frame_state["blocks"]):
+                ext.set_frame_block_at(g, i, block)
             ext.set_frame_state(g, frame_state["state"])
         else:
             g = None

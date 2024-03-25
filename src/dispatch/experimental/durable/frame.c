@@ -487,6 +487,17 @@ void set_frame_iblock(Frame *frame, int iblock) {
 #if PY_MINOR_VERSION == 10
     frame->f_iblock = iblock;
 #endif
+    assert(!iblock); // not applicable >= 3.11
+}
+
+static PyTryBlock *get_frame_blockstack(Frame *frame) {
+#if PY_MINOR_VERSION == 10
+    PyTryBlock *blockstack = frame->f_blockstack;
+#else
+    PyTryBlock *blockstack = NULL; // not applicable >= 3.11
+#endif
+    assert(blockstack);
+    return blockstack;
 }
 
 static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
@@ -599,6 +610,34 @@ static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
         stack_obj = Py_None;
     }
     return PyTuple_Pack(2, is_null, stack_obj);
+}
+
+static PyObject *ext_get_frame_block_at(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    int index;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &index)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int bp = get_frame_iblock(frame);
+    if (index < 0 || index >= bp) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+        return NULL;
+    }
+    PyTryBlock *blockstack = get_frame_blockstack(frame);
+    PyTryBlock *block = &blockstack[index];
+    return PyTuple_Pack(3, block->b_type, block->b_handler, block->b_level);
 }
 
 static PyObject *ext_set_frame_ip(PyObject *self, PyObject *args) {
@@ -755,6 +794,40 @@ static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+static PyObject *ext_set_frame_block_at(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    int index;
+    int b_type;
+    int b_handler;
+    int b_level;
+    if (!PyArg_ParseTuple(args, "Oi(iii)", &obj, &index, &b_type, &b_handler, &b_level)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int bp = get_frame_iblock(frame);
+    if (index < 0 || index >= bp) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+        return NULL;
+    }
+    PyTryBlock *blockstack = get_frame_blockstack(frame);
+    PyTryBlock *block = &blockstack[index];
+    block->b_type = b_type;
+    block->b_handler = b_handler;
+    block->b_level = b_level;
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef methods[] = {
         {"get_frame_ip",  ext_get_frame_ip, METH_VARARGS, "Get instruction pointer of a generator or coroutine."},
         {"set_frame_ip",  ext_set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
@@ -764,6 +837,8 @@ static PyMethodDef methods[] = {
         {"set_frame_bp",  ext_set_frame_bp, METH_VARARGS, "Set block pointer of a generator or coroutine."},
         {"get_frame_stack_at",  ext_get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
         {"set_frame_stack_at",  ext_set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
+        {"get_frame_block_at",  ext_get_frame_block_at, METH_VARARGS, "Get a block from a generator or coroutine."},
+        {"set_frame_block_at",  ext_set_frame_block_at, METH_VARARGS, "Restore a block of a generator or coroutine."},
         {"get_frame_state",  ext_get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
         {"set_frame_state",  ext_set_frame_state, METH_VARARGS, "Set frame state of a generator or coroutine."},
         {NULL, NULL, 0, NULL}

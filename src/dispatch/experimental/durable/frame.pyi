@@ -32,6 +32,18 @@ def set_frame_stack_at(
 ):
     """Set or unset an object on the stack of a generator or coroutine."""
 
+def get_frame_block_at(
+    frame: FrameType | Coroutine | Generator | AsyncGenerator, index: int
+) -> Tuple[int, int, int]:
+    """Get a block from a generator or coroutine."""
+
+def set_frame_block_at(
+    frame: FrameType | Coroutine | Generator | AsyncGenerator,
+    index: int,
+    value: Tuple[int, int, int],
+):
+    """Restore a block of a generator or coroutine."""
+
 def get_frame_state(
     frame: FrameType | Coroutine | Generator | AsyncGenerator,
 ) -> int:
