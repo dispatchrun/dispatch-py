@@ -120,11 +120,6 @@ class Dispatch(Registry):
         function_service = _new_app(self, verification_key)
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
-    def batch(self) -> Batch:
-        """Returns a Batch instance that can be used to build
-        a set of calls to dispatch."""
-        return self.client.batch()
-
 
 def parse_verification_key(
     verification_key: Ed25519PublicKey | str | bytes | None,
