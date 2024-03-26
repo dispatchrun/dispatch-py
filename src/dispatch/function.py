@@ -250,6 +250,11 @@ class Registry:
         for fn in self.functions.values():
             fn._client = client
 
+    def batch(self) -> Batch:
+        """Returns a Batch instance that can be used to build
+        a set of calls to dispatch."""
+        return self.client.batch()
+
 
 class Client:
     """Client for the Dispatch API."""
