@@ -85,7 +85,11 @@ def main():
             print(f'  export DISPATCH_VERIFICATION_KEY="{verification_key}"')
             print()
 
-            server.wait()
+            try:
+                server.wait()
+            except KeyboardInterrupt:
+                print("closing down server after interrupt")
+                pass
 
 
 if __name__ == "__main__":
