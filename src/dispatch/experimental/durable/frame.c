@@ -353,7 +353,7 @@ static int get_frame_lasti(Frame *frame) {
 #endif
 }
 
-void set_frame_lasti(Frame *frame, int lasti) {
+static void set_frame_lasti(Frame *frame, int lasti) {
 #if PY_MINOR_VERSION == 10
     frame->f_lasti = lasti;
 #elif PY_MINOR_VERSION == 11
@@ -486,7 +486,7 @@ static int get_frame_iblock(Frame *frame) {
     return 0; // not applicable >= 3.11
 }
 
-void set_frame_iblock(Frame *frame, int iblock) {
+static void set_frame_iblock(Frame *frame, int iblock) {
     assert(iblock >= 0 && iblock < get_frame_iblock_limit(frame));
 #if PY_MINOR_VERSION == 10
     frame->f_iblock = iblock;
