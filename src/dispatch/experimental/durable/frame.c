@@ -6,11 +6,12 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#if PY_MAJOR_VERSION != 3 || (PY_MINOR_VERSION < 9 || PY_MINOR_VERSION > 13)
-# error Python 3.9-3.13 is required
+#if PY_MAJOR_VERSION != 3 || (PY_MINOR_VERSION < 8 || PY_MINOR_VERSION > 13)
+# error Python 3.8-3.13 is required
 #endif
 
 // This is a redefinition of the private PyTryBlock from <= 3.10.
+// https://github.com/python/cpython/blob/3.8/Include/frameobject.h#L10
 // https://github.com/python/cpython/blob/3.9/Include/cpython/frameobject.h#L11
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L22
 typedef struct {
@@ -19,7 +20,8 @@ typedef struct {
     int b_level;
 } PyTryBlock;
 
-// This is a redefinition of the private PyCoroWrapper from 3.9-3.13.
+// This is a redefinition of the private PyCoroWrapper from 3.8-3.13.
+// https://github.com/python/cpython/blob/3.8/Objects/genobject.c#L840
 // https://github.com/python/cpython/blob/3.9/Objects/genobject.c#L830
 // https://github.com/python/cpython/blob/3.10/Objects/genobject.c#L884
 // https://github.com/python/cpython/blob/3.11/Objects/genobject.c#L1016
@@ -53,7 +55,9 @@ static int get_frame_iblock(Frame *frame);
 static void set_frame_iblock(Frame *frame, int iblock);
 static PyTryBlock *get_frame_blockstack(Frame *frame);
 
-#if PY_MINOR_VERSION == 9
+#if PY_MINOR_VERSION == 8
+#include "frame308.h"
+#elif PY_MINOR_VERSION == 9
 #include "frame309.h"
 #elif PY_MINOR_VERSION == 10
 #include "frame310.h"
