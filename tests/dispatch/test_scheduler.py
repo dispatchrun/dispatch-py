@@ -1,5 +1,5 @@
 import unittest
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional, Type
 
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
@@ -413,7 +413,7 @@ class TestOneShotScheduler(unittest.TestCase):
         self,
         main: Callable,
         prev_output: Output,
-        call_results: list[CallResult],
+        call_results: List[CallResult],
         poll_error: Optional[Exception] = None,
     ):
         poll = self.assert_poll(prev_output)
@@ -444,7 +444,7 @@ class TestOneShotScheduler(unittest.TestCase):
         self.assertEqual(expect, any_unpickle(result.output))
 
     def assert_exit_result_error(
-        self, output: Output, expect: type[Exception], message: Optional[str] = None
+        self, output: Output, expect: Type[Exception], message: Optional[str] = None
     ):
         result = self.assert_exit_result(output)
         self.assertFalse(result.HasField("output"))
@@ -471,7 +471,7 @@ class TestOneShotScheduler(unittest.TestCase):
         self.assertEqual(len(poll.calls), 0)
 
     def assert_poll_call_functions(
-        self, output: Output, expect: list[str], min_results=None, max_results=None
+        self, output: Output, expect: List[str], min_results=None, max_results=None
     ):
         poll = self.assert_poll(output)
         # Note: we're not testing endpoint/input here.

@@ -1,4 +1,5 @@
 import concurrent.futures
+import sys
 
 import grpc
 
@@ -47,7 +48,10 @@ class DispatchServer:
         """Stop the server."""
         self._server.stop(0)
         self._server.wait_for_termination()
-        self._thread_pool.shutdown(wait=True, cancel_futures=True)
+        if sys.version_info >= (3, 9):
+            self._thread_pool.shutdown(wait=True, cancel_futures=True)
+        else:
+            self._thread_pool.shutdown(wait=True)
 
     def __enter__(self):
         self.start()

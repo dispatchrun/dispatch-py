@@ -4,7 +4,7 @@ import pickle
 from dataclasses import dataclass
 from traceback import format_exception
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import google.protobuf.any_pb2
 import google.protobuf.message
@@ -79,7 +79,7 @@ class Input:
         self._assert_first_call()
         return self._input
 
-    def input_arguments(self) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    def input_arguments(self) -> Tuple[Tuple[Any, ...], Dict[str, Any]]:
         """Returns positional and keyword arguments carried by the input."""
         self._assert_first_call()
         if not isinstance(self._input, Arguments):
@@ -92,7 +92,7 @@ class Input:
         return self._coroutine_state
 
     @property
-    def call_results(self) -> list[CallResult]:
+    def call_results(self) -> List[CallResult]:
         self._assert_resume()
         return self._call_results
 
@@ -124,7 +124,7 @@ class Input:
         cls,
         function: str,
         coroutine_state: Any,
-        call_results: list[CallResult],
+        call_results: List[CallResult],
         error: Optional[Error] = None,
     ):
         return Input(
@@ -143,8 +143,8 @@ class Input:
 class Arguments:
     """A container for positional and keyword arguments."""
 
-    args: tuple[Any, ...]
-    kwargs: dict[str, Any]
+    args: Tuple[Any, ...]
+    kwargs: Dict[str, Any]
 
 
 @dataclass
@@ -201,7 +201,7 @@ class Output:
     def poll(
         cls,
         state: Any,
-        calls: Optional[list[Call]] = None,
+        calls: Optional[List[Call]] = None,
         min_results: int = 1,
         max_results: int = 10,
         max_wait_seconds: Optional[int] = None,

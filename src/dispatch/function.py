@@ -12,6 +12,7 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    List,
     Optional,
     TypeVar,
     overload,
@@ -329,7 +330,7 @@ class Client:
         a set of calls to dispatch."""
         return Batch(self)
 
-    def dispatch(self, calls: Iterable[Call]) -> list[DispatchID]:
+    def dispatch(self, calls: Iterable[Call]) -> List[DispatchID]:
         """Dispatch function calls.
 
         Args:
@@ -369,7 +370,7 @@ class Batch:
 
     def __init__(self, client: Client):
         self.client = client
-        self.calls: list[Call] = []
+        self.calls: List[Call] = []
 
     def add(self, func: Function[P, T], *args: P.args, **kwargs: P.kwargs) -> Batch:
         """Add a call to the specified function to the batch."""
@@ -380,7 +381,7 @@ class Batch:
         self.calls.append(call)
         return self
 
-    def dispatch(self) -> list[DispatchID]:
+    def dispatch(self) -> List[DispatchID]:
         """Dispatch dispatches the calls asynchronously.
 
         The batch is reset when the calls are dispatched successfully.

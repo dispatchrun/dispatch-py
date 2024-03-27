@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Sequence, cast
+from typing import Sequence, Set, cast
 
 import http_sfv
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -114,8 +114,8 @@ def verify_request(request: Request, key: Ed25519PublicKey, max_age: timedelta):
     verify_content_digest(request.headers["Content-Digest"], request.body)
 
 
-def extract_covered_components(result: VerifyResult) -> set[str]:
-    covered_components: set[str] = set()
+def extract_covered_components(result: VerifyResult) -> Set[str]:
+    covered_components: Set[str] = set()
     for key in result.covered_components.keys():
         item = http_sfv.Item()
         item.parse(key.encode())

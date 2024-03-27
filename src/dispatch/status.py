@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Callable, Type
+from typing import Any, Callable, Dict, Type
 
 from dispatch.error import IncompatibleStateError
 from dispatch.sdk.v1 import status_pb2 as status_pb
@@ -79,8 +79,8 @@ Status.PERMISSION_DENIED._proto = status_pb.STATUS_PERMISSION_DENIED
 Status.NOT_FOUND.__doc__ = "An operation was performed on a non-existent resource"
 Status.NOT_FOUND._proto = status_pb.STATUS_NOT_FOUND
 
-_ERROR_TYPES: dict[Type[Exception], Callable[[Exception], Status]] = {}
-_OUTPUT_TYPES: dict[Type[Any], Callable[[Any], Status]] = {}
+_ERROR_TYPES: Dict[Type[Exception], Callable[[Exception], Status]] = {}
+_OUTPUT_TYPES: Dict[Type[Any], Callable[[Any], Status]] = {}
 
 
 def status_for_error(error: Exception) -> Status:

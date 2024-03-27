@@ -2,7 +2,18 @@ import logging
 import pickle
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Optional, Protocol, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Set,
+    Tuple,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
@@ -84,9 +95,9 @@ class CallFuture:
 class AllFuture:
     """A future result of a dispatch.coroutine.all() operation."""
 
-    order: list[CoroutineID] = field(default_factory=list)
-    waiting: set[CoroutineID] = field(default_factory=set)
-    results: dict[CoroutineID, CoroutineResult] = field(default_factory=dict)
+    order: List[CoroutineID] = field(default_factory=list)
+    waiting: Set[CoroutineID] = field(default_factory=set)
+    results: Dict[CoroutineID, CoroutineResult] = field(default_factory=dict)
     first_error: Optional[Exception] = None
 
     def add_result(self, result: Union[CallResult, CoroutineResult]):
@@ -115,7 +126,7 @@ class AllFuture:
         assert self.ready()
         return self.first_error
 
-    def value(self) -> list[Any]:
+    def value(self) -> List[Any]:
         assert self.ready()
         assert len(self.waiting) == 0
         assert self.first_error is None
@@ -126,10 +137,10 @@ class AllFuture:
 class AnyFuture:
     """A future result of a dispatch.coroutine.any() operation."""
 
-    order: list[CoroutineID] = field(default_factory=list)
-    waiting: set[CoroutineID] = field(default_factory=set)
+    order: List[CoroutineID] = field(default_factory=list)
+    waiting: Set[CoroutineID] = field(default_factory=set)
     first_result: Optional[CoroutineResult] = None
-    errors: dict[CoroutineID, Exception] = field(default_factory=dict)
+    errors: Dict[CoroutineID, Exception] = field(default_factory=dict)
     generic_error: Optional[Exception] = None
 
     def add_result(self, result: Union[CallResult, CoroutineResult]):
@@ -183,7 +194,7 @@ class AnyFuture:
 class RaceFuture:
     """A future result of a dispatch.coroutine.race() operation."""
 
-    waiting: set[CoroutineID] = field(default_factory=set)
+    waiting: Set[CoroutineID] = field(default_factory=set)
     first_result: Optional[CoroutineResult] = None
     first_error: Optional[Exception] = None
 
@@ -248,12 +259,12 @@ class State:
     """State of the scheduler and the coroutines it's managing."""
 
     version: str
-    suspended: dict[CoroutineID, Coroutine]
-    ready: list[Coroutine]
+    suspended: Dict[CoroutineID, Coroutine]
+    ready: List[Coroutine]
     next_coroutine_id: int
     next_call_id: int
 
-    prev_callers: list[Coroutine]
+    prev_callers: List[Coroutine]
 
     outstanding_calls: int
 
@@ -416,7 +427,7 @@ class OneShotScheduler:
             len(state.ready) + len(state.suspended),
         )
 
-        pending_calls: list[Call] = []
+        pending_calls: List[Call] = []
         while state.ready:
             coroutine = state.ready.pop(0)
             logger.debug("running %s", coroutine)
@@ -542,8 +553,8 @@ class OneShotScheduler:
 
 
 def spawn_children(
-    state: State, coroutine: Coroutine, awaitables: tuple[Awaitable[Any], ...]
-) -> list[Coroutine]:
+    state: State, coroutine: Coroutine, awaitables: Tuple[Awaitable[Any], ...]
+) -> List[Coroutine]:
     children = []
     for awaitable in awaitables:
         g = awaitable.__await__()
