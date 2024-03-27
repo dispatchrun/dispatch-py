@@ -1,0 +1,15 @@
+graft src
+graft test
+graft example
+
+include pyproject.toml
+include setup.py
+include README.md
+include CONTRIBUTING.md
+include LICENSE
+include Makefile
+include mkdocs.yml
+
+global-exclude *.so
+global-exclude *.py[cod]
+global-exclude __pycache__
