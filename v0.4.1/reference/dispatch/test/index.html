@@ -1403,7 +1403,7 @@
 <a href="#dispatch.test.EndpointClient" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">EndpointClient</span><span class="p">(</span>
     <span class="n">http_client</span><span class="p">:</span> <span class="n"><span title="httpx.Client">Client</span></span><span class="p">,</span>
-    <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1447,7 +1447,7 @@ functions, for example a FastAPI app.</p>
         <tr>
           <td><code>signing_key</code></td>
           <td>
-                <code><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span> | None</code>
+                <code><span title="typing.Optional">Optional</span>[<span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1564,7 +1564,8 @@ functions, for example a FastAPI app.</p>
 
 <a href="#dispatch.test.EndpointClient.from_url" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">from_url</span><span class="p">(</span>
-    <span class="n">url</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">url</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
+    <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1592,7 +1593,7 @@ functions, for example a FastAPI app.</p>
 <a href="#dispatch.test.EndpointClient.from_app" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">from_app</span><span class="p">(</span>
     <span class="n">app</span><span class="p">:</span> <span class="n"><span title="fastapi.FastAPI">FastAPI</span></span><span class="p">,</span>
-    <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1814,8 +1815,8 @@ dispatch.test.DispatchService).</p>
 <a href="#dispatch.test.DispatchService" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">DispatchService</span><span class="p">(</span>
     <span class="n">endpoint_client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.test.EndpointClient" href="#dispatch.test.EndpointClient">EndpointClient</a></span><span class="p">,</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">retry_on_status</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Status" href="../status/#dispatch.status.Status">Status</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">retry_on_status</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">set</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Status" href="../status/#dispatch.status.Status">Status</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">collect_roundtrips</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -1860,7 +1861,7 @@ endpoint (that provides the functions).</p>
         <tr>
           <td><code>api_key</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1875,7 +1876,7 @@ value of the DISPATCH_API_KEY environment variable is used instead.</p>
         <tr>
           <td><code>retry_on_status</code></td>
           <td>
-                <code>set[<a class="autorefs autorefs-internal" title="dispatch.proto.Status" href="../status/#dispatch.status.Status">Status</a>] | None</code>
+                <code><span title="typing.Optional">Optional</span>[set[<a class="autorefs autorefs-internal" title="dispatch.proto.Status" href="../status/#dispatch.status.Status">Status</a>]]</code>
           </td>
           <td>
             <div class="doc-md-description">

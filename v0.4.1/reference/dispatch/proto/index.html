@@ -1735,7 +1735,9 @@ Output.poll().</p>
   </span>
 
 <a href="#dispatch.proto.Output.value" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="../status/#dispatch.status.Status">Status</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="#dispatch.proto.Output">Output</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">value</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="../status/#dispatch.status.Status">Status</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1812,8 +1814,8 @@ tail call the specified function.</p>
 
 <a href="#dispatch.proto.Output.exit" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">exit</span><span class="p">(</span>
-    <span class="n">result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.CallResult" href="#dispatch.proto.CallResult">CallResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">tail_call</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="#dispatch.proto.Call">Call</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.CallResult" href="#dispatch.proto.CallResult">CallResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">tail_call</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="#dispatch.proto.Call">Call</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="../status/#dispatch.status.Status">Status</a></span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">OK</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
@@ -1842,10 +1844,10 @@ tail call the specified function.</p>
 <a href="#dispatch.proto.Output.poll" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">poll</span><span class="p">(</span>
     <span class="n">state</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span>
-    <span class="n">calls</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="#dispatch.proto.Call">Call</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="#dispatch.proto.Call">Call</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">min_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">max_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">max_wait_seconds</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_wait_seconds</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
 
@@ -1883,9 +1885,9 @@ call results are ready.</p>
 <a href="#dispatch.proto.Call" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Call</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">endpoint</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">correlation_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1932,9 +1934,9 @@ with_call method of a Function instead.</p>
 
 <a href="#dispatch.proto.CallResult" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">CallResult</span><span class="p">(</span>
-    <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">output</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">error</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Error" href="#dispatch.proto.Error">Error</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">correlation_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">output</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Error" href="#dispatch.proto.Error">Error</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1982,8 +1984,8 @@ with_call method of a Function instead.</p>
     <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="../status/#dispatch.status.Status">Status</a></span><span class="p">,</span>
     <span class="nb">type</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">message</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">traceback</span><span class="p">:</span> <span class="n">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">traceback</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2053,7 +2055,7 @@ Output.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code>Exception | None</code>
+                <code><span title="typing.Optional">Optional</span>[Exception]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2120,7 +2122,7 @@ invalid.</p>
 
 <a href="#dispatch.proto.Error.from_exception" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">from_exception</span><span class="p">(</span>
-    <span class="n">ex</span><span class="p">:</span> <span class="n">Exception</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="../status/#dispatch.status.Status">Status</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ex</span><span class="p">:</span> <span class="n">Exception</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="../status/#dispatch.status.Status">Status</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Error" href="#dispatch.proto.Error">Error</a></span>
 </code></pre></div>
 

@@ -1463,8 +1463,8 @@
 <a href="#dispatch.scheduler.CoroutineResult" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">CoroutineResult</span><span class="p">(</span>
     <span class="n">coroutine_id</span><span class="p">:</span> <span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1510,8 +1510,8 @@
 <a href="#dispatch.scheduler.CallResult" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">CallResult</span><span class="p">(</span>
     <span class="n">call_id</span><span class="p">:</span> <span class="n"><span title="dispatch.scheduler.CallID">CallID</span></span><span class="p">,</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1556,8 +1556,8 @@
 
 <a href="#dispatch.scheduler.CallFuture" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">CallFuture</span><span class="p">(</span>
-    <span class="n">result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CallResult" href="#dispatch.scheduler.CallResult">CallResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">first_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CallResult" href="#dispatch.scheduler.CallResult">CallResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">first_error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1605,7 +1605,7 @@
     <span class="n">order</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span>
     <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
     <span class="n">results</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-    <span class="n">first_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">first_error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1652,9 +1652,9 @@
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyFuture</span><span class="p">(</span>
     <span class="n">order</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span>
     <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
-    <span class="n">first_result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">first_result</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">errors</span><span class="p">:</span> <span class="n">dict</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span> <span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
-    <span class="n">generic_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">generic_error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1700,8 +1700,8 @@
 <a href="#dispatch.scheduler.RaceFuture" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">RaceFuture</span><span class="p">(</span>
     <span class="n">waiting</span><span class="p">:</span> <span class="n">set</span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
-    <span class="n">first_result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">first_error</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">first_result</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.scheduler.CoroutineResult" href="#dispatch.scheduler.CoroutineResult">CoroutineResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">first_error</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1747,9 +1747,9 @@
 <a href="#dispatch.scheduler.Coroutine" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Coroutine</span><span class="p">(</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">,</span>
-    <span class="n">parent_id</span><span class="p">:</span> <span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">coroutine</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.experimental.durable.function.DurableCoroutine" href="../experimental/durable/function/#dispatch.experimental.durable.function.DurableCoroutine">DurableCoroutine</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.experimental.durable.function.DurableGenerator" href="../experimental/durable/function/#dispatch.experimental.durable.function.DurableGenerator">DurableGenerator</a></span><span class="p">,</span>
-    <span class="n">result</span><span class="p">:</span> <span class="n"><span title="dispatch.scheduler.Future">Future</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">parent_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.CoroutineID">CoroutineID</span></span><span class="p">],</span>
+    <span class="n">coroutine</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.experimental.durable.function.DurableCoroutine" href="../experimental/durable/function/#dispatch.experimental.durable.function.DurableCoroutine">DurableCoroutine</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.experimental.durable.function.DurableGenerator" href="../experimental/durable/function/#dispatch.experimental.durable.function.DurableGenerator">DurableGenerator</a></span><span class="p">],</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.scheduler.Future">Future</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1845,7 +1845,7 @@
     <span class="n">version</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
     <span class="n">poll_min_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">poll_max_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">poll_max_wait_seconds</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">poll_max_wait_seconds</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1936,7 +1936,7 @@ per request.</p>
         <tr>
           <td><code>poll_max_wait_seconds</code></td>
           <td>
-                <code>int | None</code>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
           </td>
           <td>
             <div class="doc-md-description">

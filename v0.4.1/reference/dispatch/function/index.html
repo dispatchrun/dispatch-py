@@ -1670,7 +1670,7 @@
   </span>
 
 <a href="#dispatch.function.PrimitiveFunctionType" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">PrimitiveFunctionType</span><span class="p">:</span> <span class="n"><span title="typing.TypeAlias">TypeAlias</span></span> <span class="o">=</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Input" href="../proto/#dispatch.proto.Input">Input</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="../proto/#dispatch.proto.Output">Output</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">PrimitiveFunctionType</span><span class="p">:</span> <span class="n"><span title="typing_extensions.TypeAlias">TypeAlias</span></span> <span class="o">=</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Input" href="../proto/#dispatch.proto.Input">Input</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="../proto/#dispatch.proto.Output">Output</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1873,7 +1873,7 @@ with a Client / api_key for this call facility to be available.</p>
 <a href="#dispatch.function.Function.build_call" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">build_call</span><span class="p">(</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span>
-    <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">correlation_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span>
 </code></pre></div>
@@ -1913,7 +1913,7 @@ generate calls when using the Client.</p>
         <tr>
           <td><code>correlation_id</code></td>
           <td>
-                <code>int | None</code>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1990,8 +1990,8 @@ match this call to a call result.</p>
 <a href="#dispatch.function.Registry" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Registry</span><span class="p">(</span>
     <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">api_url</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2031,7 +2031,7 @@ match this call to a call result.</p>
         <tr>
           <td><code>api_key</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2047,7 +2047,7 @@ DISPATCH_API_KEY environment variable by default.</p>
         <tr>
           <td><code>api_url</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2183,7 +2183,8 @@ a set of calls to dispatch.</p>
 
 <a href="#dispatch.function.Client" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Client</span><span class="p">(</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2209,7 +2210,7 @@ a set of calls to dispatch.</p>
         <tr>
           <td><code>api_key</code></td>
           <td>
-                <code>None | str</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2224,7 +2225,7 @@ the DISPATCH_API_KEY environment variable by default.</p>
         <tr>
           <td><code>api_url</code></td>
           <td>
-                <code>None | str</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
