@@ -10,123 +10,15 @@
 # error Python 3.10-3.13 is required
 #endif
 
-// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L20
-typedef int8_t PyFrameState;
-
+// This is a redefinition of the private PyTryBlock from 3.10.
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L22
-typedef struct _PyTryBlock {
+typedef struct {
     int b_type;
     int b_handler;
     int b_level;
 } PyTryBlock;
 
-// This is a redefinition of the private/opaque frame object.
-// In Python 3.10 and prior, `struct _frame` is both the PyFrameObject and
-// PyInterpreterFrame. From Python 3.11 onwards, the two were split with the
-// PyFrameObject (struct _frame) pointing to struct _PyInterpreterFrame.
-typedef struct Frame {
-#if PY_MINOR_VERSION == 10
-// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
-    PyObject_VAR_HEAD
-    struct Frame *f_back; // struct _frame
-    PyCodeObject *f_code;
-    PyObject *f_builtins;
-    PyObject *f_globals;
-    PyObject *f_locals;
-    PyObject **f_valuestack;
-    PyObject *f_trace;
-    int f_stackdepth;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    PyObject *f_gen;
-    int f_lasti;
-    int f_lineno;
-    int f_iblock;
-    PyFrameState f_state;
-    PyTryBlock f_blockstack[CO_MAXBLOCKS];
-    PyObject *f_localsplus[1];
-#elif PY_MINOR_VERSION == 11
-// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L47
-    PyFunctionObject *f_func;
-    PyObject *f_globals;
-    PyObject *f_builtins;
-    PyObject *f_locals;
-    PyCodeObject *f_code;
-    PyFrameObject *frame_obj;
-    struct Frame *previous; // struct _PyInterpreterFrame
-    _Py_CODEUNIT *prev_instr;
-    int stacktop;
-    bool is_entry;
-    char owner;
-    PyObject *localsplus[1];
-#elif PY_MINOR_VERSION == 12
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L51
-    PyCodeObject *f_code;
-    struct Frame *previous; // struct _PyInterpreterFrame
-    PyObject *f_funcobj;
-    PyObject *f_globals;
-    PyObject *f_builtins;
-    PyObject *f_locals;
-    PyFrameObject *frame_obj;
-    _Py_CODEUNIT *prev_instr;
-    int stacktop;
-    uint16_t return_offset;
-    char owner;
-    PyObject *localsplus[1];
-#elif PY_MINOR_VERSION == 13
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L57
-    PyObject *f_executable;
-    struct Frame *previous; // struct _PyInterpreterFrame
-    PyObject *f_funcobj;
-    PyObject *f_globals;
-    PyObject *f_builtins;
-    PyObject *f_locals;
-    PyFrameObject *frame_obj;
-    _Py_CODEUNIT *instr_ptr;
-    int stacktop;
-    uint16_t return_offset;
-    char owner;
-    PyObject *localsplus[1];
-#endif
-} Frame;
-
-// This is a redefinition of private frame state constants:
-typedef enum _framestate {
-#if PY_MINOR_VERSION == 10
-// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L10
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_RETURNED = 1,
-    FRAME_UNWINDING = 2,
-    FRAME_RAISED = 3,
-    FRAME_CLEARED = 4
-#elif PY_MINOR_VERSION == 11
-// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L33
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-#elif PY_MINOR_VERSION == 12
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L34
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-#elif PY_MINOR_VERSION == 13
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L38
-    FRAME_CREATED = -3,
-    FRAME_SUSPENDED = -2,
-    FRAME_SUSPENDED_YIELD_FROM = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-#endif
-} FrameState;
-
-// This is a redefinition of the private PyCoroWrapper:
+// This is a redefinition of the private PyCoroWrapper from 3.10-3.13.
 // https://github.com/python/cpython/blob/3.10/Objects/genobject.c#L884
 // https://github.com/python/cpython/blob/3.11/Objects/genobject.c#L1016
 // https://github.com/python/cpython/blob/3.12/Objects/genobject.c#L1003
@@ -136,132 +28,38 @@ typedef struct {
     PyCoroObject *cw_coroutine;
 } PyCoroWrapper;
 
-/*
-// This is the definition of PyFrameObject (aka. struct _frame) for reference
-// to developers working on the extension. As noted above, the contents of
-// struct _frame changed over time, with some fields moving in Python >= 3.11
-// to a separate struct _PyInterpreterFrame.
-//
-typedef struct {
-#if PY_MINOR_VERSION == 10
-// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L28
-    PyObject_VAR_HEAD
-    struct _frame *f_back;
-    PyCodeObject *f_code;
-    PyObject *f_builtins;
-    PyObject *f_globals;
-    PyObject *f_locals;
-    PyObject **f_valuestack;
-    PyObject *f_trace;
-    int f_stackdepth;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    PyObject *f_gen;
-    int f_lasti;
-    int f_lineno;
-    int f_iblock;
-    PyFrameState f_state;
-    PyTryBlock f_blockstack[CO_MAXBLOCKS];
-    PyObject *f_localsplus[1];
-#elif PY_MINOR_VERSION == 11
-// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L15
-    PyObject_HEAD
-    PyFrameObject *f_back;
-    struct _PyInterpreterFrame *f_frame;
-    PyObject *f_trace;
-    int f_lineno;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    char f_fast_as_locals;
-    PyObject *_f_frame_data[1];
-#elif PY_MINOR_VERSION == 12
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L16
-    PyObject_HEAD
-    PyFrameObject *f_back;
-    struct _PyInterpreterFrame *f_frame;
-    PyObject *f_trace;
-    int f_lineno;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    char f_fast_as_locals;
-    PyObject *_f_frame_data[1];
-#elif PY_MINOR_VERSION == 13
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L20
-    PyObject_HEAD
-    PyFrameObject *f_back;
-    struct _PyInterpreterFrame *f_frame;
-    PyObject *f_trace;
-    int f_lineno;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    char f_fast_as_locals;
-    PyObject *_f_frame_data[1];
-#endif
-} PyFrameObject;
-*/
+typedef struct Frame Frame;
 
-/*
-// This is the definition of PyGenObject for reference to developers
-// working on the extension.
-//
-// Note that PyCoroObject and PyAsyncGenObject have the same layout as
-// PyGenObject, however the struct fields have a cr_ and ag_ prefix
-// (respectively) rather than a gi_ prefix. In Python 3.10, PyCoroObject
-// and PyAsyncGenObject have extra fields compared to PyGenObject. In Python
-// 3.11 onwards, the three objects are identical (except for field name
-// prefixes). The extra fields in Python 3.10 are not applicable to this
-// extension at this time.
-//
-typedef struct {
-    PyObject_HEAD
+static Frame *get_frame(PyGenObject *gen_like);
+
+static PyCodeObject *get_frame_code(Frame *frame);
+
+static int get_frame_lasti(Frame *frame);
+static void set_frame_lasti(Frame *frame, int lasti);
+
+static int get_frame_state(PyGenObject *gen_like);
+static void set_frame_state(PyGenObject *gen_like, int fs);
+static int valid_frame_state(int fs);
+
+static int get_frame_stacktop_limit(Frame *frame);
+static int get_frame_stacktop(Frame *frame);
+static void set_frame_stacktop(Frame *frame, int stacktop);
+static PyObject **get_frame_localsplus(Frame *frame);
+
+static int get_frame_iblock_limit(Frame *frame);
+static int get_frame_iblock(Frame *frame);
+static void set_frame_iblock(Frame *frame, int iblock);
+static PyTryBlock *get_frame_blockstack(Frame *frame);
+
 #if PY_MINOR_VERSION == 10
-// https://github.com/python/cpython/blob/3.10/Include/genobject.h#L16
-    PyFrameObject *gi_frame;
-    PyObject *gi_code;
-    PyObject *gi_weakreflist;
-    PyObject *gi_name;
-    PyObject *gi_qualname;
-    _PyErr_StackItem gi_exc_state;
+#include "frame310.h"
 #elif PY_MINOR_VERSION == 11
-// https://github.com/python/cpython/blob/3.11/Include/cpython/genobject.h#L14
-    PyCodeObject *gi_code;
-    PyObject *gi_weakreflist;
-    PyObject *gi_name;
-    PyObject *gi_qualname;
-    _PyErr_StackItem gi_exc_state;
-    PyObject *gi_origin_or_finalizer;
-    char gi_hooks_inited;
-    char gi_closed;
-    char gi_running_async;
-    int8_t gi_frame_state;
-    PyObject *gi_iframe[1];
+#include "frame311.h"
 #elif PY_MINOR_VERSION == 12
-// https://github.com/python/cpython/blob/3.12/Include/cpython/genobject.h#L14
-    PyObject *gi_weakreflist;
-    PyObject *gi_name;
-    PyObject *gi_qualname;
-    _PyErr_StackItem gi_exc_state;
-    PyObject *gi_origin_or_finalizer;
-    char gi_hooks_inited;
-    char gi_closed;
-    char gi_running_async;
-    int8_t gi_frame_state;
-    PyObject *gi_iframe[1];
+#include "frame312.h"
 #elif PY_MINOR_VERSION == 13
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/cpython/genobject.h#L14
-    PyObject *gi_weakreflist;
-    PyObject *gi_name;
-    PyObject *gi_qualname;
-    _PyErr_StackItem gi_exc_state;
-    PyObject *gi_origin_or_finalizer;
-    char gi_hooks_inited;
-    char gi_closed;
-    char gi_running_async;
-    int8_t gi_frame_state;
-    PyObject *gi_iframe[1];
+#include "frame313.h"
 #endif
-} PyGenObject;
-*/
 
 static const char *get_type_name(PyObject *obj) {
     PyObject* type = PyObject_Type(obj);
@@ -302,207 +100,6 @@ static PyGenObject *get_generator_like_object(PyObject *obj) {
     }
     PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
     return NULL;
-}
-
-static Frame *get_frame(PyGenObject *gen_like) {
-#if PY_MINOR_VERSION == 10
-    Frame *frame = (Frame *)(gen_like->gi_frame);
-#elif PY_MINOR_VERSION == 11
-    Frame *frame = (Frame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
-#elif PY_MINOR_VERSION == 12
-    Frame *frame = (Frame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
-#elif PY_MINOR_VERSION == 13
-    Frame *frame = (Frame *)(struct _PyInterpreterFrame *)(gen_like->gi_iframe);
-#endif
-    assert(frame);
-    return frame;
-}
-
-static PyCodeObject *get_frame_code(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    PyCodeObject *code = frame->f_code;
-#elif PY_MINOR_VERSION == 11
-    PyCodeObject *code = frame->f_code;
-#elif PY_MINOR_VERSION == 12
-    PyCodeObject *code = frame->f_code;
-#elif PY_MINOR_VERSION == 13
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
-#endif
-    assert(code);
-    return code;
-}
-
-static int get_frame_lasti(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    return frame->f_lasti;
-#elif PY_MINOR_VERSION == 11
-// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L69
-    PyCodeObject *code = get_frame_code(frame);
-    assert(frame->prev_instr);
-    return (int)((intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(code));
-#elif PY_MINOR_VERSION == 12
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    PyCodeObject *code = get_frame_code(frame);
-    assert(frame->prev_instr);
-    return (int)((intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(code));
-#elif PY_MINOR_VERSION == 13
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L73
-    PyCodeObject *code = get_frame_code(frame);
-    assert(frame->instr_ptr);
-    return (int)((intptr_t)frame->instr_ptr - (intptr_t)_PyCode_CODE(code));
-#endif
-}
-
-static void set_frame_lasti(Frame *frame, int lasti) {
-#if PY_MINOR_VERSION == 10
-    frame->f_lasti = lasti;
-#elif PY_MINOR_VERSION == 11
-// https://github.com/python/cpython/blob/3.11/Include/internal/pycore_frame.h#L69
-    PyCodeObject *code = get_frame_code(frame);
-    frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)lasti);
-#elif PY_MINOR_VERSION == 12
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    PyCodeObject *code = get_frame_code(frame);
-    frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)lasti);
-#elif PY_MINOR_VERSION == 13
-// https://github.com/python/cpython/blob/v3.13.0a5/Include/internal/pycore_frame.h#L73
-    PyCodeObject *code = get_frame_code(frame);
-    frame->instr_ptr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(code) + (intptr_t)lasti);
-#endif
-}
-
-static int get_frame_state(PyGenObject *gen_like) {
-#if PY_MINOR_VERSION == 10
-    Frame *frame = (Frame *)(gen_like->gi_frame);
-    if (!frame) {
-        return FRAME_CLEARED;
-    }
-    return frame->f_state;
-#elif PY_MINOR_VERSION == 11
-    return gen_like->gi_frame_state;
-#elif PY_MINOR_VERSION == 12
-    return gen_like->gi_frame_state;
-#elif PY_MINOR_VERSION == 13
-    return gen_like->gi_frame_state;
-#endif
-}
-
-static void set_frame_state(PyGenObject *gen_like, int fs) {
-#if PY_MINOR_VERSION == 10
-    Frame *frame = get_frame(gen_like);
-    frame->f_state = (PyFrameState)fs;
-#elif PY_MINOR_VERSION == 11
-    gen_like->gi_frame_state = (int8_t)fs;
-#elif PY_MINOR_VERSION == 12
-    gen_like->gi_frame_state = (int8_t)fs;
-#elif PY_MINOR_VERSION == 13
-    gen_like->gi_frame_state = (int8_t)fs;
-#endif
-}
-
-static int valid_frame_state(int fs) {
-#if PY_MINOR_VERSION == 10
-    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_EXECUTING || fs == FRAME_RETURNED || fs == FRAME_UNWINDING || fs == FRAME_RAISED || fs == FRAME_CLEARED;
-#elif PY_MINOR_VERSION == 11
-    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_EXECUTING || fs == FRAME_COMPLETED || fs == FRAME_CLEARED;
-#elif PY_MINOR_VERSION == 12
-    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_EXECUTING || fs == FRAME_COMPLETED || fs == FRAME_CLEARED;
-#elif PY_MINOR_VERSION == 13
-    return fs == FRAME_CREATED || fs == FRAME_SUSPENDED || fs == FRAME_SUSPENDED_YIELD_FROM || fs == FRAME_EXECUTING || fs == FRAME_COMPLETED || fs == FRAME_CLEARED;
-#endif
-}
-
-static int get_frame_stacktop_limit(Frame *frame) {
-    PyCodeObject *code = get_frame_code(frame);
-#if PY_MINOR_VERSION == 10
-    return code->co_stacksize + code->co_nlocals;
-#elif PY_MINOR_VERSION == 11
-    return code->co_stacksize + code->co_nlocalsplus;
-#elif PY_MINOR_VERSION == 12
-    return code->co_stacksize + code->co_nlocalsplus;
-#elif PY_MINOR_VERSION == 13
-    return code->co_stacksize + code->co_nlocalsplus;
-#endif
-}
-
-static int get_frame_stacktop(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    assert(frame->f_localsplus);
-    assert(frame->f_valuestack);
-    int stacktop = (int)(frame->f_valuestack - frame->f_localsplus) + frame->f_stackdepth;
-#elif PY_MINOR_VERSION == 11
-    int stacktop = frame->stacktop;
-#elif PY_MINOR_VERSION == 12
-    int stacktop = frame->stacktop;
-#elif PY_MINOR_VERSION == 13
-    int stacktop = frame->stacktop;
-#endif
-    assert(stacktop >= 0 && stacktop < get_frame_stacktop_limit(frame));
-    return stacktop;
-}
-
-static void set_frame_stacktop(Frame *frame, int stacktop) {
-    assert(stacktop >= 0 && stacktop < get_frame_stacktop_limit(frame));
-#if PY_MINOR_VERSION == 10
-    assert(frame->f_localsplus);
-    assert(frame->f_valuestack);
-    int base = (int)(frame->f_valuestack - frame->f_localsplus);
-    assert(stacktop >= base);
-    frame->f_stackdepth = stacktop - base;
-#elif PY_MINOR_VERSION == 11
-    frame->stacktop = stacktop;
-#elif PY_MINOR_VERSION == 12
-    frame->stacktop = stacktop;
-#elif PY_MINOR_VERSION == 13
-    frame->stacktop = stacktop;
-#endif
-}
-
-static PyObject **get_frame_localsplus(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    PyObject **localsplus = frame->f_localsplus;
-#elif PY_MINOR_VERSION == 11
-    PyObject **localsplus = frame->localsplus;
-#elif PY_MINOR_VERSION == 12
-    PyObject **localsplus = frame->localsplus;
-#elif PY_MINOR_VERSION == 13
-    PyObject **localsplus = frame->localsplus;
-#endif
-    assert(localsplus);
-    return localsplus;
-}
-
-static int get_frame_iblock_limit(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    return CO_MAXBLOCKS;
-#endif
-    return 1; // not applicable >= 3.11
-}
-
-static int get_frame_iblock(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    return frame->f_iblock;
-#endif
-    return 0; // not applicable >= 3.11
-}
-
-static void set_frame_iblock(Frame *frame, int iblock) {
-    assert(iblock >= 0 && iblock < get_frame_iblock_limit(frame));
-#if PY_MINOR_VERSION == 10
-    frame->f_iblock = iblock;
-#else
-    assert(!iblock); // not applicable >= 3.11
-#endif
-}
-
-static PyTryBlock *get_frame_blockstack(Frame *frame) {
-#if PY_MINOR_VERSION == 10
-    PyTryBlock *blockstack = frame->f_blockstack;
-#else
-    PyTryBlock *blockstack = NULL; // not applicable >= 3.11
-#endif
-    assert(blockstack);
-    return blockstack;
 }
 
 static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
