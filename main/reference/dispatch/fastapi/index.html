@@ -1416,12 +1416,12 @@ def read_root():
 <a href="#dispatch.fastapi.Dispatch" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Dispatch</span><span class="p">(</span>
     <span class="n">app</span><span class="p">:</span> <span class="n"><span title="fastapi.FastAPI">FastAPI</span></span><span class="p">,</span>
-    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">verification_key</span><span class="p">:</span> <span class="p">(</span>
-        <span class="n"><span title="dispatch.signature.Ed25519PublicKey">Ed25519PublicKey</span></span> <span class="o">|</span> <span class="n">str</span> <span class="o">|</span> <span class="n">bytes</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">api_url</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">endpoint</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verification_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span>
+        <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PublicKey">Ed25519PublicKey</span></span><span class="p">,</span> <span class="n">str</span><span class="p">,</span> <span class="n">bytes</span><span class="p">]</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1464,7 +1464,7 @@ def read_root():
         <tr>
           <td><code>endpoint</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1480,7 +1480,7 @@ DISPATCH_ENDPOINT_URL environment variable by default.</p>
         <tr>
           <td><code>verification_key</code></td>
           <td>
-                <code><span title="dispatch.signature.Ed25519PublicKey">Ed25519PublicKey</span> | str | bytes | None</code>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.Union">Union</span>[<span title="dispatch.signature.Ed25519PublicKey">Ed25519PublicKey</span>, str, bytes]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1499,7 +1499,7 @@ will be logged by the constructor).</p>
         <tr>
           <td><code>api_key</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1514,7 +1514,7 @@ the DISPATCH_API_KEY environment variable by default.</p>
         <tr>
           <td><code>api_url</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">

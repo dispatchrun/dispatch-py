@@ -1531,7 +1531,7 @@
   </span>
 
 <a href="#dispatch.DispatchID" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">DispatchID</span><span class="p">:</span> <span class="n"><span title="typing.TypeAlias">TypeAlias</span></span> <span class="o">=</span> <span class="n">str</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">DispatchID</span><span class="p">:</span> <span class="n"><span title="typing_extensions.TypeAlias">TypeAlias</span></span> <span class="o">=</span> <span class="n">str</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1553,7 +1553,8 @@
 
 <a href="#dispatch.Client" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Client</span><span class="p">(</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">api_url</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1579,7 +1580,7 @@
         <tr>
           <td><code>api_key</code></td>
           <td>
-                <code>None | str</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1594,7 +1595,7 @@ the DISPATCH_API_KEY environment variable by default.</p>
         <tr>
           <td><code>api_url</code></td>
           <td>
-                <code>None | str</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1679,7 +1680,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.Client.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1729,7 +1730,7 @@ a set of calls to dispatch.</p>
     <tbody>
         <tr>
           <td>
-                <code>list[<a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="id/#dispatch.id.DispatchID">DispatchID</a>]</code>
+                <code><span title="typing.List">List</span>[<a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="id/#dispatch.id.DispatchID">DispatchID</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1764,8 +1765,8 @@ a set of calls to dispatch.</p>
 <a href="#dispatch.Registry" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Registry</span><span class="p">(</span>
     <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">api_url</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1805,7 +1806,7 @@ a set of calls to dispatch.</p>
         <tr>
           <td><code>api_key</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1821,7 +1822,7 @@ DISPATCH_API_KEY environment variable by default.</p>
         <tr>
           <td><code>api_url</code></td>
           <td>
-                <code>str | None</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1962,9 +1963,9 @@ a set of calls to dispatch.</p>
 <a href="#dispatch.Call" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">Call</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">correlation_id</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">endpoint</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">correlation_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2014,8 +2015,8 @@ with_call method of a Function instead.</p>
     <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span><span class="p">,</span>
     <span class="nb">type</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">message</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n">Exception</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">traceback</span><span class="p">:</span> <span class="n">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">traceback</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2085,7 +2086,7 @@ Output.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code>Exception | None</code>
+                <code><span title="typing.Optional">Optional</span>[Exception]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2152,7 +2153,7 @@ invalid.</p>
 
 <a href="#dispatch.Error.from_exception" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">from_exception</span><span class="p">(</span>
-    <span class="n">ex</span><span class="p">:</span> <span class="n">Exception</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ex</span><span class="p">:</span> <span class="n">Exception</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Error" href="proto/#dispatch.proto.Error">Error</a></span>
 </code></pre></div>
 
@@ -2243,7 +2244,7 @@ between the two cases.</p>
 
 
 <a href="#dispatch.Input.input_arguments" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">input_arguments</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tuple</span><span class="p">[</span><span class="n">tuple</span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">dict</span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">input_arguments</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2315,7 +2316,9 @@ Output.poll().</p>
   </span>
 
 <a href="#dispatch.Output.value" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="proto/#dispatch.proto.Output">Output</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">value</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="proto/#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2392,8 +2395,8 @@ tail call the specified function.</p>
 
 <a href="#dispatch.Output.exit" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">exit</span><span class="p">(</span>
-    <span class="n">result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.CallResult" href="proto/#dispatch.proto.CallResult">CallResult</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">tail_call</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.CallResult" href="proto/#dispatch.proto.CallResult">CallResult</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">tail_call</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">OK</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="proto/#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
@@ -2422,10 +2425,10 @@ tail call the specified function.</p>
 <a href="#dispatch.Output.poll" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">poll</span><span class="p">(</span>
     <span class="n">state</span><span class="p">:</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span>
-    <span class="n">calls</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">list</span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">min_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">max_results</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">max_wait_seconds</span><span class="p">:</span> <span class="n">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_wait_seconds</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="proto/#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
 
@@ -2500,7 +2503,7 @@ of functions.</p>
 
 
 <a href="#dispatch.all" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">all</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nb">all</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2523,7 +2526,7 @@ uncaught exception, the exception will be re-raised here.</p>
 
 
 <a href="#dispatch.any" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">any</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nb">any</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2568,7 +2571,7 @@ function call fails with an error, the error is raised.</p>
 
 
 <a href="#dispatch.gather" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2589,7 +2592,7 @@ function call fails with an error, the error is raised.</p>
 
 
 <a href="#dispatch.race" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">race</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">list</span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">race</span><span class="p">(</span><span class="o">*</span><span class="n">awaitables</span><span class="p">:</span> <span class="n"><span title="typing.Awaitable">Awaitable</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">

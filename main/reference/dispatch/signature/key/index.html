@@ -1393,8 +1393,8 @@
 <a href="#dispatch.signature.key.KeyResolver" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">KeyResolver</span><span class="p">(</span>
     <span class="n">key_id</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="n">public_key</span><span class="p">:</span> <span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey">Ed25519PublicKey</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">private_key</span><span class="p">:</span> <span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PrivateKey">Ed25519PrivateKey</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">public_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey">Ed25519PublicKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">private_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -1440,7 +1440,9 @@ Keys must be Ed25519 keys and have an ID of DEFAULT_KEY_ID.</p>
 
 
 <a href="#dispatch.signature.key.public_key_from_pem" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">public_key_from_pem</span><span class="p">(</span><span class="n">pem</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="n">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey">Ed25519PublicKey</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">public_key_from_pem</span><span class="p">(</span>
+    <span class="n">pem</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n">bytes</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PublicKey">Ed25519PublicKey</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1483,7 +1485,7 @@ Keys must be Ed25519 keys and have an ID of DEFAULT_KEY_ID.</p>
 
 <a href="#dispatch.signature.key.private_key_from_pem" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">private_key_from_pem</span><span class="p">(</span>
-    <span class="n">pem</span><span class="p">:</span> <span class="n">str</span> <span class="o">|</span> <span class="n">bytes</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="n">bytes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">pem</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n">bytes</span><span class="p">],</span> <span class="n">password</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="cryptography.hazmat.primitives.asymmetric.ed25519.Ed25519PrivateKey">Ed25519PrivateKey</span></span>
 </code></pre></div>
 
