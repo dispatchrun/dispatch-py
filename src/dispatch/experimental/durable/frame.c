@@ -373,7 +373,11 @@ void set_frame_lasti(Frame *frame, int lasti) {
 
 static int get_frame_state(PyGenObject *gen_like) {
 #if PY_MINOR_VERSION == 10
-    return get_frame(gen_like)->f_state;
+    Frame *frame = (Frame *)(gen_like->gi_frame);
+    if (!frame) {
+        return FRAME_CLEARED;
+    }
+    return frame->f_state;
 #elif PY_MINOR_VERSION == 11
     return gen_like->gi_frame_state;
 #elif PY_MINOR_VERSION == 12
