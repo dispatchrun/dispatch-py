@@ -490,8 +490,9 @@ void set_frame_iblock(Frame *frame, int iblock) {
     assert(iblock >= 0 && iblock < get_frame_iblock_limit(frame));
 #if PY_MINOR_VERSION == 10
     frame->f_iblock = iblock;
-#endif
+#else
     assert(!iblock); // not applicable >= 3.11
+#endif
 }
 
 static PyTryBlock *get_frame_blockstack(Frame *frame) {
