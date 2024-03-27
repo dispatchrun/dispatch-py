@@ -22,7 +22,7 @@ typedef struct _PyTryBlock {
 
 // This is a redefinition of the private/opaque frame object.
 // In Python 3.10 and prior, `struct _frame` is both the PyFrameObject and
-// PyFrame. From Python 3.11 onwards, the two were split with the
+// PyInterpreterFrame. From Python 3.11 onwards, the two were split with the
 // PyFrameObject (struct _frame) pointing to struct _PyInterpreterFrame.
 typedef struct Frame {
 #if PY_MINOR_VERSION == 10
