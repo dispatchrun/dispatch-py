@@ -9,7 +9,7 @@ from types import (
     MethodType,
     TracebackType,
 )
-from typing import Any, Callable, Coroutine, Generator, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Coroutine, Generator, Optional, TypeVar, Union, cast, Dict, Tuple
 
 from . import frame as ext
 from .registry import RegisteredFunction, lookup_function, register_function
@@ -78,8 +78,8 @@ class Serializable:
     g: Union[GeneratorType, CoroutineType]
     registered_fn: RegisteredFunction
     wrapped_coroutine: Union["DurableCoroutine", None]
-    args: tuple[Any, ...]
-    kwargs: dict[str, Any]
+    args: Tuple[Any, ...]
+    kwargs: Dict[str, Any]
 
     def __init__(
         self,
@@ -274,7 +274,7 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
         return self.coroutine.cr_await
 
     @property
-    def cr_origin(self) -> Optional[tuple[tuple[str, int, str], ...]]:
+    def cr_origin(self) -> Optional[Tuple[Tuple[str, int, str], ...]]:
         return self.coroutine.cr_origin
 
     def __repr__(self) -> str:

@@ -5,7 +5,7 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict, Tuple, List, Set
 
 import grpc
 import httpx
@@ -34,7 +34,7 @@ _default_retry_on_status = {
 logger = logging.getLogger(__name__)
 
 
-RoundTrip: TypeAlias = tuple[function_pb.RunRequest, function_pb.RunResponse]
+RoundTrip: TypeAlias = Tuple[function_pb.RunRequest, function_pb.RunResponse]
 """A request to a Dispatch endpoint, and the response that was received."""
 
 
@@ -54,7 +54,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         self,
         endpoint_client: EndpointClient,
         api_key: Optional[str] = None,
-        retry_on_status: Optional[set[Status]] = None,
+        retry_on_status: Optional[Set[Status]] = None,
         collect_roundtrips: bool = False,
     ):
         """Initialize the Dispatch service.
@@ -82,12 +82,12 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
         self._next_dispatch_id = 1
 
-        self.queue: list[tuple[DispatchID, function_pb.RunRequest, CallType]] = []
+        self.queue: List[Tuple[DispatchID, function_pb.RunRequest, CallType]] = []
 
-        self.pollers: dict[DispatchID, Poller] = {}
-        self.parents: dict[DispatchID, Poller] = {}
+        self.pollers: Dict[DispatchID, Poller] = {}
+        self.parents: Dict[DispatchID, Poller] = {}
 
-        self.roundtrips: Optional[OrderedDict[DispatchID, list[RoundTrip]]] = None
+        self.roundtrips: Optional[OrderedDict[DispatchID, List[RoundTrip]]] = None
         if collect_roundtrips:
             self.roundtrips = OrderedDict()
 
@@ -354,5 +354,5 @@ class Poller:
     coroutine_state: bytes
     # TODO: support max_wait/min_results/max_results
 
-    waiting: dict[DispatchID, call_pb.Call]
-    results: dict[DispatchID, call_pb.CallResult]
+    waiting: Dict[DispatchID, call_pb.Call]
+    results: Dict[DispatchID, call_pb.CallResult]

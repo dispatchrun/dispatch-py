@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from types import coroutine
-from typing import Any, Awaitable
+from typing import Any, Awaitable, List, Tuple
 
 from dispatch.experimental.durable import durable
 from dispatch.proto import Call
@@ -16,14 +16,14 @@ def call(call: Call) -> Any:
 
 @coroutine
 @durable
-def gather(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+def gather(*awaitables: Awaitable[Any]) -> List[Any]:  # type: ignore[misc]
     """Alias for all."""
     return all(*awaitables)
 
 
 @coroutine
 @durable
-def all(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+def all(*awaitables: Awaitable[Any]) -> List[Any]:  # type: ignore[misc]
     """Concurrently run a set of coroutines, blocking until all coroutines
     return or any coroutine raises an error. If any coroutine fails with an
     uncaught exception, the exception will be re-raised here."""
@@ -32,7 +32,7 @@ def all(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
 
 @coroutine
 @durable
-def any(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+def any(*awaitables: Awaitable[Any]) -> List[Any]:  # type: ignore[misc]
     """Concurrently run a set of coroutines, blocking until any coroutine
     returns or all coroutines raises an error. If all coroutines fail with
     uncaught exceptions, the exception(s) will be re-raised here."""
@@ -41,7 +41,7 @@ def any(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
 
 @coroutine
 @durable
-def race(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
+def race(*awaitables: Awaitable[Any]) -> List[Any]:  # type: ignore[misc]
     """Concurrently run a set of coroutines, blocking until any coroutine
     returns or raises an error. If any coroutine fails with an uncaught
     exception, the exception will be re-raised here."""
@@ -50,17 +50,17 @@ def race(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
 
 @dataclass
 class AllDirective:
-    awaitables: tuple[Awaitable[Any], ...]
+    awaitables: Tuple[Awaitable[Any], ...]
 
 
 @dataclass
 class AnyDirective:
-    awaitables: tuple[Awaitable[Any], ...]
+    awaitables: Tuple[Awaitable[Any], ...]
 
 
 @dataclass
 class RaceDirective:
-    awaitables: tuple[Awaitable[Any], ...]
+    awaitables: Tuple[Awaitable[Any], ...]
 
 
 class AnyException(RuntimeError):
@@ -69,7 +69,7 @@ class AnyException(RuntimeError):
 
     __slots__ = ("exceptions",)
 
-    def __init__(self, exceptions: list[Exception]):
+    def __init__(self, exceptions: List[Exception]):
         self.exceptions = exceptions
 
     def __str__(self):
