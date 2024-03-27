@@ -26,6 +26,21 @@ jobs:
     - run: make dev
     - run: make test
 
+  examples:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.12']
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+        cache: pip
+    - run: make dev
+    - run: make exampletest
+
   format:
     runs-on: ubuntu-latest
     strategy:
