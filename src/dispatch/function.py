@@ -62,6 +62,10 @@ class PrimitiveFunction:
     def endpoint(self) -> str:
         return self._endpoint
 
+    @endpoint.setter
+    def endpoint(self, value: str):
+        self._endpoint = value
+
     @property
     def name(self) -> str:
         return self._name
@@ -210,17 +214,6 @@ class Registry:
         logger.info("registering coroutine: %s", name)
         return self._register_coroutine(name, func)
 
-    # TODO: ensure we have only 1 entrypoint per app.
-    def entrypoint(self, func):
-        """Decorated that registers the program entrypoint."""
-        name = "entrypoint"
-        if not inspect.iscoroutinefunction(func):
-            logger.info("registering entrypoint function: %s", name)
-            return self._register_function(name, func)
-
-        logger.info("registering entrypoint coroutine: %s", name)
-        return self._register_coroutine(name, func)
-
     def _register_function(self, name: str, func: Callable[P, T]) -> Function[P, T]:
         func = durable(func)
 
@@ -277,6 +270,10 @@ class Registry:
         """Returns a Batch instance that can be used to build
         a set of calls to dispatch."""
         return self.client.batch()
+
+    def override_endpoint(self, endpoint: str):
+        for fn in self.functions.values():
+            fn.endpoint = endpoint
 
 
 class Client:

@@ -5,7 +5,6 @@ from dispatch.status import Status, status_for_error
 
 
 class TestErrorStatus(unittest.TestCase):
-
     def test_status_for_Exception(self):
         assert status_for_error(Exception()) is Status.PERMANENT_ERROR
 
@@ -71,7 +70,6 @@ class TestErrorStatus(unittest.TestCase):
 
 
 class TestHTTPStatusCodes(unittest.TestCase):
-
     def test_http_response_code_status_400(self):
         assert http_response_code_status(400) is Status.INVALID_ARGUMENT
 

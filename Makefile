@@ -17,6 +17,9 @@ install:
 dev:
 	$(PYTHON) -m pip install -e .[dev]
 
+lambda:
+	$(PYTHON) -m pip install -e .[lambda]
+
 fmt:
 	$(PYTHON) -m isort .
 	$(PYTHON) -m black .

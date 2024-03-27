@@ -5,7 +5,6 @@ from dispatch.proto import Error
 
 
 class TestError(unittest.TestCase):
-
     def test_conversion_between_exception_and_error(self):
         try:
             raise ValueError("test")

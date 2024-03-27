@@ -374,7 +374,6 @@ class OneShotScheduler:
             raise IncompatibleStateError from e
 
     def _run(self, input: Input) -> Output:
-
         if input.is_first_call:
             state = self._init_state(input)
         else:

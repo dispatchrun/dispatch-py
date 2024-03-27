@@ -10,17 +10,20 @@ Example:
     def my_function():
         return "Hello World!"
 
-    @dispatch.entrypoint
+    @dispatch.function
     def entrypoint():
         my_function()
 
     def handler(event, context):
-        dispatch.handle(event, context)
+        dispatch.handle(event, context, entrypoint="entrypoint")
     """
 
 import base64
-import logging
 import json
+import logging
+from typing import Optional
+
+from awslambdaric.lambda_context import LambdaContext
 
 from dispatch.function import Registry
 from dispatch.proto import Input
@@ -33,14 +36,14 @@ logger = logging.getLogger(__name__)
 class Dispatch(Registry):
     def __init__(
         self,
-        api_key: str | None = None,
-        api_url: str | None = None,
+        api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
     ):
         """Initializes a Dispatch Lambda handler.
 
         Args:
-            api_key: Dispatch API key to use for authentication. Uses the value of
-                the DISPATCH_API_KEY environment variable by default.
+            api_key: Dispatch API key to use for authentication. Uses the value
+                of the DISPATCH_API_KEY environment variable by default.
 
             api_url: The URL of the Dispatch API to use. Uses the value of the
                 DISPATCH_API_URL environment variable if set, otherwise
@@ -48,14 +51,16 @@ class Dispatch(Registry):
 
         """
 
-        # The endpoint (AWS Lambda ARN) is set when handling the first request.
-        super().__init__(endpoint=None, api_key=api_key, api_url=api_url)
+        super().__init__(endpoint="not configured", api_key=api_key, api_url=api_url)
 
-    def handle(self, event, context):
-        # Use the context to determine the ARN of the Lambda function.
-        self.endpoint = context.invoked_function_arn
-
-        logger.debug("Dispatch handler invoked for %s with event: %s", self.endpoint, event)
+    def handle(
+        self, event: str, context: LambdaContext, entrypoint: Optional[str] = None
+    ):
+        # The ARN is not none until the first invocation of the Lambda function.
+        # We override the endpoint of all registered functions before any execution.
+        if context.invoked_function_arn:
+            self.endpoint = context.invoked_function_arn
+        self.override_endpoint(self.endpoint)
 
         if not event:
             raise ValueError("event is required")
@@ -63,13 +68,20 @@ class Dispatch(Registry):
         try:
             raw = base64.b64decode(event)
         except Exception as e:
-            raise ValueError(f"event is not base64 encoded: {e}")
+            raise ValueError("event is not base64 encoded") from e
 
         req = function_pb.RunRequest.FromString(raw)
-        print(req)
-        if not req.function:
-            req.function = "entrypoint"
-            # FIXME raise ValueError("function is required")
+
+        function: Optional[str] = req.function if req.function else entrypoint
+        if not function:
+            raise ValueError("function is required")
+
+        logger.debug(
+            "Dispatch handler invoked for %s function %s with runRequest: %s",
+            self.endpoint,
+            function,
+            req,
+        )
 
         try:
             func = self.functions[req.function]
@@ -117,6 +129,6 @@ class Dispatch(Registry):
                     )
 
             logger.debug("finished handling run request with status %s", status.name)
-            resp = response.SerializeToString()
-            resp = base64.b64encode(resp).decode("utf-8")
-            return bytes(json.dumps(resp), "utf-8")
+            respBytes = response.SerializeToString()
+            respStr = base64.b64encode(respBytes).decode("utf-8")
+            return bytes(json.dumps(respStr), "utf-8")
