@@ -6,10 +6,10 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Optional
-from typing_extensions import TypeAlias
 
 import grpc
 import httpx
+from typing_extensions import TypeAlias
 
 import dispatch.sdk.v1.call_pb2 as call_pb
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
@@ -87,11 +87,11 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         self.pollers: dict[DispatchID, Poller] = {}
         self.parents: dict[DispatchID, Poller] = {}
 
-        self.roundtrips: OrderedDict[DispatchID, list[RoundTrip]] | None = None
+        self.roundtrips: Optional[OrderedDict[DispatchID, list[RoundTrip]]] = None
         if collect_roundtrips:
             self.roundtrips = OrderedDict()
 
-        self._thread: threading.Optional[Thread] = None
+        self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._work_signal = threading.Condition()
 
