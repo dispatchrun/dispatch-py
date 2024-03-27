@@ -5,7 +5,8 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Optional
+from typing_extensions import TypeAlias
 
 import grpc
 import httpx
@@ -52,8 +53,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
     def __init__(
         self,
         endpoint_client: EndpointClient,
-        api_key: str | None = None,
-        retry_on_status: set[Status] | None = None,
+        api_key: Optional[str] = None,
+        retry_on_status: Optional[set[Status]] = None,
         collect_roundtrips: bool = False,
     ):
         """Initialize the Dispatch service.
@@ -90,7 +91,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         if collect_roundtrips:
             self.roundtrips = OrderedDict()
 
-        self._thread: threading.Thread | None = None
+        self._thread: threading.Optional[Thread] = None
         self._stop_event = threading.Event()
         self._work_signal = threading.Condition()
 

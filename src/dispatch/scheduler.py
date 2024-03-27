@@ -2,7 +2,8 @@ import logging
 import pickle
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Protocol, TypeAlias
+from typing import Any, Awaitable, Callable, Protocol, Optional, Union
+from typing_extensions import TypeAlias
 
 from dispatch.coroutine import AllDirective, AnyDirective, AnyException, RaceDirective
 from dispatch.error import IncompatibleStateError
@@ -22,8 +23,8 @@ class CoroutineResult:
     """The result from running a coroutine to completion."""
 
     coroutine_id: CoroutineID
-    value: Any | None = None
-    error: Exception | None = None
+    value: Optional[Any] = None
+    error: Optional[Exception] = None
 
 
 @dataclass
@@ -31,18 +32,18 @@ class CallResult:
     """The result of an asynchronous function call."""
 
     call_id: CallID
-    value: Any | None = None
-    error: Exception | None = None
+    value: Optional[Any] = None
+    error: Optional[Exception] = None
 
 
 class Future(Protocol):
-    def add_result(self, result: CallResult | CoroutineResult): ...
+    def add_result(self, result: Union[CallResult, CoroutineResult]): ...
 
     def add_error(self, error: Exception): ...
 
     def ready(self) -> bool: ...
 
-    def error(self) -> Exception | None: ...
+    def error(self) -> Optional[Exception]: ...
 
     def value(self) -> Any: ...
 
@@ -51,10 +52,10 @@ class Future(Protocol):
 class CallFuture:
     """A future result of a dispatch.coroutine.call() operation."""
 
-    result: CallResult | None = None
-    first_error: Exception | None = None
+    result: Optional[CallResult] = None
+    first_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CallResult)
         if self.result is None:
             self.result = result
@@ -68,7 +69,7 @@ class CallFuture:
     def ready(self) -> bool:
         return self.first_error is not None or self.result is not None
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         return self.first_error
 
@@ -85,9 +86,9 @@ class AllFuture:
     order: list[CoroutineID] = field(default_factory=list)
     waiting: set[CoroutineID] = field(default_factory=set)
     results: dict[CoroutineID, CoroutineResult] = field(default_factory=dict)
-    first_error: Exception | None = None
+    first_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CoroutineResult)
 
         try:
@@ -109,7 +110,7 @@ class AllFuture:
     def ready(self) -> bool:
         return self.first_error is not None or len(self.waiting) == 0
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         return self.first_error
 
@@ -126,11 +127,11 @@ class AnyFuture:
 
     order: list[CoroutineID] = field(default_factory=list)
     waiting: set[CoroutineID] = field(default_factory=set)
-    first_result: CoroutineResult | None = None
+    first_result: Optional[CoroutineResult] = None
     errors: dict[CoroutineID, Exception] = field(default_factory=dict)
-    generic_error: Exception | None = None
+    generic_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CoroutineResult)
 
         try:
@@ -156,7 +157,7 @@ class AnyFuture:
             or len(self.waiting) == 0
         )
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         if self.generic_error is not None:
             return self.generic_error
@@ -182,10 +183,10 @@ class RaceFuture:
     """A future result of a dispatch.coroutine.race() operation."""
 
     waiting: set[CoroutineID] = field(default_factory=set)
-    first_result: CoroutineResult | None = None
-    first_error: Exception | None = None
+    first_result: Optional[CoroutineResult] = None
+    first_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CoroutineResult)
 
         if result.error is not None:
@@ -208,7 +209,7 @@ class RaceFuture:
             or len(self.waiting) == 0
         )
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         return self.first_error
 
@@ -222,9 +223,9 @@ class Coroutine:
     """An in-flight coroutine."""
 
     id: CoroutineID
-    parent_id: CoroutineID | None
-    coroutine: DurableCoroutine | DurableGenerator
-    result: Future | None = None
+    parent_id: Optional[CoroutineID]
+    coroutine: Union[DurableCoroutine, DurableGenerator]
+    result: Optional[Future] = None
 
     def run(self) -> Any:
         if self.result is None:
@@ -278,7 +279,7 @@ class OneShotScheduler:
         version: str = sys.version,
         poll_min_results: int = 1,
         poll_max_results: int = 10,
-        poll_max_wait_seconds: int | None = None,
+        poll_max_wait_seconds: Optional[int] = None,
     ):
         """Initialize the scheduler.
 
@@ -422,7 +423,7 @@ class OneShotScheduler:
             assert coroutine.id not in state.suspended
 
             coroutine_yield = None
-            coroutine_result: CoroutineResult | None = None
+            coroutine_result: Optional[CoroutineResult] = None
             try:
                 coroutine_yield = coroutine.run()
             except StopIteration as e:

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 import fastapi
 import grpc
@@ -25,7 +26,7 @@ class EndpointClient:
     """
 
     def __init__(
-        self, http_client: httpx.Client, signing_key: Ed25519PrivateKey | None = None
+        self, http_client: httpx.Client, signing_key: Optional[Ed25519PrivateKey] = None
     ):
         """Initialize the client.
 
@@ -48,14 +49,14 @@ class EndpointClient:
         return self._stub.Run(request)
 
     @classmethod
-    def from_url(cls, url: str, signing_key: Ed25519PrivateKey | None = None):
+    def from_url(cls, url: str, signing_key: Optional[Ed25519PrivateKey] = None):
         """Returns an EndpointClient for a Dispatch endpoint URL."""
         http_client = httpx.Client(base_url=url)
         return EndpointClient(http_client, signing_key)
 
     @classmethod
     def from_app(
-        cls, app: fastapi.FastAPI, signing_key: Ed25519PrivateKey | None = None
+        cls, app: fastapi.FastAPI, signing_key: Optional[Ed25519PrivateKey] = None
     ):
         """Returns an EndpointClient for a Dispatch endpoint bound to a
         FastAPI app instance."""
@@ -65,7 +66,7 @@ class EndpointClient:
 
 class _HttpxGrpcChannel(grpc.Channel):
     def __init__(
-        self, http_client: httpx.Client, signing_key: Ed25519PrivateKey | None = None
+        self, http_client: httpx.Client, signing_key: Optional[Ed25519PrivateKey] = None
     ):
         self.http_client = http_client
         self.signing_key = signing_key
@@ -113,7 +114,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         method,
         request_serializer,
         response_deserializer,
-        signing_key: Ed25519PrivateKey | None = None,
+        signing_key: Optional[Ed25519PrivateKey] = None,
     ):
         self.client = client
         self.method = method
