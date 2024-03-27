@@ -5,10 +5,11 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Optional
 
 import grpc
 import httpx
+from typing_extensions import TypeAlias
 
 import dispatch.sdk.v1.call_pb2 as call_pb
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
@@ -52,8 +53,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
     def __init__(
         self,
         endpoint_client: EndpointClient,
-        api_key: str | None = None,
-        retry_on_status: set[Status] | None = None,
+        api_key: Optional[str] = None,
+        retry_on_status: Optional[set[Status]] = None,
         collect_roundtrips: bool = False,
     ):
         """Initialize the Dispatch service.
@@ -86,11 +87,11 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         self.pollers: dict[DispatchID, Poller] = {}
         self.parents: dict[DispatchID, Poller] = {}
 
-        self.roundtrips: OrderedDict[DispatchID, list[RoundTrip]] | None = None
+        self.roundtrips: Optional[OrderedDict[DispatchID, list[RoundTrip]]] = None
         if collect_roundtrips:
             self.roundtrips = OrderedDict()
 
-        self._thread: threading.Thread | None = None
+        self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._work_signal = threading.Condition()
 
@@ -143,13 +144,12 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         while self.queue:
             dispatch_id, request, call_type = self.queue.pop(0)
 
-            match call_type:
-                case CallType.CALL:
-                    logger.info("calling function %s", request.function)
-                case CallType.RESUME:
-                    logger.info("resuming function %s", request.function)
-                case CallType.RETRY:
-                    logger.info("retrying function %s", request.function)
+            if call_type == CallType.CALL:
+                logger.info("calling function %s", request.function)
+            elif call_type == CallType.RESUME:
+                logger.info("resuming function %s", request.function)
+            elif call_type == CallType.RETRY:
+                logger.info("retrying function %s", request.function)
 
             try:
                 response = self.endpoint_client.run(request)

@@ -1,11 +1,12 @@
 import hashlib
 import hmac
+from typing import Union
 
 import http_sfv
 from http_message_signatures import InvalidSignature
 
 
-def generate_content_digest(body: str | bytes) -> str:
+def generate_content_digest(body: Union[str, bytes]) -> str:
     """Returns a SHA-512 Content-Digest header, according to
     https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-digest-headers-13
     """
@@ -16,7 +17,7 @@ def generate_content_digest(body: str | bytes) -> str:
     return str(http_sfv.Dictionary({"sha-512": digest}))
 
 
-def verify_content_digest(digest_header: str | bytes, body: str | bytes):
+def verify_content_digest(digest_header: Union[str, bytes], body: Union[str, bytes]):
     """Verify a SHA-256 or SHA-512 Content-Digest header matches a
     request body."""
     if isinstance(body, str):

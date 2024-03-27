@@ -92,27 +92,31 @@ def status_for_error(error: Exception) -> Status:
     # If not, resort to standard error categorization.
     #
     # See https://docs.python.org/3/library/exceptions.html
-    match error:
-        case IncompatibleStateError():
-            return Status.INCOMPATIBLE_STATE
-        case TimeoutError():
-            return Status.TIMEOUT
-        case TypeError() | ValueError():
-            return Status.INVALID_ARGUMENT
-        case ConnectionError():
-            return Status.TCP_ERROR
-        case PermissionError():
-            return Status.PERMISSION_DENIED
-        case FileNotFoundError():
-            return Status.NOT_FOUND
-        case EOFError() | InterruptedError() | KeyboardInterrupt() | OSError():
-            # For OSError, we might want to categorize the values of errnon
-            # to determine whether the error is temporary or permanent.
-            #
-            # In general, permanent errors from the OS are rare because they
-            # tend to be caused by invalid use of syscalls, which are
-            # unlikely at higher abstraction levels.
-            return Status.TEMPORARY_ERROR
+    if isinstance(error, IncompatibleStateError):
+        return Status.INCOMPATIBLE_STATE
+    elif isinstance(error, TimeoutError):
+        return Status.TIMEOUT
+    elif isinstance(error, TypeError) or isinstance(error, ValueError):
+        return Status.INVALID_ARGUMENT
+    elif isinstance(error, ConnectionError):
+        return Status.TCP_ERROR
+    elif isinstance(error, PermissionError):
+        return Status.PERMISSION_DENIED
+    elif isinstance(error, FileNotFoundError):
+        return Status.NOT_FOUND
+    elif (
+        isinstance(error, EOFError)
+        or isinstance(error, InterruptedError)
+        or isinstance(error, KeyboardInterrupt)
+        or isinstance(error, OSError)
+    ):
+        # For OSError, we might want to categorize the values of errnon
+        # to determine whether the error is temporary or permanent.
+        #
+        # In general, permanent errors from the OS are rare because they
+        # tend to be caused by invalid use of syscalls, which are
+        # unlikely at higher abstraction levels.
+        return Status.TEMPORARY_ERROR
     return Status.PERMANENT_ERROR
 
 

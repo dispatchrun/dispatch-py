@@ -12,14 +12,14 @@ from typing import (
     Dict,
     Generic,
     Iterable,
-    ParamSpec,
-    TypeAlias,
+    Optional,
     TypeVar,
     overload,
 )
 from urllib.parse import urlparse
 
 import grpc
+from typing_extensions import ParamSpec, TypeAlias
 
 import dispatch.coroutine
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
@@ -73,7 +73,7 @@ class PrimitiveFunction:
         return dispatch_id
 
     def _build_primitive_call(
-        self, input: Any, correlation_id: int | None = None
+        self, input: Any, correlation_id: Optional[int] = None
     ) -> Call:
         return Call(
             correlation_id=correlation_id,
@@ -137,7 +137,7 @@ class Function(PrimitiveFunction, Generic[P, T]):
         return self._primitive_dispatch(Arguments(args, kwargs))
 
     def build_call(
-        self, *args: P.args, correlation_id: int | None = None, **kwargs: P.kwargs
+        self, *args: P.args, correlation_id: Optional[int] = None, **kwargs: P.kwargs
     ) -> Call:
         """Create a Call for this function with the provided input. Useful to
         generate calls when using the Client.
@@ -162,7 +162,10 @@ class Registry:
     __slots__ = ("functions", "endpoint", "client")
 
     def __init__(
-        self, endpoint: str, api_key: str | None = None, api_url: str | None = None
+        self,
+        endpoint: str,
+        api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
     ):
         """Initialize a function registry.
 
@@ -261,7 +264,7 @@ class Client:
 
     __slots__ = ("api_url", "api_key", "_stub", "api_key_from")
 
-    def __init__(self, api_key: None | str = None, api_url: None | str = None):
+    def __init__(self, api_key: Optional[str] = None, api_url: Optional[str] = None):
         """Create a new Dispatch client.
 
         Args:
@@ -308,13 +311,12 @@ class Client:
 
     def _init_stub(self):
         result = urlparse(self.api_url)
-        match result.scheme:
-            case "http":
-                creds = grpc.local_channel_credentials()
-            case "https":
-                creds = grpc.ssl_channel_credentials()
-            case _:
-                raise ValueError(f"Invalid API scheme: '{result.scheme}'")
+        if result.scheme == "http":
+            creds = grpc.local_channel_credentials()
+        elif result.scheme == "https":
+            creds = grpc.ssl_channel_credentials()
+        else:
+            raise ValueError(f"Invalid API scheme: '{result.scheme}'")
 
         call_creds = grpc.access_token_call_credentials(self.api_key)
         creds = grpc.composite_channel_credentials(creds, call_creds)
@@ -344,11 +346,10 @@ class Client:
             resp = self._stub.Dispatch(req)
         except grpc.RpcError as e:
             status_code = e.code()
-            match status_code:
-                case grpc.StatusCode.UNAUTHENTICATED:
-                    raise PermissionError(
-                        f"Dispatch received an invalid authentication token (check {self.api_key_from} is correct)"
-                    ) from e
+            if status_code == grpc.StatusCode.UNAUTHENTICATED:
+                raise PermissionError(
+                    f"Dispatch received an invalid authentication token (check {self.api_key_from} is correct)"
+                ) from e
             raise
 
         dispatch_ids = [DispatchID(x) for x in resp.dispatch_ids]

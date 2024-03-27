@@ -6,11 +6,12 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#if PY_MAJOR_VERSION != 3 || (PY_MINOR_VERSION < 10 || PY_MINOR_VERSION > 13)
-# error Python 3.10-3.13 is required
+#if PY_MAJOR_VERSION != 3 || (PY_MINOR_VERSION < 9 || PY_MINOR_VERSION > 13)
+# error Python 3.9-3.13 is required
 #endif
 
-// This is a redefinition of the private PyTryBlock from 3.10.
+// This is a redefinition of the private PyTryBlock from <= 3.10.
+// https://github.com/python/cpython/blob/3.9/Include/cpython/frameobject.h#L11
 // https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L22
 typedef struct {
     int b_type;
@@ -18,7 +19,8 @@ typedef struct {
     int b_level;
 } PyTryBlock;
 
-// This is a redefinition of the private PyCoroWrapper from 3.10-3.13.
+// This is a redefinition of the private PyCoroWrapper from 3.9-3.13.
+// https://github.com/python/cpython/blob/3.9/Objects/genobject.c#L830
 // https://github.com/python/cpython/blob/3.10/Objects/genobject.c#L884
 // https://github.com/python/cpython/blob/3.11/Objects/genobject.c#L1016
 // https://github.com/python/cpython/blob/3.12/Objects/genobject.c#L1003
@@ -51,7 +53,9 @@ static int get_frame_iblock(Frame *frame);
 static void set_frame_iblock(Frame *frame, int iblock);
 static PyTryBlock *get_frame_blockstack(Frame *frame);
 
-#if PY_MINOR_VERSION == 10
+#if PY_MINOR_VERSION == 9
+#include "frame309.h"
+#elif PY_MINOR_VERSION == 10
 #include "frame310.h"
 #elif PY_MINOR_VERSION == 11
 #include "frame311.h"
@@ -78,7 +82,7 @@ static const char *get_type_name(PyObject *obj) {
 
 static PyGenObject *get_generator_like_object(PyObject *obj) {
     if (PyGen_Check(obj) || PyCoro_CheckExact(obj) || PyAsyncGen_CheckExact(obj)) {
-        // Note: In Python 3.10-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
+        // Note: In Python 3.9-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
         // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
         // We cast to PyGenObject here so that the remainder of the code can use the gi_
         // prefix for all three cases.
@@ -386,7 +390,7 @@ static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
     }
     PyObject **localsplus = get_frame_localsplus(frame);
     PyObject *prev = localsplus[index];
-    if (Py_IsTrue(unset)) {
+    if (PyObject_IsTrue(unset)) {
         localsplus[index] = NULL;
     } else {
         Py_INCREF(stack_obj);

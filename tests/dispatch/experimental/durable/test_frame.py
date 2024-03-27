@@ -28,14 +28,6 @@ async def coroutine(a):
     await Yields(a)
 
 
-async def async_generator(a):
-    await Yields(a)
-    a += 1
-    yield a
-    a += 1
-    await Yields(a)
-
-
 class TestFrame(unittest.TestCase):
     def test_generator_copy(self):
         # Create an instance and run it to the first yield point.
@@ -72,39 +64,6 @@ class TestFrame(unittest.TestCase):
 
         # Original coroutine is not affected.
         assert next(g) == 2
-        assert next(g) == 3
-
-    def test_async_generator_copy(self):
-        # Create an instance and run it to the first yield point.
-        ag = async_generator(1)
-        next_awaitable = anext(ag)
-        g = next_awaitable.__await__()
-        assert next(g) == 1
-
-        # Copy the async generator.
-        ag2 = async_generator(1)
-        self.copy_to(ag, ag2)
-        next_awaitable2 = anext(ag2)
-        g2 = next_awaitable2.__await__()
-
-        # The copy should start from where the previous generator was suspended.
-        try:
-            next(g2)
-            raise RuntimeError
-        except StopIteration as e:
-            assert e.value == 2
-        next_awaitable2 = anext(ag2)
-        g2 = next_awaitable2.__await__()
-        assert next(g2) == 3
-
-        # Original generator is not affected.
-        try:
-            next(g)
-            raise RuntimeError
-        except StopIteration as e:
-            assert e.value == 2
-        next_awaitable = anext(ag)
-        g = next_awaitable.__await__()
         assert next(g) == 3
 
     def copy_to(self, from_obj, to_obj):

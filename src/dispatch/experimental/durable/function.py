@@ -9,7 +9,7 @@ from types import (
     MethodType,
     TracebackType,
 )
-from typing import Any, Callable, Coroutine, Generator, TypeVar, Union, cast
+from typing import Any, Callable, Coroutine, Generator, Optional, TypeVar, Union, cast
 
 from . import frame as ext
 from .registry import RegisteredFunction, lookup_function, register_function
@@ -75,7 +75,7 @@ class Serializable:
         "__qualname__",
     )
 
-    g: GeneratorType | CoroutineType
+    g: Union[GeneratorType, CoroutineType]
     registered_fn: RegisteredFunction
     wrapped_coroutine: Union["DurableCoroutine", None]
     args: tuple[Any, ...]
@@ -83,7 +83,7 @@ class Serializable:
 
     def __init__(
         self,
-        g: GeneratorType | CoroutineType,
+        g: Union[GeneratorType, CoroutineType],
         registered_fn: RegisteredFunction,
         wrapped_coroutine: Union["DurableCoroutine", None],
         *args: Any,
@@ -243,7 +243,7 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
     def send(self, send: _SendT) -> _YieldT:
         return self.coroutine.send(send)
 
-    def throw(self, typ, val=None, tb: TracebackType | None = None) -> _YieldT:
+    def throw(self, typ, val=None, tb: Optional[TracebackType] = None) -> _YieldT:
         return self.coroutine.throw(typ, val, tb)
 
     def close(self) -> None:
@@ -270,11 +270,11 @@ class DurableCoroutine(Serializable, Coroutine[_YieldT, _SendT, _ReturnT]):
         return self.coroutine.cr_frame
 
     @property
-    def cr_await(self) -> Any | None:
+    def cr_await(self) -> Any:
         return self.coroutine.cr_await
 
     @property
-    def cr_origin(self) -> tuple[tuple[str, int, str], ...] | None:
+    def cr_origin(self) -> Optional[tuple[tuple[str, int, str], ...]]:
         return self.coroutine.cr_origin
 
     def __repr__(self) -> str:
@@ -291,7 +291,7 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
         self,
         generator: GeneratorType,
         registered_fn: RegisteredFunction,
-        coroutine: DurableCoroutine | None,
+        coroutine: Optional[DurableCoroutine],
         *args: Any,
         **kwargs: Any,
     ):
@@ -309,7 +309,7 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
     def send(self, send: _SendT) -> _YieldT:
         return self.generator.send(send)
 
-    def throw(self, typ, val=None, tb: TracebackType | None = None) -> _YieldT:
+    def throw(self, typ, val=None, tb: Optional[TracebackType] = None) -> _YieldT:
         return self.generator.throw(typ, val, tb)
 
     def close(self) -> None:
@@ -336,7 +336,7 @@ class DurableGenerator(Serializable, Generator[_YieldT, _SendT, _ReturnT]):
         return self.generator.gi_frame
 
     @property
-    def gi_yieldfrom(self) -> GeneratorType | None:
+    def gi_yieldfrom(self) -> Optional[GeneratorType]:
         return self.generator.gi_yieldfrom
 
     def __repr__(self) -> str:

@@ -21,6 +21,7 @@ import base64
 import logging
 import os
 from datetime import timedelta
+from typing import Optional, Union
 from urllib.parse import urlparse
 
 import fastapi
@@ -51,10 +52,10 @@ class Dispatch(Registry):
     def __init__(
         self,
         app: fastapi.FastAPI,
-        endpoint: str | None = None,
-        verification_key: Ed25519PublicKey | str | bytes | None = None,
-        api_key: str | None = None,
-        api_url: str | None = None,
+        endpoint: Optional[str] = None,
+        verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
+        api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
     ):
         """Initialize a Dispatch endpoint, and integrate it into a FastAPI app.
 
@@ -122,8 +123,8 @@ class Dispatch(Registry):
 
 
 def parse_verification_key(
-    verification_key: Ed25519PublicKey | str | bytes | None,
-) -> Ed25519PublicKey | None:
+    verification_key: Optional[Union[Ed25519PublicKey, str, bytes]],
+) -> Optional[Ed25519PublicKey]:
     if isinstance(verification_key, Ed25519PublicKey):
         return verification_key
 
@@ -169,7 +170,7 @@ class _ConnectError(fastapi.HTTPException):
         self.message = message
 
 
-def _new_app(function_registry: Dispatch, verification_key: Ed25519PublicKey | None):
+def _new_app(function_registry: Dispatch, verification_key: Optional[Ed25519PublicKey]):
     app = fastapi.FastAPI()
 
     @app.exception_handler(_ConnectError)

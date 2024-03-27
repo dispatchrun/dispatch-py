@@ -1,4 +1,4 @@
-from typing import TypeAlias
+from typing_extensions import TypeAlias
 
 DispatchID: TypeAlias = str
 """Unique identifier in Dispatch.

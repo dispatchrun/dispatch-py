@@ -2,7 +2,9 @@ import logging
 import pickle
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Protocol, TypeAlias
+from typing import Any, Awaitable, Callable, Optional, Protocol, Union
+
+from typing_extensions import TypeAlias
 
 from dispatch.coroutine import AllDirective, AnyDirective, AnyException, RaceDirective
 from dispatch.error import IncompatibleStateError
@@ -17,44 +19,44 @@ CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
 
 
-@dataclass(slots=True)
+@dataclass
 class CoroutineResult:
     """The result from running a coroutine to completion."""
 
     coroutine_id: CoroutineID
-    value: Any | None = None
-    error: Exception | None = None
+    value: Optional[Any] = None
+    error: Optional[Exception] = None
 
 
-@dataclass(slots=True)
+@dataclass
 class CallResult:
     """The result of an asynchronous function call."""
 
     call_id: CallID
-    value: Any | None = None
-    error: Exception | None = None
+    value: Optional[Any] = None
+    error: Optional[Exception] = None
 
 
 class Future(Protocol):
-    def add_result(self, result: CallResult | CoroutineResult): ...
+    def add_result(self, result: Union[CallResult, CoroutineResult]): ...
 
     def add_error(self, error: Exception): ...
 
     def ready(self) -> bool: ...
 
-    def error(self) -> Exception | None: ...
+    def error(self) -> Optional[Exception]: ...
 
     def value(self) -> Any: ...
 
 
-@dataclass(slots=True)
+@dataclass
 class CallFuture:
     """A future result of a dispatch.coroutine.call() operation."""
 
-    result: CallResult | None = None
-    first_error: Exception | None = None
+    result: Optional[CallResult] = None
+    first_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CallResult)
         if self.result is None:
             self.result = result
@@ -68,7 +70,7 @@ class CallFuture:
     def ready(self) -> bool:
         return self.first_error is not None or self.result is not None
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         return self.first_error
 
@@ -78,16 +80,16 @@ class CallFuture:
         return self.result.value
 
 
-@dataclass(slots=True)
+@dataclass
 class AllFuture:
     """A future result of a dispatch.coroutine.all() operation."""
 
     order: list[CoroutineID] = field(default_factory=list)
     waiting: set[CoroutineID] = field(default_factory=set)
     results: dict[CoroutineID, CoroutineResult] = field(default_factory=dict)
-    first_error: Exception | None = None
+    first_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CoroutineResult)
 
         try:
@@ -109,7 +111,7 @@ class AllFuture:
     def ready(self) -> bool:
         return self.first_error is not None or len(self.waiting) == 0
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         return self.first_error
 
@@ -120,17 +122,17 @@ class AllFuture:
         return [self.results[id].value for id in self.order]
 
 
-@dataclass(slots=True)
+@dataclass
 class AnyFuture:
     """A future result of a dispatch.coroutine.any() operation."""
 
     order: list[CoroutineID] = field(default_factory=list)
     waiting: set[CoroutineID] = field(default_factory=set)
-    first_result: CoroutineResult | None = None
+    first_result: Optional[CoroutineResult] = None
     errors: dict[CoroutineID, Exception] = field(default_factory=dict)
-    generic_error: Exception | None = None
+    generic_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CoroutineResult)
 
         try:
@@ -156,19 +158,18 @@ class AnyFuture:
             or len(self.waiting) == 0
         )
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         if self.generic_error is not None:
             return self.generic_error
         if self.first_result is not None or len(self.errors) == 0:
             return None
-        match len(self.errors):
-            case 0:
-                return None
-            case 1:
-                return self.errors[self.order[0]]
-            case _:
-                return AnyException([self.errors[id] for id in self.order])
+        if len(self.errors) == 0:
+            return None
+        elif len(self.errors) == 1:
+            return self.errors[self.order[0]]
+        else:
+            return AnyException([self.errors[id] for id in self.order])
 
     def value(self) -> Any:
         assert self.ready()
@@ -178,15 +179,15 @@ class AnyFuture:
         return self.first_result.value
 
 
-@dataclass(slots=True)
+@dataclass
 class RaceFuture:
     """A future result of a dispatch.coroutine.race() operation."""
 
     waiting: set[CoroutineID] = field(default_factory=set)
-    first_result: CoroutineResult | None = None
-    first_error: Exception | None = None
+    first_result: Optional[CoroutineResult] = None
+    first_error: Optional[Exception] = None
 
-    def add_result(self, result: CallResult | CoroutineResult):
+    def add_result(self, result: Union[CallResult, CoroutineResult]):
         assert isinstance(result, CoroutineResult)
 
         if result.error is not None:
@@ -209,7 +210,7 @@ class RaceFuture:
             or len(self.waiting) == 0
         )
 
-    def error(self) -> Exception | None:
+    def error(self) -> Optional[Exception]:
         assert self.ready()
         return self.first_error
 
@@ -218,14 +219,14 @@ class RaceFuture:
         return self.first_result.value if self.first_result else None
 
 
-@dataclass(slots=True)
+@dataclass
 class Coroutine:
     """An in-flight coroutine."""
 
     id: CoroutineID
-    parent_id: CoroutineID | None
-    coroutine: DurableCoroutine | DurableGenerator
-    result: Future | None = None
+    parent_id: Optional[CoroutineID]
+    coroutine: Union[DurableCoroutine, DurableGenerator]
+    result: Optional[Future] = None
 
     def run(self) -> Any:
         if self.result is None:
@@ -242,7 +243,7 @@ class Coroutine:
         return f"Coroutine({self.id}, {self.coroutine.__qualname__})"
 
 
-@dataclass(slots=True)
+@dataclass
 class State:
     """State of the scheduler and the coroutines it's managing."""
 
@@ -279,7 +280,7 @@ class OneShotScheduler:
         version: str = sys.version,
         poll_min_results: int = 1,
         poll_max_results: int = 10,
-        poll_max_wait_seconds: int | None = None,
+        poll_max_wait_seconds: Optional[int] = None,
     ):
         """Initialize the scheduler.
 
@@ -423,7 +424,7 @@ class OneShotScheduler:
             assert coroutine.id not in state.suspended
 
             coroutine_yield = None
-            coroutine_result: CoroutineResult | None = None
+            coroutine_result: Optional[CoroutineResult] = None
             try:
                 coroutine_yield = coroutine.run()
             except StopIteration as e:
@@ -470,60 +471,47 @@ class OneShotScheduler:
 
             # Handle coroutines that yield.
             logger.debug("%s yielded %s", coroutine, coroutine_yield)
-            match coroutine_yield:
-                case Call():
-                    call = coroutine_yield
-                    call_id = state.next_call_id
-                    state.next_call_id += 1
-                    call.correlation_id = correlation_id(coroutine.id, call_id)
-                    logger.debug(
-                        "enqueuing call %d (%s) for %s",
-                        call_id,
-                        call.function,
-                        coroutine,
-                    )
-                    pending_calls.append(call)
-                    coroutine.result = CallFuture()
-                    state.suspended[coroutine.id] = coroutine
-                    state.prev_callers.append(coroutine)
-                    state.outstanding_calls += 1
+            if isinstance(coroutine_yield, Call):
+                call = coroutine_yield
+                call_id = state.next_call_id
+                state.next_call_id += 1
+                call.correlation_id = correlation_id(coroutine.id, call_id)
+                logger.debug(
+                    "enqueuing call %d (%s) for %s",
+                    call_id,
+                    call.function,
+                    coroutine,
+                )
+                pending_calls.append(call)
+                coroutine.result = CallFuture()
+                state.suspended[coroutine.id] = coroutine
+                state.prev_callers.append(coroutine)
+                state.outstanding_calls += 1
 
-                case AllDirective():
-                    children = spawn_children(
-                        state, coroutine, coroutine_yield.awaitables
-                    )
+            elif isinstance(coroutine_yield, AllDirective):
+                children = spawn_children(state, coroutine, coroutine_yield.awaitables)
 
-                    child_ids = [child.id for child in children]
-                    coroutine.result = AllFuture(
-                        order=child_ids, waiting=set(child_ids)
-                    )
-                    state.suspended[coroutine.id] = coroutine
+                child_ids = [child.id for child in children]
+                coroutine.result = AllFuture(order=child_ids, waiting=set(child_ids))
+                state.suspended[coroutine.id] = coroutine
 
-                case AnyDirective():
-                    children = spawn_children(
-                        state, coroutine, coroutine_yield.awaitables
-                    )
+            elif isinstance(coroutine_yield, AnyDirective):
+                children = spawn_children(state, coroutine, coroutine_yield.awaitables)
 
-                    child_ids = [child.id for child in children]
-                    coroutine.result = AnyFuture(
-                        order=child_ids, waiting=set(child_ids)
-                    )
-                    state.suspended[coroutine.id] = coroutine
+                child_ids = [child.id for child in children]
+                coroutine.result = AnyFuture(order=child_ids, waiting=set(child_ids))
+                state.suspended[coroutine.id] = coroutine
 
-                case RaceDirective():
-                    children = spawn_children(
-                        state, coroutine, coroutine_yield.awaitables
-                    )
+            elif isinstance(coroutine_yield, RaceDirective):
+                children = spawn_children(state, coroutine, coroutine_yield.awaitables)
 
-                    coroutine.result = RaceFuture(
-                        waiting={child.id for child in children}
-                    )
-                    state.suspended[coroutine.id] = coroutine
+                coroutine.result = RaceFuture(waiting={child.id for child in children})
+                state.suspended[coroutine.id] = coroutine
 
-                case _:
-                    raise RuntimeError(
-                        f"coroutine unexpectedly yielded '{coroutine_yield}'"
-                    )
+            else:
+                raise RuntimeError(
+                    f"coroutine unexpectedly yielded '{coroutine_yield}'"
+                )
 
         # Serialize coroutines and scheduler state.
         logger.debug("serializing state")

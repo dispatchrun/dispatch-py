@@ -4,7 +4,7 @@ import pickle
 from dataclasses import dataclass
 from traceback import format_exception
 from types import TracebackType
-from typing import Any
+from typing import Any, Optional
 
 import google.protobuf.any_pb2
 import google.protobuf.message
@@ -97,7 +97,7 @@ class Input:
         return self._call_results
 
     @property
-    def poll_error(self) -> Error | None:
+    def poll_error(self) -> Optional[Error]:
         self._assert_resume()
         return self._poll_error
 
@@ -125,7 +125,7 @@ class Input:
         function: str,
         coroutine_state: Any,
         call_results: list[CallResult],
-        error: Error | None = None,
+        error: Optional[Error] = None,
     ):
         return Input(
             req=function_pb.RunRequest(
@@ -139,7 +139,7 @@ class Input:
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class Arguments:
     """A container for positional and keyword arguments."""
 
@@ -147,7 +147,7 @@ class Arguments:
     kwargs: dict[str, Any]
 
 
-@dataclass(slots=True)
+@dataclass
 class Output:
     """The output of a primitive function.
 
@@ -163,7 +163,7 @@ class Output:
         self._message = proto
 
     @classmethod
-    def value(cls, value: Any, status: Status | None = None) -> Output:
+    def value(cls, value: Any, status: Optional[Status] = None) -> Output:
         """Terminally exit the function with the provided return value."""
         if status is None:
             status = status_for_output(value)
@@ -183,8 +183,8 @@ class Output:
     @classmethod
     def exit(
         cls,
-        result: CallResult | None = None,
-        tail_call: Call | None = None,
+        result: Optional[CallResult] = None,
+        tail_call: Optional[Call] = None,
         status: Status = Status.OK,
     ) -> Output:
         """Terminally exit the function."""
@@ -201,10 +201,10 @@ class Output:
     def poll(
         cls,
         state: Any,
-        calls: None | list[Call] = None,
+        calls: Optional[list[Call]] = None,
         min_results: int = 1,
         max_results: int = 10,
-        max_wait_seconds: int | None = None,
+        max_wait_seconds: Optional[int] = None,
     ) -> Output:
         """Suspend the function with a set of Calls, instructing the
         orchestrator to resume the function with the provided state when
@@ -240,7 +240,7 @@ class Output:
 # the current Python process.
 
 
-@dataclass(slots=True)
+@dataclass
 class Call:
     """Instruction to call a function.
 
@@ -249,9 +249,9 @@ class Call:
     """
 
     function: str
-    input: Any | None = None
-    endpoint: str | None = None
-    correlation_id: int | None = None
+    input: Optional[Any] = None
+    endpoint: Optional[str] = None
+    correlation_id: Optional[int] = None
 
     def _as_proto(self) -> call_pb.Call:
         input_bytes = _pb_any_pickle(self.input)
@@ -263,13 +263,13 @@ class Call:
         )
 
 
-@dataclass(slots=True)
+@dataclass
 class CallResult:
     """Result of a Call."""
 
-    correlation_id: int | None = None
-    output: Any | None = None
-    error: Error | None = None
+    correlation_id: Optional[int] = None
+    output: Optional[Any] = None
+    error: Optional[Error] = None
 
     def _as_proto(self) -> call_pb.CallResult:
         output_any = None
@@ -297,15 +297,19 @@ class CallResult:
         )
 
     @classmethod
-    def from_value(cls, output: Any, correlation_id: int | None = None) -> CallResult:
+    def from_value(
+        cls, output: Any, correlation_id: Optional[int] = None
+    ) -> CallResult:
         return CallResult(correlation_id=correlation_id, output=output)
 
     @classmethod
-    def from_error(cls, error: Error, correlation_id: int | None = None) -> CallResult:
+    def from_error(
+        cls, error: Error, correlation_id: Optional[int] = None
+    ) -> CallResult:
         return CallResult(correlation_id=correlation_id, error=error)
 
 
-@dataclass(slots=True)
+@dataclass
 class Error:
     """Error when running a function.
 
@@ -316,16 +320,16 @@ class Error:
     status: Status
     type: str
     message: str
-    value: Exception | None = None
-    traceback: bytes | None = None
+    value: Optional[Exception] = None
+    traceback: Optional[bytes] = None
 
     def __init__(
         self,
         status: Status,
         type: str,
         message: str,
-        value: Exception | None = None,
-        traceback: bytes | None = None,
+        value: Optional[Exception] = None,
+        traceback: Optional[bytes] = None,
     ):
         """Create a new Error.
 
@@ -352,10 +356,12 @@ class Error:
         self.value = value
         self.traceback = traceback
         if not traceback and value:
-            self.traceback = "".join(format_exception(value)).encode("utf-8")
+            self.traceback = "".join(
+                format_exception(value.__class__, value, value.__traceback__)
+            ).encode("utf-8")
 
     @classmethod
-    def from_exception(cls, ex: Exception, status: Status | None = None) -> Error:
+    def from_exception(cls, ex: Exception, status: Optional[Status] = None) -> Error:
         """Create an Error from a Python exception, using its class qualified
         named as type.
 

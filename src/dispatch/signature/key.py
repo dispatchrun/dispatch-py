@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, Union
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
@@ -11,7 +12,7 @@ from cryptography.hazmat.primitives.serialization import (
 from http_message_signatures import HTTPSignatureKeyResolver
 
 
-def public_key_from_pem(pem: str | bytes) -> Ed25519PublicKey:
+def public_key_from_pem(pem: Union[str, bytes]) -> Ed25519PublicKey:
     """Returns an Ed25519 public key given a PEM representation."""
     if isinstance(pem, str):
         pem = pem.encode()
@@ -28,7 +29,7 @@ def public_key_from_bytes(key: bytes) -> Ed25519PublicKey:
 
 
 def private_key_from_pem(
-    pem: str | bytes, password: bytes | None = None
+    pem: Union[str, bytes], password: Optional[bytes] = None
 ) -> Ed25519PrivateKey:
     """Returns an Ed25519 private key given a PEM representation
     and optional password."""
@@ -48,7 +49,7 @@ def private_key_from_bytes(key: bytes) -> Ed25519PrivateKey:
     return Ed25519PrivateKey.from_private_bytes(key)
 
 
-@dataclass(slots=True)
+@dataclass
 class KeyResolver(HTTPSignatureKeyResolver):
     """KeyResolver provides public and private keys.
 
@@ -57,8 +58,8 @@ class KeyResolver(HTTPSignatureKeyResolver):
     """
 
     key_id: str
-    public_key: Ed25519PublicKey | None = None
-    private_key: Ed25519PrivateKey | None = None
+    public_key: Optional[Ed25519PublicKey] = None
+    private_key: Optional[Ed25519PrivateKey] = None
 
     def resolve_public_key(self, key_id: str):
         if key_id != self.key_id or self.public_key is None:
