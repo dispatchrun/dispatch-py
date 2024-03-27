@@ -64,7 +64,10 @@ class Input:
             input_pb = google.protobuf.wrappers_pb2.BytesValue()
             req.input.Unpack(input_pb)
             input_bytes = input_pb.value
-            self._input = pickle.loads(input_bytes)
+            try:
+                self._input = pickle.loads(input_bytes)
+            except EOFError:
+                self._input = Arguments(args=(req.input,), kwargs={})
         else:
             state_bytes = req.poll_result.coroutine_state
             if len(state_bytes) > 0:

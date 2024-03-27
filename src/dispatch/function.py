@@ -210,6 +210,17 @@ class Registry:
         logger.info("registering coroutine: %s", name)
         return self._register_coroutine(name, func)
 
+    # TODO: ensure we have only 1 entrypoint per app.
+    def entrypoint(self, func):
+        """Decorated that registers the program entrypoint."""
+        name = "entrypoint"
+        if not inspect.iscoroutinefunction(func):
+            logger.info("registering entrypoint function: %s", name)
+            return self._register_function(name, func)
+
+        logger.info("registering entrypoint coroutine: %s", name)
+        return self._register_coroutine(name, func)
+
     def _register_function(self, name: str, func: Callable[P, T]) -> Function[P, T]:
         func = durable(func)
 
