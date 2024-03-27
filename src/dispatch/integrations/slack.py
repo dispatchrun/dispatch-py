@@ -8,10 +8,8 @@ from dispatch.status import Status, register_error_type, register_output_type
 
 def slack_error_status(error: Exception) -> Status:
     # See https://github.com/slackapi/python-slack-sdk/blob/main/slack/errors.py
-    match error:
-        case slack_sdk.errors.SlackApiError():
-            if error.response is not None:
-                return slack_response_status(error.response)
+    if isinstance(error, slack_sdk.errors.SlackApiError) and error.response is not None:
+        return slack_response_status(error.response)
 
     return Status.TEMPORARY_ERROR
 

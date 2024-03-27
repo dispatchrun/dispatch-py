@@ -6,15 +6,14 @@ from dispatch.status import Status, register_error_type, register_output_type
 
 def httpx_error_status(error: Exception) -> Status:
     # See https://www.python-httpx.org/exceptions/
-    match error:
-        case httpx.HTTPStatusError():
-            return httpx_response_status(error.response)
-        case httpx.InvalidURL():
-            return Status.INVALID_ARGUMENT
-        case httpx.UnsupportedProtocol():
-            return Status.INVALID_ARGUMENT
-        case httpx.TimeoutException():
-            return Status.TIMEOUT
+    if isinstance(error, httpx.HTTPStatusError):
+        return httpx_response_status(error.response)
+    elif isinstance(error, httpx.InvalidURL):
+        return Status.INVALID_ARGUMENT
+    elif isinstance(error, httpx.UnsupportedProtocol):
+        return Status.INVALID_ARGUMENT
+    elif isinstance(error, httpx.TimeoutException):
+        return Status.TIMEOUT
 
     return Status.TEMPORARY_ERROR
 

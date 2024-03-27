@@ -308,13 +308,12 @@ class Client:
 
     def _init_stub(self):
         result = urlparse(self.api_url)
-        match result.scheme:
-            case "http":
-                creds = grpc.local_channel_credentials()
-            case "https":
-                creds = grpc.ssl_channel_credentials()
-            case _:
-                raise ValueError(f"Invalid API scheme: '{result.scheme}'")
+        if result.scheme == "http":
+            creds = grpc.local_channel_credentials()
+        elif result.scheme == "https":
+            creds = grpc.ssl_channel_credentials()
+        else:
+            raise ValueError(f"Invalid API scheme: '{result.scheme}'")
 
         call_creds = grpc.access_token_call_credentials(self.api_key)
         creds = grpc.composite_channel_credentials(creds, call_creds)
@@ -344,11 +343,10 @@ class Client:
             resp = self._stub.Dispatch(req)
         except grpc.RpcError as e:
             status_code = e.code()
-            match status_code:
-                case grpc.StatusCode.UNAUTHENTICATED:
-                    raise PermissionError(
-                        f"Dispatch received an invalid authentication token (check {self.api_key_from} is correct)"
-                    ) from e
+            if status_code == grpc.StatusCode.UNAUTHENTICATED:
+                raise PermissionError(
+                    f"Dispatch received an invalid authentication token (check {self.api_key_from} is correct)"
+                ) from e
             raise
 
         dispatch_ids = [DispatchID(x) for x in resp.dispatch_ids]

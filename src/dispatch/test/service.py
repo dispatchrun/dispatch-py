@@ -143,13 +143,12 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         while self.queue:
             dispatch_id, request, call_type = self.queue.pop(0)
 
-            match call_type:
-                case CallType.CALL:
-                    logger.info("calling function %s", request.function)
-                case CallType.RESUME:
-                    logger.info("resuming function %s", request.function)
-                case CallType.RETRY:
-                    logger.info("retrying function %s", request.function)
+            if call_type == CallType.CALL:
+                logger.info("calling function %s", request.function)
+            elif call_type == CallType.RESUME:
+                logger.info("resuming function %s", request.function)
+            elif call_type == CallType.RETRY:
+                logger.info("retrying function %s", request.function)
 
             try:
                 response = self.endpoint_client.run(request)

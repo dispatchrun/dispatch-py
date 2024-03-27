@@ -6,11 +6,10 @@ from dispatch.status import Status, register_error_type
 
 def openai_error_status(error: Exception) -> Status:
     # See https://github.com/openai/openai-python/blob/main/src/openai/_exceptions.py
-    match error:
-        case openai.APITimeoutError():
-            return Status.TIMEOUT
-        case openai.APIStatusError():
-            return http_response_code_status(error.status_code)
+    if isinstance(error, openai.APITimeoutError):
+        return Status.TIMEOUT
+    elif isinstance(error, openai.APIStatusError):
+        return http_response_code_status(error.status_code)
 
     return Status.TEMPORARY_ERROR
 

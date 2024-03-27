@@ -162,13 +162,12 @@ class AnyFuture:
             return self.generic_error
         if self.first_result is not None or len(self.errors) == 0:
             return None
-        match len(self.errors):
-            case 0:
-                return None
-            case 1:
-                return self.errors[self.order[0]]
-            case _:
-                return AnyException([self.errors[id] for id in self.order])
+        if len(self.errors) == 0:
+            return None
+        elif len(self.errors) == 1:
+            return self.errors[self.order[0]]
+        else:
+            return AnyException([self.errors[id] for id in self.order])
 
     def value(self) -> Any:
         assert self.ready()
@@ -470,60 +469,47 @@ class OneShotScheduler:
 
             # Handle coroutines that yield.
             logger.debug("%s yielded %s", coroutine, coroutine_yield)
-            match coroutine_yield:
-                case Call():
-                    call = coroutine_yield
-                    call_id = state.next_call_id
-                    state.next_call_id += 1
-                    call.correlation_id = correlation_id(coroutine.id, call_id)
-                    logger.debug(
-                        "enqueuing call %d (%s) for %s",
-                        call_id,
-                        call.function,
-                        coroutine,
-                    )
-                    pending_calls.append(call)
-                    coroutine.result = CallFuture()
-                    state.suspended[coroutine.id] = coroutine
-                    state.prev_callers.append(coroutine)
-                    state.outstanding_calls += 1
+            if isinstance(coroutine_yield, Call):
+                call = coroutine_yield
+                call_id = state.next_call_id
+                state.next_call_id += 1
+                call.correlation_id = correlation_id(coroutine.id, call_id)
+                logger.debug(
+                    "enqueuing call %d (%s) for %s",
+                    call_id,
+                    call.function,
+                    coroutine,
+                )
+                pending_calls.append(call)
+                coroutine.result = CallFuture()
+                state.suspended[coroutine.id] = coroutine
+                state.prev_callers.append(coroutine)
+                state.outstanding_calls += 1
 
-                case AllDirective():
-                    children = spawn_children(
-                        state, coroutine, coroutine_yield.awaitables
-                    )
+            elif isinstance(coroutine_yield, AllDirective):
+                children = spawn_children(state, coroutine, coroutine_yield.awaitables)
 
-                    child_ids = [child.id for child in children]
-                    coroutine.result = AllFuture(
-                        order=child_ids, waiting=set(child_ids)
-                    )
-                    state.suspended[coroutine.id] = coroutine
+                child_ids = [child.id for child in children]
+                coroutine.result = AllFuture(order=child_ids, waiting=set(child_ids))
+                state.suspended[coroutine.id] = coroutine
 
-                case AnyDirective():
-                    children = spawn_children(
-                        state, coroutine, coroutine_yield.awaitables
-                    )
+            elif isinstance(coroutine_yield, AnyDirective):
+                children = spawn_children(state, coroutine, coroutine_yield.awaitables)
 
-                    child_ids = [child.id for child in children]
-                    coroutine.result = AnyFuture(
-                        order=child_ids, waiting=set(child_ids)
-                    )
-                    state.suspended[coroutine.id] = coroutine
+                child_ids = [child.id for child in children]
+                coroutine.result = AnyFuture(order=child_ids, waiting=set(child_ids))
+                state.suspended[coroutine.id] = coroutine
 
-                case RaceDirective():
-                    children = spawn_children(
-                        state, coroutine, coroutine_yield.awaitables
-                    )
+            elif isinstance(coroutine_yield, RaceDirective):
+                children = spawn_children(state, coroutine, coroutine_yield.awaitables)
 
-                    coroutine.result = RaceFuture(
-                        waiting={child.id for child in children}
-                    )
-                    state.suspended[coroutine.id] = coroutine
+                coroutine.result = RaceFuture(waiting={child.id for child in children})
+                state.suspended[coroutine.id] = coroutine
 
-                case _:
-                    raise RuntimeError(
-                        f"coroutine unexpectedly yielded '{coroutine_yield}'"
-                    )
+            else:
+                raise RuntimeError(
+                    f"coroutine unexpectedly yielded '{coroutine_yield}'"
+                )
 
         # Serialize coroutines and scheduler state.
         logger.debug("serializing state")
