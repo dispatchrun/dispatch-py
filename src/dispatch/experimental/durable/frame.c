@@ -6,102 +6,60 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#if PY_MAJOR_VERSION != 3 || (PY_MINOR_VERSION < 11 || PY_MINOR_VERSION > 13)
-# error Python 3.11-3.13 is required
+#if PY_MAJOR_VERSION != 3 || (PY_MINOR_VERSION < 10 || PY_MINOR_VERSION > 13)
+# error Python 3.10-3.13 is required
 #endif
 
-// This is a redefinition of the private/opaque struct _PyInterpreterFrame:
-// https://github.com/python/cpython/blob/3.12/Include/cpython/pyframe.h#L23
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L51
-typedef struct InterpreterFrame {
-#if PY_MINOR_VERSION == 11
-    PyFunctionObject *f_func;
-#elif PY_MINOR_VERSION >= 12
-    PyCodeObject *f_code; // 3.13: PyObject *f_executable
-    struct _PyInterpreterFrame *previous;
-    PyObject *f_funcobj;
-#endif
-    PyObject *f_globals;
-    PyObject *f_builtins;
-    PyObject *f_locals;
-#if PY_MINOR_VERSION == 11
-    PyCodeObject *f_code;
-    PyFrameObject *frame_obj;
-    struct _PyInterpreterFrame *previous;
-    _Py_CODEUNIT *prev_instr;
-    int stacktop;
-    bool is_entry;
-#elif PY_MINOR_VERSION >= 12
-    PyFrameObject *frame_obj;
-    _Py_CODEUNIT *prev_instr; // 3.13: _Py_CODEUNIT *instr_ptr
-    int stacktop;
-    uint16_t return_offset;
-#endif
-    char owner;
-    PyObject *localsplus[1];
-} InterpreterFrame;
+// This is a redefinition of the private PyTryBlock from 3.10.
+// https://github.com/python/cpython/blob/3.10/Include/cpython/frameobject.h#L22
+typedef struct {
+    int b_type;
+    int b_handler;
+    int b_level;
+} PyTryBlock;
 
-// This is a redefinition of the private/opaque PyFrameObject:
-// https://github.com/python/cpython/blob/3.12/Include/pytypedefs.h#L22
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L16
-// The definition is the same for Python 3.11-3.13.
-typedef struct FrameObject {
-    PyObject_HEAD
-    PyFrameObject *f_back;
-    struct _PyInterpreterFrame *f_frame;
-    PyObject *f_trace;
-    int f_lineno;
-    char f_trace_lines;
-    char f_trace_opcodes;
-    char f_fast_as_locals;
-    PyObject *_f_frame_data[1];
-} FrameObject;
-
-// This is a redefinition of frame state constants:
-// https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L34
-typedef enum _framestate {
-#if PY_MINOR_VERSION == 13
-    FRAME_CREATED = -3,
-    FRAME_SUSPENDED = -2,
-    FRAME_SUSPENDED_YIELD_FROM = -1,
-#else
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
-#endif
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-} FrameState;
-
-// This is a redefinition of the private PyCoroWrapper:
+// This is a redefinition of the private PyCoroWrapper from 3.10-3.13.
+// https://github.com/python/cpython/blob/3.10/Objects/genobject.c#L884
+// https://github.com/python/cpython/blob/3.11/Objects/genobject.c#L1016
+// https://github.com/python/cpython/blob/3.12/Objects/genobject.c#L1003
+// https://github.com/python/cpython/blob/v3.13.0a5/Objects/genobject.c#L985
 typedef struct {
     PyObject_HEAD
     PyCoroObject *cw_coroutine;
 } PyCoroWrapper;
 
-// For reference, PyGenObject is defined as follows after expanding top-most macro:
-// https://github.com/python/cpython/blob/3.12/Include/cpython/genobject.h
-// Note that PyCoroObject and PyAsyncGenObject have the same layout in
-// Python 3.11-3.13, however the struct fields have a cr_ and ag_ prefix
-// (respectively) instead of a gi_ prefix.
-/*
-typedef struct {
-    PyObject_HEAD
-#if PY_MINOR_VERSION == 11
-    PyCodeObject *gi_code;
+typedef struct Frame Frame;
+
+static Frame *get_frame(PyGenObject *gen_like);
+
+static PyCodeObject *get_frame_code(Frame *frame);
+
+static int get_frame_lasti(Frame *frame);
+static void set_frame_lasti(Frame *frame, int lasti);
+
+static int get_frame_state(PyGenObject *gen_like);
+static void set_frame_state(PyGenObject *gen_like, int fs);
+static int valid_frame_state(int fs);
+
+static int get_frame_stacktop_limit(Frame *frame);
+static int get_frame_stacktop(Frame *frame);
+static void set_frame_stacktop(Frame *frame, int stacktop);
+static PyObject **get_frame_localsplus(Frame *frame);
+
+static int get_frame_iblock_limit(Frame *frame);
+static int get_frame_iblock(Frame *frame);
+static void set_frame_iblock(Frame *frame, int iblock);
+static PyTryBlock *get_frame_blockstack(Frame *frame);
+
+#if PY_MINOR_VERSION == 10
+#include "frame310.h"
+#elif PY_MINOR_VERSION == 11
+#include "frame311.h"
+#elif PY_MINOR_VERSION == 12
+#include "frame312.h"
+#elif PY_MINOR_VERSION == 13
+#include "frame313.h"
 #endif
-    PyObject *gi_weakreflist;
-    PyObject *gi_name;
-    PyObject *gi_qualname;
-    _PyErr_StackItem gi_exc_state;
-    PyObject *gi_origin_or_finalizer;
-    char gi_hooks_inited;
-    char gi_closed;
-    char gi_running_async;
-    int8_t gi_frame_state;
-    PyObject *gi_iframe[1];
-} PyGenObject;
-*/
 
 static const char *get_type_name(PyObject *obj) {
     PyObject* type = PyObject_Type(obj);
@@ -120,44 +78,44 @@ static const char *get_type_name(PyObject *obj) {
 
 static PyGenObject *get_generator_like_object(PyObject *obj) {
     if (PyGen_Check(obj) || PyCoro_CheckExact(obj) || PyAsyncGen_CheckExact(obj)) {
-        // Note: In Python 3.11-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
+        // Note: In Python 3.10-3.13, the PyGenObject, PyCoroObject and PyAsyncGenObject
         // have the same layout, they just have different field prefixes (gi_, cr_, ag_).
+        // We cast to PyGenObject here so that the remainder of the code can use the gi_
+        // prefix for all three cases.
         return (PyGenObject *)obj;
     }
-    // CPython unfortunately does not export any functions that
-    // check whether an object is a coroutine_wrapper.
-    // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
+    // If the object isn't a PyGenObject, PyCoroObject or PyAsyncGenObject, it may
+    // still be a coroutine, for example a PyCoroWrapper. CPython unfortunately does
+    // not export a function that checks whether a PyObject is a PyCoroWrapper. We
+    // need to check the type name string.
     const char *type_name = get_type_name(obj);
     if (!type_name) {
         return NULL;
     }
     if (strcmp(type_name, "coroutine_wrapper") == 0) {
+        // FIXME: improve safety here, e.g. by checking that the obj type matches a known size
         PyCoroWrapper *wrapper = (PyCoroWrapper *)obj;
+        // Cast the inner PyCoroObject to a PyGenObject. See the comment above.
         return (PyGenObject *)wrapper->cw_coroutine;
     }
     PyErr_SetString(PyExc_TypeError, "Input object is not a generator or coroutine");
     return NULL;
 }
 
-static InterpreterFrame *get_interpreter_frame(PyGenObject *gen_like) {
-    struct _PyInterpreterFrame *frame = (struct _PyInterpreterFrame *)(gen_like->gi_iframe);
-    assert(frame);
-    return (InterpreterFrame *)frame;
-}
-
-static PyObject *get_frame_state(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_state(PyObject *self, PyObject *args) {
     PyObject *arg;
     if (!PyArg_ParseTuple(args, "O", &arg)) {
         return NULL;
     }
-    PyGenObject *gen = get_generator_like_object(arg);
-    if (!gen) {
+    PyGenObject *gen_like = get_generator_like_object(arg);
+    if (!gen_like) {
         return NULL;
     }
-    return PyLong_FromLong((long)gen->gi_frame_state); // aka. cr_frame_state / ag_frame_state
+    int fs = get_frame_state(gen_like);
+    return PyLong_FromLong((long)fs);
 }
 
-static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_ip(PyObject *self, PyObject *args) {
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
@@ -166,23 +124,19 @@ static PyObject *get_frame_ip(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-    assert(frame->f_code);
-    assert(frame->prev_instr);
-    // See _PyInterpreterFrame_LASTI
-    // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    intptr_t ip = (intptr_t)frame->prev_instr - (intptr_t)_PyCode_CODE(frame->f_code);
+    int ip = get_frame_lasti(frame);
     return PyLong_FromLong((long)ip);
 }
 
-static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_sp(PyObject *self, PyObject *args) {
     PyObject *obj;
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
@@ -191,20 +145,40 @@ static PyObject *get_frame_sp(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-    int sp = frame->stacktop;
+    int sp = get_frame_stacktop(frame);
     return PyLong_FromLong((long)sp);
 }
 
-static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_bp(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int bp = get_frame_iblock(frame);
+    return PyLong_FromLong((long)bp);
+}
+
+static PyObject *ext_get_frame_stack_at(PyObject *self, PyObject *args) {
     PyObject *obj;
     int index;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &index)) {
@@ -214,18 +188,16 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-
-    int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
-    if (index < 0 || index >= limit) {
+    int sp = get_frame_stacktop(frame);
+    if (index < 0 || index >= sp) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
     }
@@ -233,7 +205,8 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
     // NULL in C != None in Python. We need to preserve the fact that some items
     // on the stack are NULL (not yet available).
     PyObject *is_null = Py_False;
-    PyObject *stack_obj = frame->localsplus[index];
+    PyObject **localsplus = get_frame_localsplus(frame);
+    PyObject *stack_obj = localsplus[index];
     if (!stack_obj) {
         is_null = Py_True;
         stack_obj = Py_None;
@@ -241,7 +214,35 @@ static PyObject *get_frame_stack_at(PyObject *self, PyObject *args) {
     return PyTuple_Pack(2, is_null, stack_obj);
 }
 
-static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
+static PyObject *ext_get_frame_block_at(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    int index;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &index)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot access cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int bp = get_frame_iblock(frame);
+    if (index < 0 || index >= bp) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+        return NULL;
+    }
+    PyTryBlock *blockstack = get_frame_blockstack(frame);
+    PyTryBlock *block = &blockstack[index];
+    return Py_BuildValue("(iii)", block->b_type, block->b_handler, block->b_level);
+}
+
+static PyObject *ext_set_frame_ip(PyObject *self, PyObject *args) {
     PyObject *obj;
     int ip;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &ip)) {
@@ -251,23 +252,19 @@ static PyObject *set_frame_ip(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-    assert(frame->f_code);
-    assert(frame->prev_instr);
-    // See _PyInterpreterFrame_LASTI
-    // https://github.com/python/cpython/blob/3.12/Include/internal/pycore_frame.h#L77
-    frame->prev_instr = (_Py_CODEUNIT *)((intptr_t)_PyCode_CODE(frame->f_code) + (intptr_t)ip);
+    set_frame_lasti(frame, ip);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_sp(PyObject *self, PyObject *args) {
     PyObject *obj;
     int sp;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &sp)) {
@@ -277,33 +274,58 @@ static PyObject *set_frame_sp(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-
-    int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
+    int limit = get_frame_stacktop_limit(frame);
     if (sp < 0 || sp >= limit) {
         PyErr_SetString(PyExc_IndexError, "Stack pointer out of bounds");
         return NULL;
     }
-
-    if (sp > frame->stacktop) {
-        for (int i = frame->stacktop; i < sp; i++) {
-            frame->localsplus[i] = NULL;
+    PyObject **localsplus = get_frame_localsplus(frame);
+    int current_sp = get_frame_stacktop(frame);
+    if (sp > current_sp) {
+        for (int i = current_sp; i < sp; i++) {
+            localsplus[i] = NULL;
         }
     }
-
-    frame->stacktop = sp;
+    set_frame_stacktop(frame, sp);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_frame_state(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_bp(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    int bp;
+    if (!PyArg_ParseTuple(args, "Oi", &obj, &bp)) {
+        return NULL;
+    }
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int limit = get_frame_iblock_limit(frame);
+    if (bp < 0 || bp >= limit) {
+        PyErr_SetString(PyExc_IndexError, "Block pointer out of bounds");
+        return NULL;
+    }
+    set_frame_iblock(frame, bp);
+    Py_RETURN_NONE;
+}
+
+static PyObject *ext_set_frame_state(PyObject *self, PyObject *args) {
     PyObject *obj;
     int fs;
     if (!PyArg_ParseTuple(args, "Oi", &obj, &fs)) {
@@ -317,30 +339,23 @@ static PyObject *set_frame_state(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-#if PY_MINOR_VERSION == 13
-    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_SUSPENDED_YIELD_FROM && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED) {
+    if (!valid_frame_state(fs)) {
         PyErr_SetString(PyExc_ValueError, "Invalid frame state");
         return NULL;
     }
-#else
-    if (fs != FRAME_CREATED && fs != FRAME_SUSPENDED && fs != FRAME_EXECUTING && fs != FRAME_COMPLETED) {
-        PyErr_SetString(PyExc_ValueError, "Invalid frame state");
-        return NULL;
-    }
-#endif
-    gen_like->gi_frame_state = (int8_t)fs; // aka. cr_frame_state / ag_frame_state
+    set_frame_state(gen_like, fs);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
+static PyObject *ext_set_frame_stack_at(PyObject *self, PyObject *args) {
     PyObject *obj;
     int index;
     PyObject *unset;
@@ -356,45 +371,78 @@ static PyObject *set_frame_stack_at(PyObject *self, PyObject *args) {
     if (!gen_like) {
         return NULL;
     }
-    if (gen_like->gi_frame_state >= FRAME_CLEARED) {
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
         return NULL;
     }
-    InterpreterFrame *frame = get_interpreter_frame(gen_like);
+    Frame *frame = get_frame(gen_like);
     if (!frame) {
         return NULL;
     }
-    assert(frame->stacktop >= 0);
-    int limit = frame->f_code->co_stacksize + frame->f_code->co_nlocalsplus;
-    if (index < 0 || index >= limit) {
+    int sp = get_frame_stacktop(frame);
+    if (index < 0 || index >= sp) {
         PyErr_SetString(PyExc_IndexError, "Index out of bounds");
         return NULL;
     }
-
-    PyObject *prev = frame->localsplus[index];
+    PyObject **localsplus = get_frame_localsplus(frame);
+    PyObject *prev = localsplus[index];
     if (Py_IsTrue(unset)) {
-        frame->localsplus[index] = NULL;
+        localsplus[index] = NULL;
     } else {
         Py_INCREF(stack_obj);
-        frame->localsplus[index] = stack_obj;
+        localsplus[index] = stack_obj;
     }
+    Py_XDECREF(prev);
+    Py_RETURN_NONE;
+}
 
-    if (index < frame->stacktop) {
-        Py_XDECREF(prev);
+static PyObject *ext_set_frame_block_at(PyObject *self, PyObject *args) {
+    PyObject *obj;
+    int index;
+    int b_type;
+    int b_handler;
+    int b_level;
+    if (!PyArg_ParseTuple(args, "Oi(iii)", &obj, &index, &b_type, &b_handler, &b_level)) {
+        return NULL;
     }
-
+    PyGenObject *gen_like = get_generator_like_object(obj);
+    if (!gen_like) {
+        return NULL;
+    }
+    if (get_frame_state(gen_like) >= FRAME_CLEARED) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot mutate cleared frame");
+        return NULL;
+    }
+    Frame *frame = get_frame(gen_like);
+    if (!frame) {
+        return NULL;
+    }
+    int bp = get_frame_iblock(frame);
+    if (index < 0 || index >= bp) {
+        PyErr_SetString(PyExc_IndexError, "Index out of bounds");
+        return NULL;
+    }
+    PyTryBlock *blockstack = get_frame_blockstack(frame);
+    PyTryBlock *block = &blockstack[index];
+    block->b_type = b_type;
+    block->b_handler = b_handler;
+    block->b_level = b_level;
     Py_RETURN_NONE;
 }
 
 static PyMethodDef methods[] = {
-        {"get_frame_ip",  get_frame_ip, METH_VARARGS, "Get instruction pointer of a generator or coroutine."},
-        {"set_frame_ip",  set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
-        {"get_frame_sp",  get_frame_sp, METH_VARARGS, "Get stack pointer of a generator or coroutine."},
-        {"set_frame_sp",  set_frame_sp, METH_VARARGS, "Set stack pointer of a generator or coroutine."},
-        {"get_frame_stack_at",  get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
-        {"set_frame_stack_at",  set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
-        {"get_frame_state",  get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
-        {"set_frame_state",  set_frame_state, METH_VARARGS, "Set frame state of a generator or coroutine."},
+        {"get_frame_ip",  ext_get_frame_ip, METH_VARARGS, "Get instruction pointer of a generator or coroutine."},
+        {"set_frame_ip",  ext_set_frame_ip, METH_VARARGS, "Set instruction pointer of a generator or coroutine."},
+        {"get_frame_sp",  ext_get_frame_sp, METH_VARARGS, "Get stack pointer of a generator or coroutine."},
+        {"set_frame_sp",  ext_set_frame_sp, METH_VARARGS, "Set stack pointer of a generator or coroutine."},
+        {"get_frame_bp",  ext_get_frame_bp, METH_VARARGS, "Get block pointer of a generator or coroutine."},
+        {"set_frame_bp",  ext_set_frame_bp, METH_VARARGS, "Set block pointer of a generator or coroutine."},
+        {"get_frame_stack_at",  ext_get_frame_stack_at, METH_VARARGS, "Get an object from a generator or coroutine's stack, as an (is_null, obj) tuple."},
+        {"set_frame_stack_at",  ext_set_frame_stack_at, METH_VARARGS, "Set or unset an object on the stack of a generator or coroutine."},
+        {"get_frame_block_at",  ext_get_frame_block_at, METH_VARARGS, "Get a block from a generator or coroutine."},
+        {"set_frame_block_at",  ext_set_frame_block_at, METH_VARARGS, "Restore a block of a generator or coroutine."},
+        {"get_frame_state",  ext_get_frame_state, METH_VARARGS, "Get frame state of a generator or coroutine."},
+        {"set_frame_state",  ext_set_frame_state, METH_VARARGS, "Set frame state of a generator or coroutine."},
         {NULL, NULL, 0, NULL}
 };
 

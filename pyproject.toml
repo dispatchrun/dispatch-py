@@ -7,7 +7,7 @@ name = "dispatch-py"
 description = "Develop reliable distributed systems on the Dispatch platform."
 readme = "README.md"
 dynamic = ["version"]
-requires-python = ">= 3.11"
+requires-python = ">= 3.10"
 dependencies = [
     "grpcio >= 1.60.0",
     "protobuf >= 4.24.0",

@@ -99,7 +99,10 @@ class TestGenerator(unittest.TestCase):
 
         def check():
             self.assertEqual(g.gi_running, underlying.gi_running)
-            self.assertEqual(g.gi_suspended, underlying.gi_suspended)
+            try:
+                self.assertEqual(g.gi_suspended, underlying.gi_suspended)
+            except AttributeError:
+                pass
             self.assertIs(g.gi_yieldfrom, underlying.gi_yieldfrom)
 
         check()
