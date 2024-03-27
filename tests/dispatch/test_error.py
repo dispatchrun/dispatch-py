@@ -12,7 +12,13 @@ class TestError(unittest.TestCase):
         except Exception as e:
             original_exception = e
             error = Error.from_exception(e)
-        original_traceback = "".join(traceback.format_exception(original_exception))
+        original_traceback = "".join(
+            traceback.format_exception(
+                original_exception.__class__,
+                original_exception,
+                original_exception.__traceback__,
+            )
+        )
 
         # For some reasons traceback.format_exception does not include the caret
         # (^) in the original traceback, but it does in the reconstructed one,
@@ -24,7 +30,13 @@ class TestError(unittest.TestCase):
 
         reconstructed_exception = error.to_exception()
         reconstructed_traceback = strip_caret(
-            "".join(traceback.format_exception(reconstructed_exception))
+            "".join(
+                traceback.format_exception(
+                    reconstructed_exception.__class__,
+                    reconstructed_exception,
+                    reconstructed_exception.__traceback__,
+                )
+            )
         )
 
         assert type(reconstructed_exception) is type(original_exception)
@@ -34,7 +46,13 @@ class TestError(unittest.TestCase):
         error2 = Error.from_exception(reconstructed_exception)
         reconstructed_exception2 = error2.to_exception()
         reconstructed_traceback2 = strip_caret(
-            "".join(traceback.format_exception(reconstructed_exception2))
+            "".join(
+                traceback.format_exception(
+                    reconstructed_exception2.__class__,
+                    reconstructed_exception2,
+                    reconstructed_exception2.__traceback__,
+                )
+            )
         )
 
         assert type(reconstructed_exception2) is type(original_exception)

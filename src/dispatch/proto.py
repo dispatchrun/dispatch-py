@@ -297,11 +297,15 @@ class CallResult:
         )
 
     @classmethod
-    def from_value(cls, output: Any, correlation_id: Optional[int] = None) -> CallResult:
+    def from_value(
+        cls, output: Any, correlation_id: Optional[int] = None
+    ) -> CallResult:
         return CallResult(correlation_id=correlation_id, output=output)
 
     @classmethod
-    def from_error(cls, error: Error, correlation_id: Optional[int] = None) -> CallResult:
+    def from_error(
+        cls, error: Error, correlation_id: Optional[int] = None
+    ) -> CallResult:
         return CallResult(correlation_id=correlation_id, error=error)
 
 
@@ -352,7 +356,9 @@ class Error:
         self.value = value
         self.traceback = traceback
         if not traceback and value:
-            self.traceback = "".join(format_exception(value)).encode("utf-8")
+            self.traceback = "".join(
+                format_exception(value.__class__, value, value.__traceback__)
+            ).encode("utf-8")
 
     @classmethod
     def from_exception(cls, ex: Exception, status: Optional[Status] = None) -> Error:
