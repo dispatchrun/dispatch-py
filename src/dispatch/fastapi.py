@@ -21,8 +21,8 @@ import base64
 import logging
 import os
 from datetime import timedelta
-from urllib.parse import urlparse
 from typing import Optional, Union
+from urllib.parse import urlparse
 
 import fastapi
 import fastapi.responses

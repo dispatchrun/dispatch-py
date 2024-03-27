@@ -2,7 +2,8 @@ import logging
 import pickle
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable, Protocol, Optional, Union
+from typing import Any, Awaitable, Callable, Optional, Protocol, Union
+
 from typing_extensions import TypeAlias
 
 from dispatch.coroutine import AllDirective, AnyDirective, AnyException, RaceDirective

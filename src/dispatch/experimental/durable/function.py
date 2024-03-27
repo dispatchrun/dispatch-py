@@ -9,7 +9,7 @@ from types import (
     MethodType,
     TracebackType,
 )
-from typing import Any, Callable, Coroutine, Generator, TypeVar, Union, cast, Optional
+from typing import Any, Callable, Coroutine, Generator, Optional, TypeVar, Union, cast
 
 from . import frame as ext
 from .registry import RegisteredFunction, lookup_function, register_function

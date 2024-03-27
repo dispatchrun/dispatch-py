@@ -12,14 +12,14 @@ from typing import (
     Dict,
     Generic,
     Iterable,
-    TypeVar,
     Optional,
+    TypeVar,
     overload,
 )
-from typing_extensions import ParamSpec, TypeAlias
 from urllib.parse import urlparse
 
 import grpc
+from typing_extensions import ParamSpec, TypeAlias
 
 import dispatch.coroutine
 import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
@@ -162,7 +162,10 @@ class Registry:
     __slots__ = ("functions", "endpoint", "client")
 
     def __init__(
-        self, endpoint: str, api_key: Optional[str] = None, api_url: Optional[str] = None
+        self,
+        endpoint: str,
+        api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
     ):
         """Initialize a function registry.
 
