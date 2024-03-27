@@ -12,10 +12,10 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    List,
     Optional,
     TypeVar,
     overload,
-    List
 )
 from urllib.parse import urlparse
 

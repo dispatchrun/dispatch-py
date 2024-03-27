@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Sequence, cast, Set
+from typing import Sequence, Set, cast
 
 import http_sfv
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (

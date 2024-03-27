@@ -4,7 +4,7 @@ import pickle
 from dataclasses import dataclass
 from traceback import format_exception
 from types import TracebackType
-from typing import Any, Optional, Dict, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import google.protobuf.any_pb2
 import google.protobuf.message

@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Callable, Type, Dict
+from typing import Any, Callable, Dict, Type
 
 from dispatch.error import IncompatibleStateError
 from dispatch.sdk.v1 import status_pb2 as status_pb

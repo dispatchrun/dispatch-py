@@ -5,7 +5,7 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Optional, Dict, Tuple, List, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import grpc
 import httpx
