@@ -641,7 +641,7 @@ static PyObject *ext_get_frame_block_at(PyObject *self, PyObject *args) {
     }
     PyTryBlock *blockstack = get_frame_blockstack(frame);
     PyTryBlock *block = &blockstack[index];
-    return PyTuple_Pack(3, block->b_type, block->b_handler, block->b_level);
+    return Py_BuildValue("(iii)", block->b_type, block->b_handler, block->b_level);
 }
 
 static PyObject *ext_set_frame_ip(PyObject *self, PyObject *args) {
