@@ -48,17 +48,17 @@ def race(*awaitables: Awaitable[Any]) -> list[Any]:  # type: ignore[misc]
     return (yield RaceDirective(awaitables))
 
 
-@dataclass(slots=True)
+@dataclass
 class AllDirective:
     awaitables: tuple[Awaitable[Any], ...]
 
 
-@dataclass(slots=True)
+@dataclass
 class AnyDirective:
     awaitables: tuple[Awaitable[Any], ...]
 
 
-@dataclass(slots=True)
+@dataclass
 class RaceDirective:
     awaitables: tuple[Awaitable[Any], ...]
 

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from http_message_signatures.structures import CaseInsensitiveDict
 
 
-@dataclass(slots=True)
+@dataclass
 class Request:
     """A framework-agnostic representation of an HTTP request."""
 

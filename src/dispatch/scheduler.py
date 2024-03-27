@@ -17,7 +17,7 @@ CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
 
 
-@dataclass(slots=True)
+@dataclass
 class CoroutineResult:
     """The result from running a coroutine to completion."""
 
@@ -26,7 +26,7 @@ class CoroutineResult:
     error: Exception | None = None
 
 
-@dataclass(slots=True)
+@dataclass
 class CallResult:
     """The result of an asynchronous function call."""
 
@@ -47,7 +47,7 @@ class Future(Protocol):
     def value(self) -> Any: ...
 
 
-@dataclass(slots=True)
+@dataclass
 class CallFuture:
     """A future result of a dispatch.coroutine.call() operation."""
 
@@ -78,7 +78,7 @@ class CallFuture:
         return self.result.value
 
 
-@dataclass(slots=True)
+@dataclass
 class AllFuture:
     """A future result of a dispatch.coroutine.all() operation."""
 
@@ -120,7 +120,7 @@ class AllFuture:
         return [self.results[id].value for id in self.order]
 
 
-@dataclass(slots=True)
+@dataclass
 class AnyFuture:
     """A future result of a dispatch.coroutine.any() operation."""
 
@@ -177,7 +177,7 @@ class AnyFuture:
         return self.first_result.value
 
 
-@dataclass(slots=True)
+@dataclass
 class RaceFuture:
     """A future result of a dispatch.coroutine.race() operation."""
 
@@ -217,7 +217,7 @@ class RaceFuture:
         return self.first_result.value if self.first_result else None
 
 
-@dataclass(slots=True)
+@dataclass
 class Coroutine:
     """An in-flight coroutine."""
 
@@ -241,7 +241,7 @@ class Coroutine:
         return f"Coroutine({self.id}, {self.coroutine.__qualname__})"
 
 
-@dataclass(slots=True)
+@dataclass
 class State:
     """State of the scheduler and the coroutines it's managing."""
 

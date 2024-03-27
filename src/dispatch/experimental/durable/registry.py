@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from types import FunctionType
 
 
-@dataclass(slots=True)
+@dataclass
 class RegisteredFunction:
     """A function that can be referenced in durable state."""
 
