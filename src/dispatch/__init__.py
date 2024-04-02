@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dispatch.integrations
 from dispatch.coroutine import all, any, call, gather, race
-from dispatch.function import DEFAULT_API_URL, Client, Registry
+from dispatch.function import DEFAULT_API_URL, Client, Registry, Reset
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
 from dispatch.status import Status
@@ -17,6 +17,7 @@ __all__ = [
     "Output",
     "Call",
     "Error",
+    "Reset",
     "Status",
     "call",
     "gather",
