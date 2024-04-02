@@ -27,7 +27,7 @@ import dispatch.sdk.v1.dispatch_pb2 as dispatch_pb
 import dispatch.sdk.v1.dispatch_pb2_grpc as dispatch_grpc
 from dispatch.experimental.durable import durable
 from dispatch.id import DispatchID
-from dispatch.proto import Arguments, Call, Error, Input, Output
+from dispatch.proto import Arguments, Call, Error, Input, Output, TailCall
 from dispatch.scheduler import OneShotScheduler
 
 logger = logging.getLogger(__name__)
@@ -155,6 +155,14 @@ class Function(PrimitiveFunction, Generic[P, T]):
         return self._build_primitive_call(
             Arguments(args, kwargs), correlation_id=correlation_id
         )
+
+
+class Reset(TailCall):
+    """The current coroutine is aborted and scheduling reset to be replaced with
+    the call embedded in this exception."""
+
+    def __init__(self, func: Function[P, T], *args: P.args, **kwargs: P.kwargs):
+        super().__init__(call=func.build_call(*args, correlation_id=None, **kwargs))
 
 
 class Registry:

@@ -20,7 +20,7 @@ from typing_extensions import TypeAlias
 from dispatch.coroutine import AllDirective, AnyDirective, AnyException, RaceDirective
 from dispatch.error import IncompatibleStateError
 from dispatch.experimental.durable.function import DurableCoroutine, DurableGenerator
-from dispatch.proto import Call, Error, Input, Output
+from dispatch.proto import Call, Error, Input, Output, TailCall
 from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,8 @@ class CoroutineResult:
     coroutine_id: CoroutineID
     value: Optional[Any] = None
     error: Optional[Exception] = None
+    call: Optional[Call] = None
+    status: Status = Status.OK
 
 
 @dataclass
@@ -438,6 +440,10 @@ class OneShotScheduler:
             coroutine_result: Optional[CoroutineResult] = None
             try:
                 coroutine_yield = coroutine.run()
+            except TailCall as tc:
+                coroutine_result = CoroutineResult(
+                    coroutine_id=coroutine.id, call=tc.call, status=tc.status
+                )
             except StopIteration as e:
                 coroutine_result = CoroutineResult(
                     coroutine_id=coroutine.id, value=e.value
@@ -450,7 +456,11 @@ class OneShotScheduler:
 
             # Handle coroutines that return or raise.
             if coroutine_result is not None:
-                if coroutine_result.error is not None:
+                if coroutine_result.call is not None:
+                    logger.debug(
+                        "%s reset to %s", coroutine, coroutine_result.call.function
+                    )
+                elif coroutine_result.error is not None:
                     logger.debug("%s raised %s", coroutine, coroutine_result.error)
                 else:
                     logger.debug("%s returned %s", coroutine, coroutine_result.value)
@@ -462,6 +472,11 @@ class OneShotScheduler:
                     if coroutine_result.error is not None:
                         return Output.error(
                             Error.from_exception(coroutine_result.error)
+                        )
+                    if coroutine_result.call is not None:
+                        return Output.tail_call(
+                            tail_call=coroutine_result.call,
+                            status=coroutine_result.status,
                         )
                     return Output.value(coroutine_result.value)
 
