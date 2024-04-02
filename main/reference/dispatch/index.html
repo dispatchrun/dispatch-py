@@ -1300,6 +1300,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dispatch.Reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Reset
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dispatch.Call" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Call
@@ -1952,6 +1961,50 @@ a set of calls to dispatch.</p>
 
 
 
+<h2 id="dispatch.Reset" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Reset</span>
+
+
+<a href="#dispatch.Reset" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">Reset</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="function/#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="dispatch.proto.TailCall" href="proto/#dispatch.proto.TailCall">TailCall</a></code></p>
+
+  
+      <p>The current coroutine is aborted and scheduling reset to be replaced with
+the call embedded in this exception.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="dispatch.Call" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Call</span>
 
@@ -2368,7 +2421,9 @@ Output.poll().</p>
   </span>
 
 <a href="#dispatch.Output.tail_call" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">tail_call</span><span class="p">(</span><span class="n">tail_call</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="proto/#dispatch.proto.Output">Output</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tail_call</span><span class="p">(</span>
+    <span class="n">tail_call</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="proto/#dispatch.proto.Call">Call</a></span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="status/#dispatch.status.Status">Status</a></span> <span class="o">=</span> <span class="n">Status</span><span class="o">.</span><span class="n">OK</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Output" href="proto/#dispatch.proto.Output">Output</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
