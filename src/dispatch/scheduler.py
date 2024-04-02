@@ -31,14 +31,6 @@ CorrelationID: TypeAlias = int
 
 
 @dataclass
-class Reset(Exception):
-    """A reset exception which discards the current coroutine and schedules
-    the provided call as argument instead"""
-
-    def __init__(self): ...
-
-
-@dataclass
 class CoroutineResult:
     """The result from running a coroutine to completion."""
 
