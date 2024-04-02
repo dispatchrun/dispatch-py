@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Optional, Type
 
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
-from dispatch.proto import Call, CallResult, Error, Input, Output
+from dispatch.proto import Arguments, Call, CallResult, Error, Input, Output, TailCall
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.scheduler import (
     AllFuture,
@@ -372,6 +372,21 @@ class TestOneShotScheduler(unittest.TestCase):
         output = self.start(main)
         self.assert_exit_result_error(output, ValueError, "oops")
 
+    def test_raise_reset(self):
+        @durable
+        async def main(x: int, y: int):
+            raise TailCall(
+                call=Call(
+                    function="main", input=Arguments((), {"x": x + 1, "y": y + 2})
+                )
+            )
+
+        output = self.start(main, x=1, y=2)
+        self.assert_exit_tail_call(
+            output,
+            tail_call=Call(function="main", input=Arguments((), {"x": 2, "y": 4})),
+        )
+
     def test_min_max_results_clamping(self):
         @durable
         async def main():
@@ -456,6 +471,12 @@ class TestOneShotScheduler(unittest.TestCase):
         if message is not None:
             self.assertEqual(str(error), message)
         return error
+
+    def assert_exit_tail_call(self, output: Output, tail_call: Call):
+        exit = self.assert_exit(output)
+        self.assertFalse(exit.HasField("result"))
+        self.assertTrue(exit.HasField("tail_call"))
+        self.assertEqual(tail_call._as_proto(), exit.tail_call)
 
     def assert_poll(self, output: Output) -> poll_pb.Poll:
         response = output._message

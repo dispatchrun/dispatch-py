@@ -20,6 +20,20 @@ from dispatch.sdk.v1 import poll_pb2 as poll_pb
 from dispatch.sdk.v1 import status_pb2 as status_pb
 from dispatch.status import Status, status_for_error, status_for_output
 
+
+class TailCall(Exception):
+    """The current coroutine is aborted and scheduling reset to be replaced with
+    the call embedded in this exception."""
+
+    call: Call
+    status: Status
+
+    def __init__(self, call: Call, status: Status = Status.TEMPORARY_ERROR):
+        super().__init__(f"reset coroutine to ${call.function}")
+        self.call = call
+        self.status = status
+
+
 # Most types in this package are thin wrappers around the various protobuf
 # messages of dispatch.sdk.v1. They provide some safeguards and ergonomics.
 
@@ -175,10 +189,10 @@ class Output:
         return cls.exit(result=CallResult.from_error(error), status=error.status)
 
     @classmethod
-    def tail_call(cls, tail_call: Call) -> Output:
+    def tail_call(cls, tail_call: Call, status: Status = Status.OK) -> Output:
         """Terminally exit the function, and instruct the orchestrator to
         tail call the specified function."""
-        return cls.exit(tail_call=tail_call)
+        return cls.exit(tail_call=tail_call, status=status)
 
     @classmethod
     def exit(
