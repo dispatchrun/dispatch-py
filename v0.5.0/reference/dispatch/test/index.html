@@ -1401,7 +1401,7 @@
 
 
 <a href="#dispatch.test.EndpointClient" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">EndpointClient</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">EndpointClient</span><span class="p">(</span>
     <span class="n">http_client</span><span class="p">:</span> <span class="n"><span title="httpx.Client">Client</span></span><span class="p">,</span>
     <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1484,7 +1484,7 @@ functions, for example a FastAPI app.</p>
 
 
 <a href="#dispatch.test.EndpointClient.run" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">run</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n"><span title="dispatch.sdk.v1.function_pb2.RunRequest">RunRequest</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="dispatch.sdk.v1.function_pb2.RunResponse">RunResponse</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">run</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n"><span title="dispatch.sdk.v1.function_pb2.RunRequest">RunRequest</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="dispatch.sdk.v1.function_pb2.RunResponse">RunResponse</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1563,7 +1563,7 @@ functions, for example a FastAPI app.</p>
   </span>
 
 <a href="#dispatch.test.EndpointClient.from_url" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">from_url</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_url</span><span class="p">(</span>
     <span class="n">url</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1591,7 +1591,7 @@ functions, for example a FastAPI app.</p>
   </span>
 
 <a href="#dispatch.test.EndpointClient.from_app" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">from_app</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_app</span><span class="p">(</span>
     <span class="n">app</span><span class="p">:</span> <span class="n"><span title="fastapi.FastAPI">FastAPI</span></span><span class="p">,</span>
     <span class="n">signing_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dispatch.signature.Ed25519PrivateKey">Ed25519PrivateKey</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1624,7 +1624,7 @@ FastAPI app instance.</p>
 
 
 <a href="#dispatch.test.DispatchServer" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">DispatchServer</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">DispatchServer</span><span class="p">(</span>
     <span class="n">service</span><span class="p">:</span> <span class="n"><span title="dispatch.sdk.v1.dispatch_pb2_grpc.DispatchServiceServicer">DispatchServiceServicer</span></span><span class="p">,</span>
     <span class="n">hostname</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
     <span class="n">port</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
@@ -1742,7 +1742,7 @@ dispatch.test.DispatchService).</p>
 
 
 <a href="#dispatch.test.DispatchServer.start" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">start</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">start</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1763,7 +1763,7 @@ dispatch.test.DispatchService).</p>
 
 
 <a href="#dispatch.test.DispatchServer.wait" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">wait</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">wait</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1784,7 +1784,7 @@ dispatch.test.DispatchService).</p>
 
 
 <a href="#dispatch.test.DispatchServer.stop" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">stop</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">stop</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1813,7 +1813,7 @@ dispatch.test.DispatchService).</p>
 
 
 <a href="#dispatch.test.DispatchService" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">DispatchService</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">DispatchService</span><span class="p">(</span>
     <span class="n">endpoint_client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.test.EndpointClient" href="#dispatch.test.EndpointClient">EndpointClient</a></span><span class="p">,</span>
     <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">retry_on_status</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Set">Set</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Status" href="../status/#dispatch.status.Status">Status</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1928,7 +1928,7 @@ to the configured endpoint.</p>
 
 
 <a href="#dispatch.test.DispatchService.Dispatch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Dispatch</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n"><span title="dispatch.DispatchRequest">DispatchRequest</span></span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Dispatch</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n"><span title="dispatch.DispatchRequest">DispatchRequest</span></span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1950,7 +1950,7 @@ processing here.</p>
 
 
 <a href="#dispatch.test.DispatchService.dispatch_calls" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch_calls</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch_calls</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1972,7 +1972,7 @@ configured endpoint.</p>
 
 
 <a href="#dispatch.test.DispatchService.start" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">start</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">start</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1994,7 +1994,7 @@ configured endpoint.</p>
 
 
 <a href="#dispatch.test.DispatchService.stop" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">stop</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">stop</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
