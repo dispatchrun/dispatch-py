@@ -1710,7 +1710,7 @@ exceptions.</p>
 
 
 <a href="#dispatch.function.Function" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Function</span><span class="p">(</span>
     <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
@@ -1750,7 +1750,7 @@ Dispatch Python SDK.</p>
 
 <a href="#dispatch.function.Function.__call__" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="fm">__call__</span><span class="p">(</span>
-    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
+    <span class="o">*</span><span class="nf">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Coroutine">Coroutine</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span>
 </code></pre></div>
 
@@ -1773,7 +1773,7 @@ coroutine that can be awaited to retrieve the call result.</p>
 
 
 <a href="#dispatch.function.Function.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1889,7 +1889,7 @@ with a Client / api_key for this call facility to be available.</p>
 
 
 <a href="#dispatch.function.Function.build_call" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">build_call</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">build_call</span><span class="p">(</span>
     <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span>
     <span class="n">correlation_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
@@ -2006,7 +2006,7 @@ match this call to a call result.</p>
 
 
 <a href="#dispatch.function.Reset" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Reset</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Reset</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span>
 </code></pre></div>
@@ -2050,7 +2050,7 @@ the call embedded in this exception.</p>
 
 
 <a href="#dispatch.function.Registry" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Registry</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Registry</span><span class="p">(</span>
     <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2149,7 +2149,7 @@ variable if set, otherwise defaults to the public Dispatch API
 
 
 <a href="#dispatch.function.Registry.function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2170,7 +2170,7 @@ variable if set, otherwise defaults to the public Dispatch API
 
 
 <a href="#dispatch.function.Registry.primitive_function" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">primitive_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">primitive_function</span><span class="p">(</span>
     <span class="n">primitive_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="dispatch.function.PrimitiveFunction">PrimitiveFunction</span></span>
 </code></pre></div>
@@ -2193,7 +2193,7 @@ variable if set, otherwise defaults to the public Dispatch API
 
 
 <a href="#dispatch.function.Registry.set_client" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">set_client</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_client</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2214,7 +2214,7 @@ variable if set, otherwise defaults to the public Dispatch API
 
 
 <a href="#dispatch.function.Registry.batch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">batch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">batch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2244,7 +2244,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Client" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Client</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Client</span><span class="p">(</span>
     <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -2350,7 +2350,7 @@ defaults to the public Dispatch API (DEFAULT_API_URL).</p>
 
 
 <a href="#dispatch.function.Client.batch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">batch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">batch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2372,7 +2372,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Client.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2455,7 +2455,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Batch" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Batch</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Batch</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2486,7 +2486,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Batch.add" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">add</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
 </code></pre></div>
@@ -2509,7 +2509,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Batch.add_call" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">add_call</span><span class="p">(</span><span class="n">call</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_call</span><span class="p">(</span><span class="n">call</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2530,7 +2530,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Batch.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dispatch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2586,7 +2586,7 @@ a set of calls to dispatch.</p>
 
 
 <a href="#dispatch.function.Batch.reset" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">reset</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reset</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
