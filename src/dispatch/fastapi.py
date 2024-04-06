@@ -17,6 +17,7 @@ Example:
         my_function.dispatch()
     """
 
+import asyncio
 import base64
 import logging
 import os
@@ -229,8 +230,11 @@ def _new_app(function_registry: Dispatch, verification_key: Optional[Ed25519Publ
 
         input = Input(req)
         logger.info("running function '%s'", req.function)
+
+        loop = asyncio.get_running_loop()
+
         try:
-            output = func._primitive_call(input)
+            output = await loop.run_in_executor(None, func._primitive_call, input)
         except Exception:
             # This indicates that an exception was raised in a primitive
             # function. Primitive functions must catch exceptions, categorize
