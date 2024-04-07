@@ -20,7 +20,7 @@ from buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
 from dispatch.sdk.v1 import error_pb2 as dispatch_dot_sdk_dot_v1_dot_error__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x1a\x64ispatch/sdk/v1/call.proto\x12\x0f\x64ispatch.sdk.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1b\x64ispatch/sdk/v1/error.proto\x1a\x19google/protobuf/any.proto\x1a\x1egoogle/protobuf/duration.proto"\x84\x02\n\x04\x43\x61ll\x12%\n\x0e\x63orrelation_id\x18\x01 \x01(\x04R\rcorrelationId\x12$\n\x08\x65ndpoint\x18\x02 \x01(\tB\x08\xbaH\x05r\x03\x88\x01\x01R\x08\x65ndpoint\x12>\n\x08\x66unction\x18\x03 \x01(\tB"\xbaH\x1fr\x1a\x32\x18^[a-zA-Z_][a-zA-Z0-9_]*$\xc8\x01\x01R\x08\x66unction\x12*\n\x05input\x18\x04 \x01(\x0b\x32\x14.google.protobuf.AnyR\x05input\x12\x43\n\nexpiration\x18\x05 \x01(\x0b\x32\x19.google.protobuf.DurationB\x08\xbaH\x05\xaa\x01\x02\x32\x00R\nexpiration"\x8f\x01\n\nCallResult\x12%\n\x0e\x63orrelation_id\x18\x01 \x01(\x04R\rcorrelationId\x12,\n\x06output\x18\x02 \x01(\x0b\x32\x14.google.protobuf.AnyR\x06output\x12,\n\x05\x65rror\x18\x03 \x01(\x0b\x32\x16.dispatch.sdk.v1.ErrorR\x05\x65rrorB~\n\x13\x63om.dispatch.sdk.v1B\tCallProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3'
+    b'\n\x1a\x64ispatch/sdk/v1/call.proto\x12\x0f\x64ispatch.sdk.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1b\x64ispatch/sdk/v1/error.proto\x1a\x19google/protobuf/any.proto\x1a\x1egoogle/protobuf/duration.proto"\x87\x02\n\x04\x43\x61ll\x12%\n\x0e\x63orrelation_id\x18\x01 \x01(\x04R\rcorrelationId\x12$\n\x08\x65ndpoint\x18\x02 \x01(\tB\x08\xbaH\x05r\x03\x88\x01\x01R\x08\x65ndpoint\x12\x41\n\x08\x66unction\x18\x03 \x01(\tB%\xbaH"r\x1d\x32\x1b^[a-zA-Z_][a-zA-Z0-9_<>.]*$\xc8\x01\x01R\x08\x66unction\x12*\n\x05input\x18\x04 \x01(\x0b\x32\x14.google.protobuf.AnyR\x05input\x12\x43\n\nexpiration\x18\x05 \x01(\x0b\x32\x19.google.protobuf.DurationB\x08\xbaH\x05\xaa\x01\x02\x32\x00R\nexpiration"\x8f\x01\n\nCallResult\x12%\n\x0e\x63orrelation_id\x18\x01 \x01(\x04R\rcorrelationId\x12,\n\x06output\x18\x02 \x01(\x0b\x32\x14.google.protobuf.AnyR\x06output\x12,\n\x05\x65rror\x18\x03 \x01(\x0b\x32\x16.dispatch.sdk.v1.ErrorR\x05\x65rrorB~\n\x13\x63om.dispatch.sdk.v1B\tCallProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3'
 )
 
 _globals = globals()
@@ -40,13 +40,13 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _globals["_CALL"].fields_by_name["function"]._options = None
     _globals["_CALL"].fields_by_name[
         "function"
-    ]._serialized_options = b"\272H\037r\0322\030^[a-zA-Z_][a-zA-Z0-9_]*$\310\001\001"
+    ]._serialized_options = b'\272H"r\0352\033^[a-zA-Z_][a-zA-Z0-9_<>.]*$\310\001\001'
     _globals["_CALL"].fields_by_name["expiration"]._options = None
     _globals["_CALL"].fields_by_name[
         "expiration"
     ]._serialized_options = b"\272H\005\252\001\0022\000"
     _globals["_CALL"]._serialized_start = 165
-    _globals["_CALL"]._serialized_end = 425
-    _globals["_CALLRESULT"]._serialized_start = 428
-    _globals["_CALLRESULT"]._serialized_end = 571
+    _globals["_CALL"]._serialized_end = 428
+    _globals["_CALLRESULT"]._serialized_start = 431
+    _globals["_CALLRESULT"]._serialized_end = 574
 # @@protoc_insertion_point(module_scope)

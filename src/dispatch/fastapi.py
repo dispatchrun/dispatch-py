@@ -8,7 +8,7 @@ Example:
     app = fastapi.FastAPI()
     dispatch = Dispatch(app, api_key="test-key")
 
-    @dispatch.function()
+    @dispatch.function
     def my_function():
         return "Hello World!"
 
@@ -29,7 +29,7 @@ import fastapi
 import fastapi.responses
 from http_message_signatures import InvalidSignature
 
-from dispatch.function import Batch, Client, Registry
+from dispatch.function import Batch, Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (

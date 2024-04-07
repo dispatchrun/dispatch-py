@@ -2,6 +2,13 @@
 
 PYTHON := python
 
+ifdef PROTO_VERSION
+PROTO_TARGET := buf.build/stealthrocket/dispatch-proto:$(PROTO_VERSION)
+else
+PROTO_TARGET := buf.build/stealthrocket/dispatch-proto
+endif
+
+
 all: test
 
 install:
@@ -9,6 +16,9 @@ install:
 
 dev:
 	$(PYTHON) -m pip install -e .[dev]
+
+lambda:
+	$(PYTHON) -m pip install -e .[lambda]
 
 fmt:
 	$(PYTHON) -m isort .
@@ -39,7 +49,7 @@ test: typecheck unittest
 	mkdir -p $@
 
 .proto/dispatch-proto: .proto
-	buf export buf.build/stealthrocket/dispatch-proto --output=.proto/dispatch-proto
+	buf export $(PROTO_TARGET) --output=.proto/dispatch-proto
 
 update-proto:
 	$(MAKE) clean

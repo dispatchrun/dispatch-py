@@ -39,7 +39,6 @@ def create_dispatch_instance(app, endpoint):
 
 
 class TestFastAPI(unittest.TestCase):
-
     def test_Dispatch(self):
         app = fastapi.FastAPI()
         create_dispatch_instance(app, "https://127.0.0.1:9999")

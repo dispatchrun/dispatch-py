@@ -62,6 +62,10 @@ class PrimitiveFunction:
     def endpoint(self) -> str:
         return self._endpoint
 
+    @endpoint.setter
+    def endpoint(self, value: str):
+        self._endpoint = value
+
     @property
     def name(self) -> str:
         return self._name
@@ -266,6 +270,10 @@ class Registry:
         """Returns a Batch instance that can be used to build
         a set of calls to dispatch."""
         return self.client.batch()
+
+    def override_endpoint(self, endpoint: str):
+        for fn in self.functions.values():
+            fn.endpoint = endpoint
 
 
 class Client:
