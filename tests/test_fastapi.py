@@ -1,6 +1,7 @@
 import base64
 import os
 import pickle
+import struct
 import unittest
 from typing import Any
 from unittest import mock
@@ -282,7 +283,7 @@ class TestCoroutine(unittest.TestCase):
         @self.dispatch.primitive_function
         def my_function(input: Input) -> Output:
             if input.is_first_call:
-                return Output.poll(state=42)
+                return Output.poll(coroutine_state=b"42")
             try:
                 print(input.input)
             except ValueError:
@@ -294,7 +295,7 @@ class TestCoroutine(unittest.TestCase):
             return Output.value("not reached")
 
         resp = self.execute(my_function, input="cool stuff")
-        self.assertEqual(42, pickle.loads(resp.poll.coroutine_state))
+        self.assertEqual(b"42", resp.poll.coroutine_state)
 
         resp = self.execute(my_function, state=resp.poll.coroutine_state)
         self.assertEqual("ValueError", resp.exit.result.error.type)
@@ -337,11 +338,12 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 counter = input.input
             else:
-                counter = input.coroutine_state
+                (counter,) = struct.unpack("@i", input.coroutine_state)
             counter -= 1
             if counter <= 0:
                 return Output.value("done")
-            return Output.poll(state=counter)
+            coroutine_state = struct.pack("@i", counter)
+            return Output.poll(coroutine_state=coroutine_state)
 
         # first call
         resp = self.execute(coroutine3, input=4)
@@ -375,9 +377,10 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
-                    state=text, calls=[coro_compute_len._build_primitive_call(text)]
+                    coroutine_state=text.encode(),
+                    calls=[coro_compute_len._build_primitive_call(text)],
                 )
-            text = input.coroutine_state
+            text = input.coroutine_state.decode()
             length = input.call_results[0].output
             return Output.value(f"length={length} text='{text}'")
 
@@ -415,7 +418,8 @@ class TestCoroutine(unittest.TestCase):
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
-                    state=text, calls=[coro_compute_len._build_primitive_call(text)]
+                    coroutine_state=text.encode(),
+                    calls=[coro_compute_len._build_primitive_call(text)],
                 )
             error = input.call_results[0].error
             if error is not None:

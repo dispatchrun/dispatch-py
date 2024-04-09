@@ -558,7 +558,7 @@ class OneShotScheduler:
             len(serialized_state),
         )
         return Output.poll(
-            state=serialized_state,
+            coroutine_state=serialized_state,
             calls=pending_calls,
             min_results=max(1, min(state.outstanding_calls, self.poll_min_results)),
             max_results=max(1, min(state.outstanding_calls, self.poll_max_results)),

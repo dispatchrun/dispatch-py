@@ -72,11 +72,7 @@ class Input:
             else:
                 self._input = _pb_any_unpack(req.input)
         else:
-            state_bytes = req.poll_result.coroutine_state
-            if len(state_bytes) > 0:
-                self._coroutine_state = pickle.loads(state_bytes)
-            else:
-                self._coroutine_state = None
+            self._coroutine_state = req.poll_result.coroutine_state
             self._call_results = [
                 CallResult._from_proto(r) for r in req.poll_result.results
             ]
@@ -143,7 +139,7 @@ class Input:
     def from_poll_results(
         cls,
         function: str,
-        coroutine_state: Any,
+        coroutine_state: Optional[bytes],
         call_results: List[CallResult],
         error: Optional[Error] = None,
     ):
@@ -220,7 +216,7 @@ class Output:
     @classmethod
     def poll(
         cls,
-        state: Any,
+        coroutine_state: Optional[bytes] = None,
         calls: Optional[List[Call]] = None,
         min_results: int = 1,
         max_results: int = 10,
@@ -229,14 +225,13 @@ class Output:
         """Suspend the function with a set of Calls, instructing the
         orchestrator to resume the function with the provided state when
         call results are ready."""
-        state_bytes = pickle.dumps(state)
         max_wait = (
             duration_pb2.Duration(seconds=max_wait_seconds)
             if max_wait_seconds is not None
             else None
         )
         poll = poll_pb.Poll(
-            coroutine_state=state_bytes,
+            coroutine_state=coroutine_state,
             min_results=min_results,
             max_results=max_results,
             max_wait=max_wait,
