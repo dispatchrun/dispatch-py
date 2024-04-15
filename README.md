@@ -41,7 +41,7 @@ To get started, follow the instructions to [sign up for Dispatch][signup] 🚀.
 
 As a pre-requisite, we recommend installing the Dispatch CLI to simplify the
 configuration and execution of applications that use Dispatch. On macOS, this
-can be done easily using the [Homebrew](https://docs.brew.sh/) tap:
+can be done easily using [Homebrew](https://docs.brew.sh/):
 
 ```console
 brew tap stealthrocket/dispatch
