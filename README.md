@@ -98,7 +98,7 @@ dispatch login
 
 Then we are ready to run the example program we wrote above:
 ```console
-dispatch run -- main.py
+dispatch run -- python3 main.py
 ```
 
 ### Writing Transactional Applications with Dispatch
