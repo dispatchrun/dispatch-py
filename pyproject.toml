@@ -15,8 +15,6 @@ dependencies = [
     "grpc-stubs >= 1.53.0.5",
     "http-message-signatures >= 0.4.4",
     "tblib >= 3.0.0",
-    "docopt >= 0.6.2",
-    "types-docopt >= 0.6.11.4",
     "httpx >= 0.27.0",
     "typing_extensions >= 4.10"
 ]
