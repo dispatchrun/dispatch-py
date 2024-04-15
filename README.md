@@ -155,7 +155,7 @@ async def transform(msg):
 Dispatch converts Python coroutines to *Distributed Coroutines*, which can be
 suspended and resumed on any instance of a service across a fleet. For a deep
 dive on these concepts, read our blog post on
-[*Distributed Coroutines with a Native Python Extension and Dispatch*](https://stealthrocket.tech/blog/distributed-coroutines-in-python).
+[*Distributed Coroutines in Python*](https://stealthrocket.tech/blog/distributed-coroutines-in-python).
 
 ### Integration with FastAPI
 
