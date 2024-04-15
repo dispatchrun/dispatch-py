@@ -1,4 +1,4 @@
-"""Integration of Dispatch programmable endpoints for FastAPI.
+"""Integration of Dispatch functions with FastAPI.
 
 Example:
 
@@ -18,7 +18,6 @@ Example:
     """
 
 import asyncio
-import base64
 import logging
 import os
 from datetime import timedelta
@@ -36,8 +35,7 @@ from dispatch.signature import (
     CaseInsensitiveDict,
     Ed25519PublicKey,
     Request,
-    public_key_from_bytes,
-    public_key_from_pem,
+    parse_verification_key,
     verify_request,
 )
 from dispatch.status import Status
@@ -46,9 +44,7 @@ logger = logging.getLogger(__name__)
 
 
 class Dispatch(Registry):
-    """A Dispatch programmable endpoint, powered by FastAPI."""
-
-    __slots__ = ("client",)
+    """A Dispatch instance, powered by FastAPI."""
 
     def __init__(
         self,
@@ -65,9 +61,9 @@ class Dispatch(Registry):
         Args:
             app: The FastAPI app to configure.
 
-            endpoint: Full URL of the application the Dispatch programmable
-                endpoint will be running on. Uses the value of the
-                DISPATCH_ENDPOINT_URL environment variable by default.
+            endpoint: Full URL of the application the Dispatch instance will
+                be running on. Uses the value of the DISPATCH_ENDPOINT_URL
+                environment variable by default.
 
             verification_key: Key to use when verifying signed requests. Uses
                 the value of the DISPATCH_VERIFICATION_KEY environment variable
@@ -108,53 +104,11 @@ class Dispatch(Registry):
                 f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
             )
 
-        verification_key = parse_verification_key(verification_key)
-        if verification_key:
-            base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
-            logger.info("verifying request signatures using key %s", base64_key)
-        elif parsed_url.scheme != "bridge":
-            logger.warning(
-                "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
-            )
-
         super().__init__(endpoint, api_key=api_key, api_url=api_url)
 
+        verification_key = parse_verification_key(verification_key, url_scheme=parsed_url.scheme)
         function_service = _new_app(self, verification_key)
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
-
-
-def parse_verification_key(
-    verification_key: Optional[Union[Ed25519PublicKey, str, bytes]],
-) -> Optional[Ed25519PublicKey]:
-    if isinstance(verification_key, Ed25519PublicKey):
-        return verification_key
-
-    from_env = False
-    if not verification_key:
-        try:
-            verification_key = os.environ["DISPATCH_VERIFICATION_KEY"]
-        except KeyError:
-            return None
-        from_env = True
-
-    if isinstance(verification_key, bytes):
-        verification_key = verification_key.decode()
-
-    # Be forgiving when accepting keys in PEM format, which may span
-    # multiple lines. Users attempting to pass a PEM key via an environment
-    # variable may accidentally include literal "\n" bytes rather than a
-    # newline char (0xA).
-    try:
-        return public_key_from_pem(verification_key.replace("\\n", "\n"))
-    except ValueError:
-        pass
-
-    try:
-        return public_key_from_bytes(base64.b64decode(verification_key.encode()))
-    except ValueError:
-        if from_env:
-            raise ValueError(f"invalid DISPATCH_VERIFICATION_KEY '{verification_key}'")
-        raise ValueError(f"invalid verification key '{verification_key}'")
 
 
 class _ConnectResponse(fastapi.Response):

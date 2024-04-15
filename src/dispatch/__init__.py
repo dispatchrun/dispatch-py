@@ -10,19 +10,27 @@ from dispatch.proto import Call, Error, Input, Output
 from dispatch.status import Status
 
 __all__ = [
+    "Call",
     "Client",
-    "DispatchID",
     "DEFAULT_API_URL",
+    "DispatchID",
+    "Error",
     "Input",
     "Output",
-    "Call",
-    "Error",
+    "Registry",
     "Reset",
     "Status",
-    "call",
-    "gather",
     "all",
     "any",
+    "call",
+    "function",
+    "gather",
     "race",
-    "Registry",
+    "run",
 ]
+
+function = None
+primitive_function = None
+
+
+def run(): ...
