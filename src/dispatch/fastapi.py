@@ -112,7 +112,7 @@ class Dispatch(Registry):
         if verification_key:
             base64_key = base64.b64encode(verification_key.public_bytes_raw()).decode()
             logger.info("verifying request signatures using key %s", base64_key)
-        else:
+        elif parsed_url.scheme != "bridge":
             logger.warning(
                 "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
             )
