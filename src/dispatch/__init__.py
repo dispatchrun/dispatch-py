@@ -1,22 +1,23 @@
 """The Dispatch SDK for Python."""
+
 from __future__ import annotations
 
 import os
-import dispatch.integrations
-
 from concurrent import futures
 from http.server import HTTPServer
 from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
-from typing_extensions import ParamSpec, TypeAlias
 from urllib.parse import urlsplit
 
+from typing_extensions import ParamSpec, TypeAlias
+
+import dispatch.integrations
 from dispatch.coroutine import all, any, call, gather, race
 from dispatch.function import DEFAULT_API_URL, Client, Function, Registry, Reset
 from dispatch.http import Dispatch
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
-from dispatch.status import Status
 from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
+from dispatch.status import Status
 
 __all__ = [
     "Call",
@@ -44,20 +45,25 @@ T = TypeVar("T")
 
 _registry: Optional[Registry] = None
 
+
 def _default_registry():
     global _registry
     if not _registry:
         _registry = Registry()
     return _registry
 
+
 @overload
 def function(func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
+
 
 @overload
 def function(func: Callable[P, T]) -> Function[P, T]: ...
 
+
 def function(func):
     return _default_registry().function(func)
+
 
 def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "[::]:8000")):
     """Run the default dispatch server on the given port. The default server
@@ -73,8 +79,7 @@ def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "[::]:8000")):
           DISPATCH_ENDPOINT_ADDR environment variable, or '[::]:8000' if it
           wasn't set.
     """
-    parsed_url = urlsplit('//' + port)
+    parsed_url = urlsplit("//" + port)
     server_address = (parsed_url.hostname, parsed_url.port)
     server = HTTPServer(server_address, Dispatch(_default_registry()))
     server.serve_forever()
-

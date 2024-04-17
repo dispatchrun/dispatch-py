@@ -3,8 +3,9 @@
 import logging
 import os
 from datetime import timedelta
-from typing import Optional, Union
 from http.server import BaseHTTPRequestHandler
+from typing import Optional, Union
+
 from http_message_signatures import InvalidSignature
 
 from dispatch.function import Registry
@@ -27,7 +28,10 @@ class Dispatch:
     acts as a factory for DispatchHandler objects, by capturing the variables
     that would be shared between all DispatchHandler instances it created."""
 
-    def __init__(        self,            registry: Registry,         verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
+    def __init__(
+        self,
+        registry: Registry,
+        verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
     ):
         """Initialize a Dispatch http handler.
 
@@ -38,16 +42,29 @@ class Dispatch:
         self.verification_key = parse_verification_key(verification_key)
 
     def __call__(self, request, client_address, server):
-        return FunctionService(request, client_address, server, registry=self.registry, verification_key=self.verification_key)
+        return FunctionService(
+            request,
+            client_address,
+            server,
+            registry=self.registry,
+            verification_key=self.verification_key,
+        )
 
 
 class FunctionService(BaseHTTPRequestHandler):
 
-    def __init__(self, request, client_address, server, registry: Registry, verification_key: Optional[Ed25519PublicKey] = None):
+    def __init__(
+        self,
+        request,
+        client_address,
+        server,
+        registry: Registry,
+        verification_key: Optional[Ed25519PublicKey] = None,
+    ):
         super().__init__(request, client_address, server)
         self.registry = registry
         self.verification_key = verification_key
-        self.error_content_type = 'application/json'
+        self.error_content_type = "application/json"
 
     def send_error_response_invalid_argument(self, message: str):
         self.send_error_response(400, "invalid_argument", message)
@@ -80,8 +97,8 @@ class FunctionService(BaseHTTPRequestHandler):
 
         if self.verification_key is not None:
             signed_request = Request(
-                method='POST',
-                url=self.requestline, # TODO: need full URL
+                method="POST",
+                url=self.requestline,  # TODO: need full URL
                 headers=CaseInsensitiveDict(self.headers),
                 body=data,
             )
@@ -108,7 +125,9 @@ class FunctionService(BaseHTTPRequestHandler):
             func = self.registry.functions[req.function]
         except KeyError:
             logger.debug("function '%s' not found", req.function)
-            self.send_error_response_not_found(f"function '{req.function}' does not exist")
+            self.send_error_response_not_found(
+                f"function '{req.function}' does not exist"
+            )
             return
 
         logger.info("running function '%s'", req.function)

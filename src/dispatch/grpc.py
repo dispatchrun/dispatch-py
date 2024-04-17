@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class FunctionService(FunctionServiceServicer):
     """A Dispatch instance to be serviced by a gRPC server."""
 
-    def __init__(        self,            registry: Registry    ):
+    def __init__(self, registry: Registry):
         """Initialize a Dispatch gRPC service.
 
         Args:
@@ -46,5 +46,6 @@ class FunctionService(FunctionServiceServicer):
             return
 
         return output._message
+
 
 # TODO: interceptor for verification key
