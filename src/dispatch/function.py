@@ -176,7 +176,7 @@ class Registry:
 
     def __init__(
         self,
-        endpoint: str,
+        endpoint: Optional[str] = None,
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
     ):
@@ -184,6 +184,8 @@ class Registry:
 
         Args:
             endpoint: URL of the endpoint that the function is accessible from.
+                Uses the value of the DISPATCH_ENDPOINT_URL environment variable
+                by default.
 
             api_key: Dispatch API key to use for authentication when
                 dispatching calls to functions. Uses the value of the
@@ -193,7 +195,24 @@ class Registry:
                 to functions. Uses the value of the DISPATCH_API_URL environment
                 variable if set, otherwise defaults to the public Dispatch API
                 (DEFAULT_API_URL).
+
+        Raises:
+            ValueError: If any of the required arguments are missing.
         """
+        endpoint_from = "endpoint argument"
+        if not endpoint:
+            endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
+            endpoint_from = "DISPATCH_ENDPOINT_URL"
+        if not endpoint:
+            raise ValueError(
+                "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
+            )
+        parsed_url = urlparse(endpoint)
+        if not parsed_url.netloc or not parsed_url.scheme:
+            raise ValueError(
+                f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
+            )
+        logger.info("configuring Dispatch endpoint %s", endpoint)
         self.functions: Dict[str, PrimitiveFunction] = {}
         self.endpoint = endpoint
         self.client = Client(api_key=api_key, api_url=api_url)

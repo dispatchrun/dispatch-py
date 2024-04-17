@@ -86,26 +86,7 @@ class Dispatch(Registry):
             raise ValueError(
                 "missing FastAPI app as first argument of the Dispatch constructor"
             )
-
-        endpoint_from = "endpoint argument"
-        if not endpoint:
-            endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
-            endpoint_from = "DISPATCH_ENDPOINT_URL"
-        if not endpoint:
-            raise ValueError(
-                "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
-            )
-
-        logger.info("configuring Dispatch endpoint %s", endpoint)
-
-        parsed_url = urlparse(endpoint)
-        if not parsed_url.netloc or not parsed_url.scheme:
-            raise ValueError(
-                f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
-            )
-
         super().__init__(endpoint, api_key=api_key, api_url=api_url)
-
         verification_key = parse_verification_key(verification_key, url_scheme=parsed_url.scheme)
         function_service = _new_app(self, verification_key)
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
@@ -200,39 +181,39 @@ def _new_app(function_registry: Dispatch, verification_key: Optional[Ed25519Publ
             raise _ConnectError(
                 500, "internal", f"function '{req.function}' fatal error"
             )
-        else:
-            response = output._message
-            status = Status(response.status)
 
-            if response.HasField("poll"):
-                logger.debug(
-                    "function '%s' polling with %d call(s)",
-                    req.function,
-                    len(response.poll.calls),
-                )
-            elif response.HasField("exit"):
-                exit = response.exit
-                if not exit.HasField("result"):
-                    logger.debug("function '%s' exiting with no result", req.function)
-                else:
-                    result = exit.result
-                    if result.HasField("output"):
-                        logger.debug(
-                            "function '%s' exiting with output value", req.function
-                        )
-                    elif result.HasField("error"):
-                        err = result.error
-                        logger.debug(
-                            "function '%s' exiting with error: %s (%s)",
-                            req.function,
-                            err.message,
-                            err.type,
-                        )
-                if exit.HasField("tail_call"):
+        response = output._message
+        status = Status(response.status)
+
+        if response.HasField("poll"):
+            logger.debug(
+                "function '%s' polling with %d call(s)",
+                req.function,
+                len(response.poll.calls),
+            )
+        elif response.HasField("exit"):
+            exit = response.exit
+            if not exit.HasField("result"):
+                logger.debug("function '%s' exiting with no result", req.function)
+            else:
+                result = exit.result
+                if result.HasField("output"):
                     logger.debug(
-                        "function '%s' tail calling function '%s'",
-                        exit.tail_call.function,
+                        "function '%s' exiting with output value", req.function
                     )
+                elif result.HasField("error"):
+                    err = result.error
+                    logger.debug(
+                        "function '%s' exiting with error: %s (%s)",
+                        req.function,
+                        err.message,
+                        err.type,
+                    )
+            if exit.HasField("tail_call"):
+                logger.debug(
+                    "function '%s' tail calling function '%s'",
+                    exit.tail_call.function,
+                )
 
         logger.debug("finished handling run request with status %s", status.name)
         return fastapi.Response(
