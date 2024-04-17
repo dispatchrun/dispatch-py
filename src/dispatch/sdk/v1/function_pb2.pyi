@@ -14,18 +14,21 @@ from dispatch.sdk.v1 import status_pb2 as _status_pb2
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class RunRequest(_message.Message):
-    __slots__ = ("function", "input", "poll_result")
+    __slots__ = ("function", "input", "poll_result", "dispatch_id")
     FUNCTION_FIELD_NUMBER: _ClassVar[int]
     INPUT_FIELD_NUMBER: _ClassVar[int]
     POLL_RESULT_FIELD_NUMBER: _ClassVar[int]
+    DISPATCH_ID_FIELD_NUMBER: _ClassVar[int]
     function: str
     input: _any_pb2.Any
     poll_result: _poll_pb2.PollResult
+    dispatch_id: str
     def __init__(
         self,
         function: _Optional[str] = ...,
         input: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...,
         poll_result: _Optional[_Union[_poll_pb2.PollResult, _Mapping]] = ...,
+        dispatch_id: _Optional[str] = ...,
     ) -> None: ...
 
 class RunResponse(_message.Message):

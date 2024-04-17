@@ -51,6 +51,7 @@ class Input:
     """
 
     __slots__ = (
+        "dispatch_id",
         "_has_input",
         "_input",
         "_coroutine_state",
@@ -59,6 +60,8 @@ class Input:
     )
 
     def __init__(self, req: function_pb.RunRequest):
+        self.dispatch_id = req.dispatch_id
+
         self._has_input = req.HasField("input")
         if self._has_input:
             if req.input.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):
