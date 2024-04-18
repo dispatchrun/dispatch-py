@@ -65,7 +65,7 @@ def function(func):
     return _default_registry().function(func)
 
 
-def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "[::]:8000")):
+def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")):
     """Run the default dispatch server on the given port. The default server
     uses a function registry where functions tagged by the `@dispatch.function`
     decorator are registered.
@@ -76,7 +76,7 @@ def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "[::]:8000")):
 
     Args:
         port: The address to bind the server to. Defaults to the value of the
-          DISPATCH_ENDPOINT_ADDR environment variable, or '[::]:8000' if it
+          DISPATCH_ENDPOINT_ADDR environment variable, or 'localhost:8000' if it
           wasn't set.
     """
     parsed_url = urlsplit("//" + port)
