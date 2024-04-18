@@ -110,6 +110,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 run_request = function_pb.RunRequest(
                     function=call.function,
                     input=call.input,
+                    dispatch_id=dispatch_id,
+                    root_dispatch_id=dispatch_id,
                 )
                 self.queue.append((dispatch_id, run_request, CallType.CALL))
 
@@ -207,6 +209,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 assert dispatch_id not in self.pollers
                 poller = Poller(
                     id=dispatch_id,
+                    parent_id=request.parent_dispatch_id,
+                    root_id=request.root_dispatch_id,
                     function=request.function,
                     coroutine_state=response.poll.coroutine_state,
                     waiting={},
@@ -219,6 +223,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                     child_request = function_pb.RunRequest(
                         function=call.function,
                         input=call.input,
+                        dispatch_id=child_dispatch_id,
+                        parent_dispatch_id=request.dispatch_id,
+                        root_dispatch_id=request.root_dispatch_id,
                     )
 
                     _next_queue.append(
@@ -239,6 +246,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                     tail_call_request = function_pb.RunRequest(
                         function=tail_call.function,
                         input=tail_call.input,
+                        dispatch_id=request.dispatch_id,
+                        parent_dispatch_id=request.parent_dispatch_id,
+                        root_dispatch_id=request.root_dispatch_id,
                     )
                     _next_queue.append((dispatch_id, tail_call_request, CallType.CALL))
 
@@ -269,6 +279,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                             len(poller.results),
                         )
                         poll_results_request = function_pb.RunRequest(
+                            dispatch_id=poller.id,
+                            parent_dispatch_id=poller.parent_id,
+                            root_dispatch_id=poller.root_id,
                             function=poller.function,
                             poll_result=poll_pb.PollResult(
                                 coroutine_state=poller.coroutine_state,
@@ -349,6 +362,9 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 @dataclass
 class Poller:
     id: DispatchID
+    parent_id: DispatchID
+    root_id: DispatchID
+
     function: str
 
     coroutine_state: bytes

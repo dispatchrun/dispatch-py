@@ -12,6 +12,7 @@ import google.protobuf.wrappers_pb2
 import tblib  # type: ignore[import-untyped]
 from google.protobuf import descriptor_pool, duration_pb2, message_factory
 
+from dispatch.id import DispatchID
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import error_pb2 as error_pb
 from dispatch.sdk.v1 import exit_pb2 as exit_pb
@@ -51,6 +52,9 @@ class Input:
     """
 
     __slots__ = (
+        "dispatch_id",
+        "parent_dispatch_id",
+        "root_dispatch_id",
         "_has_input",
         "_input",
         "_coroutine_state",
@@ -59,6 +63,10 @@ class Input:
     )
 
     def __init__(self, req: function_pb.RunRequest):
+        self.dispatch_id = req.dispatch_id
+        self.parent_dispatch_id = req.parent_dispatch_id
+        self.root_dispatch_id = req.root_dispatch_id
+
         self._has_input = req.HasField("input")
         if self._has_input:
             if req.input.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):
@@ -285,6 +293,7 @@ class CallResult:
     correlation_id: Optional[int] = None
     output: Optional[Any] = None
     error: Optional[Error] = None
+    dispatch_id: DispatchID = ""
 
     def _as_proto(self) -> call_pb.CallResult:
         output_any = None
@@ -295,7 +304,10 @@ class CallResult:
             error_proto = self.error._as_proto()
 
         return call_pb.CallResult(
-            correlation_id=self.correlation_id, output=output_any, error=error_proto
+            correlation_id=self.correlation_id,
+            output=output_any,
+            error=error_proto,
+            dispatch_id=self.dispatch_id,
         )
 
     @classmethod
@@ -308,7 +320,10 @@ class CallResult:
             error = Error._from_proto(proto.error)
 
         return CallResult(
-            correlation_id=proto.correlation_id, output=output, error=error
+            correlation_id=proto.correlation_id,
+            output=output,
+            error=error,
+            dispatch_id=proto.dispatch_id,
         )
 
     @classmethod

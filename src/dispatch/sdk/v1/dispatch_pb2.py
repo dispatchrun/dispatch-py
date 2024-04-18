@@ -17,7 +17,7 @@ from buf.validate import validate_pb2 as buf_dot_validate_dot_validate__pb2
 from dispatch.sdk.v1 import call_pb2 as dispatch_dot_sdk_dot_v1_dot_call__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b"\n\x1e\x64ispatch/sdk/v1/dispatch.proto\x12\x0f\x64ispatch.sdk.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1a\x64ispatch/sdk/v1/call.proto\"\xb7\x03\n\x0f\x44ispatchRequest\x12+\n\x05\x63\x61lls\x18\x01 \x03(\x0b\x32\x15.dispatch.sdk.v1.CallR\x05\x63\x61lls:\xf6\x02\xbaH\xf2\x02\x1as\n(dispatch.request.calls.endpoint.nonempty\x12\x1d\x43\x61ll endpoint cannot be empty\x1a(this.calls.all(call, has(call.endpoint))\x1a\xfa\x01\n&dispatch.request.calls.endpoint.scheme\x12>Call endpoint must be a http or https URL or an AWS Lambda ARN\x1a\x8f\x01this.calls.all(call, call.endpoint.startsWith('http://') || call.endpoint.startsWith('https://') || call.endpoint.startsWith('arn:aws:lambda'))\"5\n\x10\x44ispatchResponse\x12!\n\x0c\x64ispatch_ids\x18\x01 \x03(\tR\x0b\x64ispatchIds2d\n\x0f\x44ispatchService\x12Q\n\x08\x44ispatch\x12 .dispatch.sdk.v1.DispatchRequest\x1a!.dispatch.sdk.v1.DispatchResponse\"\x00\x42\x82\x01\n\x13\x63om.dispatch.sdk.v1B\rDispatchProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3"
+    b"\n\x1e\x64ispatch/sdk/v1/dispatch.proto\x12\x0f\x64ispatch.sdk.v1\x1a\x1b\x62uf/validate/validate.proto\x1a\x1a\x64ispatch/sdk/v1/call.proto\"\x9d\x03\n\x0f\x44ispatchRequest\x12+\n\x05\x63\x61lls\x18\x01 \x03(\x0b\x32\x15.dispatch.sdk.v1.CallR\x05\x63\x61lls:\xdc\x02\xbaH\xd8\x02\x1as\n(dispatch.request.calls.endpoint.nonempty\x12\x1d\x43\x61ll endpoint cannot be empty\x1a(this.calls.all(call, has(call.endpoint))\x1a\xe0\x01\n&dispatch.request.calls.endpoint.scheme\x12)Call endpoint must be a http or https URL\x1a\x8a\x01this.calls.all(call, call.endpoint.startsWith('http://') || call.endpoint.startsWith('https://') || call.endpoint.startsWith('bridge://'))\"5\n\x10\x44ispatchResponse\x12!\n\x0c\x64ispatch_ids\x18\x01 \x03(\tR\x0b\x64ispatchIds2d\n\x0f\x44ispatchService\x12Q\n\x08\x44ispatch\x12 .dispatch.sdk.v1.DispatchRequest\x1a!.dispatch.sdk.v1.DispatchResponse\"\x00\x42\x82\x01\n\x13\x63om.dispatch.sdk.v1B\rDispatchProtoP\x01\xa2\x02\x03\x44SX\xaa\x02\x0f\x44ispatch.Sdk.V1\xca\x02\x0f\x44ispatch\\Sdk\\V1\xe2\x02\x1b\x44ispatch\\Sdk\\V1\\GPBMetadata\xea\x02\x11\x44ispatch::Sdk::V1b\x06proto3"
 )
 
 _globals = globals()
@@ -32,12 +32,12 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     )
     _globals["_DISPATCHREQUEST"]._options = None
     _globals["_DISPATCHREQUEST"]._serialized_options = (
-        b"\272H\362\002\032s\n(dispatch.request.calls.endpoint.nonempty\022\035Call endpoint cannot be empty\032(this.calls.all(call, has(call.endpoint))\032\372\001\n&dispatch.request.calls.endpoint.scheme\022>Call endpoint must be a http or https URL or an AWS Lambda ARN\032\217\001this.calls.all(call, call.endpoint.startsWith('http://') || call.endpoint.startsWith('https://') || call.endpoint.startsWith('arn:aws:lambda'))"
+        b"\272H\330\002\032s\n(dispatch.request.calls.endpoint.nonempty\022\035Call endpoint cannot be empty\032(this.calls.all(call, has(call.endpoint))\032\340\001\n&dispatch.request.calls.endpoint.scheme\022)Call endpoint must be a http or https URL\032\212\001this.calls.all(call, call.endpoint.startsWith('http://') || call.endpoint.startsWith('https://') || call.endpoint.startsWith('bridge://'))"
     )
     _globals["_DISPATCHREQUEST"]._serialized_start = 109
-    _globals["_DISPATCHREQUEST"]._serialized_end = 548
-    _globals["_DISPATCHRESPONSE"]._serialized_start = 550
-    _globals["_DISPATCHRESPONSE"]._serialized_end = 603
-    _globals["_DISPATCHSERVICE"]._serialized_start = 605
-    _globals["_DISPATCHSERVICE"]._serialized_end = 705
+    _globals["_DISPATCHREQUEST"]._serialized_end = 522
+    _globals["_DISPATCHRESPONSE"]._serialized_start = 524
+    _globals["_DISPATCHRESPONSE"]._serialized_end = 577
+    _globals["_DISPATCHSERVICE"]._serialized_start = 579
+    _globals["_DISPATCHSERVICE"]._serialized_end = 679
 # @@protoc_insertion_point(module_scope)

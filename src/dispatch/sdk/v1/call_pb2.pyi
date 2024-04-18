@@ -35,16 +35,19 @@ class Call(_message.Message):
     ) -> None: ...
 
 class CallResult(_message.Message):
-    __slots__ = ("correlation_id", "output", "error")
+    __slots__ = ("correlation_id", "output", "error", "dispatch_id")
     CORRELATION_ID_FIELD_NUMBER: _ClassVar[int]
     OUTPUT_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
+    DISPATCH_ID_FIELD_NUMBER: _ClassVar[int]
     correlation_id: int
     output: _any_pb2.Any
     error: _error_pb2.Error
+    dispatch_id: str
     def __init__(
         self,
         correlation_id: _Optional[int] = ...,
         output: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...,
         error: _Optional[_Union[_error_pb2.Error, _Mapping]] = ...,
+        dispatch_id: _Optional[str] = ...,
     ) -> None: ...
