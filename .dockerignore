@@ -1,0 +1,6 @@
+Dockerfile
+__pycache__
+*.md
+*.yaml
+*.yml
+dist/*

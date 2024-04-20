@@ -14,12 +14,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from fastapi.testclient import TestClient
 
 from dispatch.experimental.durable.registry import clear_functions
-from dispatch.fastapi import Dispatch, parse_verification_key
+from dispatch.fastapi import Dispatch
 from dispatch.function import Arguments, Error, Function, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
-from dispatch.signature import public_key_from_pem
+from dispatch.signature import parse_verification_key, public_key_from_pem
 from dispatch.status import Status
 from dispatch.test import EndpointClient
 

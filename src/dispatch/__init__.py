@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from concurrent import futures
-from http.server import HTTPServer
+from http.server import ThreadingHTTPServer
 from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
 from urllib.parse import urlsplit
 
@@ -79,7 +79,8 @@ def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")):
           DISPATCH_ENDPOINT_ADDR environment variable, or 'localhost:8000' if it
           wasn't set.
     """
+    print(f"Starting Dispatch server on {port}")
     parsed_url = urlsplit("//" + port)
     server_address = (parsed_url.hostname or "", parsed_url.port or 0)
-    server = HTTPServer(server_address, Dispatch(_default_registry()))
+    server = ThreadingHTTPServer(server_address, Dispatch(_default_registry()))
     server.serve_forever()

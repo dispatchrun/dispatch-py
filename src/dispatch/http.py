@@ -1,5 +1,7 @@
 """Integration of Dispatch functions with http."""
 
+from datetime import datetime
+
 import logging
 import os
 from datetime import timedelta
@@ -61,10 +63,12 @@ class FunctionService(BaseHTTPRequestHandler):
         registry: Registry,
         verification_key: Optional[Ed25519PublicKey] = None,
     ):
-        super().__init__(request, client_address, server)
         self.registry = registry
         self.verification_key = verification_key
         self.error_content_type = "application/json"
+        print(datetime.now(), "INITIALIZING FUNCTION SERVICE")
+        super().__init__(request, client_address, server)
+        print(datetime.now(), "DONE HANDLING REQUEST")
 
     def send_error_response_invalid_argument(self, message: str):
         self.send_error_response(400, "invalid_argument", message)
@@ -82,17 +86,33 @@ class FunctionService(BaseHTTPRequestHandler):
         self.send_error_response(500, "internal", message)
 
     def send_error_response(self, status: int, code: str, message: str):
+        body = f'{{"code":"{code}","message":"{message}"}}'.encode()
         self.send_response(status)
         self.send_header("Content-Type", self.error_content_type)
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(f'{{"code":"{code}","message":"{message}"}}'.encode())
+        print(datetime.now(), "SENDING ERROR RESPONSE")
+        self.wfile.write(body)
+        print(datetime.now(), f"SERVER IS DONE {len(body)}")
 
     def do_POST(self):
         if self.path != "/dispatch.sdk.v1.FunctionService/Run":
             self.send_error_response_not_found("path not found")
             return
 
-        data: bytes = self.rfile.read()
+        content_length = int(self.headers.get("Content-Length", 0))
+        if content_length == 0:
+            self.send_error_response_invalid_argument("content length is required")
+            return
+        if content_length < 0:
+            self.send_error_response_invalid_argument("content length is negative")
+            return
+        if content_length > 16_000_000:
+            self.send_error_response_invalid_argument("content length is too large")
+            return
+
+        data: bytes = self.rfile.read(content_length)
+        print(datetime.now(), f"RECEIVED POST REQUEST: {self.path} {len(data)} {self.request_version} {self.headers}")
         logger.debug("handling run request with %d byte body", len(data))
 
         if self.verification_key is not None:
@@ -130,7 +150,7 @@ class FunctionService(BaseHTTPRequestHandler):
             )
             return
 
-        logger.info("running function '%s'", req.function)
+        print(datetime.now(), "running function '%s'", req.function)
         try:
             output = func._primitive_call(Input(req))
         except Exception:
