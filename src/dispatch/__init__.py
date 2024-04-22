@@ -67,17 +67,18 @@ def function(func):
     return default_registry().function(func)
 
 
-def run(init: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
-    """Run the default dispatch server on the given port. The default server
-    uses a function registry where functions tagged by the `@dispatch.function`
-    decorator are registered.
+def run(init: Optional[Callable[P, None]] = None, *args: P.args, **kwargs: P.kwargs):
+    """Run the default dispatch server. The default server uses a function
+    registry where functions tagged by the `@dispatch.function` decorator are
+    registered.
 
     This function is intended to be used with the `dispatch` CLI tool, which
     automatically configures environment variables to connect the local server
     to the Dispatch bridge API.
 
     Args:
-        entrypoint: The entrypoint function to run. Defaults to a no-op function.
+        init: An initialization function called after binding the server address
+            but before entering the event loop to handle requests.
 
         args: Positional arguments to pass to the entrypoint.
 
@@ -86,32 +87,14 @@ def run(init: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
     Returns:
         The return value of the entrypoint function.
     """
-    with serve():
-        return init(*args, **kwargs)
-
-
-@contextmanager
-def serve(
-    address: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000"),
-    poll_interval: float = 0.5,
-):
-    """Returns a context manager managing the operation of a Disaptch server
-    running on the given address. The server is initialized before the context
-    manager yields, then runs forever until the the program is interrupted.
-
-    Args:
-        address: The address to bind the server to. Defaults to the value of the
-            DISPATCH_ENDPOINT_ADDR environment variable, or 'localhost:8000' if
-            it wasn't set.
-
-        poll_interval: Poll for shutdown every poll_interval seconds.
-            Defaults to 0.5 seconds.
-    """
+    address = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")
     parsed_url = urlsplit("//" + address)
     server_address = (parsed_url.hostname or "", parsed_url.port or 0)
     server = ThreadingHTTPServer(server_address, Dispatch(default_registry()))
     try:
-        yield server
-        server.serve_forever(poll_interval=poll_interval)
+        if init is not None:
+            init(*args, **kwargs)
+        server.serve_forever()
     finally:
+        server.shutdown()
         server.server_close()
