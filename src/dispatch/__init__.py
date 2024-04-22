@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from concurrent import futures
-from contextlib import contextmanager
 from http.server import ThreadingHTTPServer
 from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
 from urllib.parse import urlsplit
@@ -17,7 +16,6 @@ from dispatch.function import DEFAULT_API_URL, Client, Function, Registry, Reset
 from dispatch.http import Dispatch
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
-from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
 from dispatch.status import Status
 
 __all__ = [
