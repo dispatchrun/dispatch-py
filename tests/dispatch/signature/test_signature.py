@@ -1,13 +1,18 @@
+import base64
+import os
 import unittest
 from datetime import datetime, timedelta
+from unittest import mock
 
 from http_message_signatures import HTTPMessageSigner
 from http_message_signatures._algorithms import ED25519
 
 from dispatch.signature import (
     CaseInsensitiveDict,
+    Ed25519PublicKey,
     InvalidSignature,
     Request,
+    parse_verification_key,
     sign_request,
     verify_request,
 )
@@ -32,6 +37,18 @@ MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 -----END PRIVATE KEY-----
 """
 )
+
+public_key2_pem = """-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
+-----END PUBLIC KEY-----
+"""
+public_key2_pem2 = """-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
+-----END PUBLIC KEY-----
+"""
+public_key2 = public_key_from_pem(public_key2_pem)
+public_key2_bytes = public_key2.public_bytes_raw()
+public_key2_b64 = base64.b64encode(public_key2_bytes)
 
 
 class TestSignature(unittest.TestCase):
@@ -125,3 +142,70 @@ class TestSignature(unittest.TestCase):
             ValueError, "public key 'test-key-ed25519' not available"
         ):
             verify_request(request, public_key, max_age=timedelta(weeks=9000))
+
+    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key2_pem})
+    def test_parse_verification_key_env_pem_str(self):
+        verification_key = parse_verification_key(None)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key2_pem2})
+    def test_parse_verification_key_env_pem_escaped_newline_str(self):
+        verification_key = parse_verification_key(None)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    @mock.patch.dict(
+        os.environ, {"DISPATCH_VERIFICATION_KEY": public_key2_b64.decode()}
+    )
+    def test_parse_verification_key_env_b64_str(self):
+        verification_key = parse_verification_key(None)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_none(self):
+        # The verification key is optional. Both Dispatch(verification_key=...) and
+        # DISPATCH_VERIFICATION_KEY may be omitted/None.
+        verification_key = parse_verification_key(None)
+        self.assertIsNone(verification_key)
+
+    def test_parse_verification_key_ed25519publickey(self):
+        verification_key = parse_verification_key(public_key2)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_pem_str(self):
+        verification_key = parse_verification_key(public_key2_pem)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_pem_escaped_newline_str(self):
+        verification_key = parse_verification_key(public_key2_pem2)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_pem_bytes(self):
+        verification_key = parse_verification_key(public_key2_pem.encode())
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_b64_str(self):
+        verification_key = parse_verification_key(public_key2_b64.decode())
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_b64_bytes(self):
+        verification_key = parse_verification_key(public_key2_b64)
+        self.assertIsInstance(verification_key, Ed25519PublicKey)
+        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+
+    def test_parse_verification_key_invalid(self):
+        with self.assertRaisesRegex(ValueError, "invalid verification key 'foo'"):
+            parse_verification_key("foo")
+
+    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": "foo"})
+    def test_parse_verification_key_invalid_env(self):
+        with self.assertRaisesRegex(
+            ValueError, "invalid DISPATCH_VERIFICATION_KEY 'foo'"
+        ):
+            parse_verification_key(None)

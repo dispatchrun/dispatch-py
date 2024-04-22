@@ -91,21 +91,27 @@ def run(init: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
 
 
 @contextmanager
-def serve(address: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")):
+def serve(
+    address: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000"),
+    poll_interval: float = 0.5,
+):
     """Returns a context manager managing the operation of a Disaptch server
     running on the given address. The server is initialized before the context
     manager yields, then runs forever until the the program is interrupted.
 
     Args:
         address: The address to bind the server to. Defaults to the value of the
-          DISPATCH_ENDPOINT_ADDR environment variable, or 'localhost:8000' if it
-          wasn't set.
+            DISPATCH_ENDPOINT_ADDR environment variable, or 'localhost:8000' if
+            it wasn't set.
+
+        poll_interval: Poll for shutdown every poll_interval seconds.
+            Defaults to 0.5 seconds.
     """
     parsed_url = urlsplit("//" + address)
     server_address = (parsed_url.hostname or "", parsed_url.port or 0)
     server = ThreadingHTTPServer(server_address, Dispatch(default_registry()))
     try:
         yield server
-        server.serve_forever()
+        server.serve_forever(poll_interval=poll_interval)
     finally:
         server.server_close()
