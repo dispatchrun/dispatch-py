@@ -82,7 +82,7 @@ import dispatch
 def greet(msg: str):
     print(f"Hello, ${msg}!")
 
-greet.dispatch('World')
+dispatch.run(lambda: greet.dispatch('World'))
 ```
 
 Obviously, this is just an example, a real application would perform much more

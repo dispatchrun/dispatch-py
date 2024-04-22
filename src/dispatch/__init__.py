@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from concurrent import futures
+from contextlib import contextmanager
 from http.server import ThreadingHTTPServer
 from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
 from urllib.parse import urlsplit
@@ -37,6 +38,7 @@ __all__ = [
     "gather",
     "race",
     "run",
+    "serve",
 ]
 
 
@@ -46,7 +48,7 @@ T = TypeVar("T")
 _registry: Optional[Registry] = None
 
 
-def _default_registry():
+def default_registry():
     global _registry
     if not _registry:
         _registry = Registry()
@@ -62,10 +64,10 @@ def function(func: Callable[P, T]) -> Function[P, T]: ...
 
 
 def function(func):
-    return _default_registry().function(func)
+    return default_registry().function(func)
 
 
-def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")):
+def run(init: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
     """Run the default dispatch server on the given port. The default server
     uses a function registry where functions tagged by the `@dispatch.function`
     decorator are registered.
@@ -75,12 +77,35 @@ def run(port: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")):
     to the Dispatch bridge API.
 
     Args:
-        port: The address to bind the server to. Defaults to the value of the
+        entrypoint: The entrypoint function to run. Defaults to a no-op function.
+
+        args: Positional arguments to pass to the entrypoint.
+
+        kwargs: Keyword arguments to pass to the entrypoint.
+
+    Returns:
+        The return value of the entrypoint function.
+    """
+    with serve():
+        return init(*args, **kwargs)
+
+
+@contextmanager
+def serve(address: str = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")):
+    """Returns a context manager managing the operation of a Disaptch server
+    running on the given address. The server is initialized before the context
+    manager yields, then runs forever until the the program is interrupted.
+
+    Args:
+        address: The address to bind the server to. Defaults to the value of the
           DISPATCH_ENDPOINT_ADDR environment variable, or 'localhost:8000' if it
           wasn't set.
     """
-    print(f"Starting Dispatch server on {port}")
-    parsed_url = urlsplit("//" + port)
+    parsed_url = urlsplit("//" + address)
     server_address = (parsed_url.hostname or "", parsed_url.port or 0)
-    server = ThreadingHTTPServer(server_address, Dispatch(_default_registry()))
-    server.serve_forever()
+    server = ThreadingHTTPServer(server_address, Dispatch(default_registry()))
+    try:
+        yield server
+        server.serve_forever()
+    finally:
+        server.server_close()

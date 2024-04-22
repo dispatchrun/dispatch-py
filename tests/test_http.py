@@ -57,9 +57,6 @@ class TestHTTP(unittest.TestCase):
         self.server.server_close()
 
     def test_Dispatch_defaults(self):
-        print("POST REQUEST", f"{self.endpoint}/dispatch.sdk.v1.FunctionService/Run")
         resp = self.client.post(f"{self.endpoint}/dispatch.sdk.v1.FunctionService/Run")
-        print(resp.status_code)
-        print("CLIENT RESPONSE!", resp.headers)
-        #body = resp.read()
-        #self.assertEqual(resp.status_code, 400)
+        body = resp.read()
+        self.assertEqual(resp.status_code, 400)
