@@ -87,7 +87,7 @@ class Dispatch(Registry):
                 "missing FastAPI app as first argument of the Dispatch constructor"
             )
         super().__init__(endpoint, api_key=api_key, api_url=api_url)
-        verification_key = parse_verification_key(verification_key, url_scheme=parsed_url.scheme)
+        verification_key = parse_verification_key(verification_key, endpoint=endpoint)
         function_service = _new_app(self, verification_key)
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 

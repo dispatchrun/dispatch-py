@@ -3,6 +3,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from typing import Optional, Sequence, Set, Union, cast
+from urllib.parse import urlparse
 
 import http_sfv
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -129,7 +130,7 @@ def extract_covered_components(result: VerifyResult) -> Set[str]:
 
 def parse_verification_key(
     verification_key: Optional[Union[Ed25519PublicKey, str, bytes]],
-    url_scheme: str | None = None,
+    endpoint: Optional[str] = None,
 ) -> Optional[Ed25519PublicKey]:
     # This function depends a lot on global context like enviornment variables
     # and logging configuration. It's not ideal for testing, but it's useful to
@@ -175,6 +176,14 @@ def parse_verification_key(
             raise ValueError(f"invalid verification key '{verification_key}'")
 
     # Print diagostic information about the key, this is useful for debugging.
+    url_scheme = ""
+    if endpoint:
+        try:
+            parsed_url = urlparse(endpoint)
+            url_scheme = parsed_url.scheme
+        except:
+            pass
+
     if public_key:
         base64_key = base64.b64encode(public_key.public_bytes_raw()).decode()
         logger.info("verifying request signatures using key %s", base64_key)
