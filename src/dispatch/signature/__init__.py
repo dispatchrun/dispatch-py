@@ -1,6 +1,9 @@
+import base64
 import logging
+import os
 from datetime import datetime, timedelta
-from typing import Sequence, Set, cast
+from typing import Optional, Sequence, Set, Union, cast
+from urllib.parse import urlparse
 
 import http_sfv
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -123,3 +126,69 @@ def extract_covered_components(result: VerifyResult) -> Set[str]:
         covered_components.add(item.value)
 
     return covered_components
+
+
+def parse_verification_key(
+    verification_key: Optional[Union[Ed25519PublicKey, str, bytes]],
+    endpoint: Optional[str] = None,
+) -> Optional[Ed25519PublicKey]:
+    # This function depends a lot on global context like enviornment variables
+    # and logging configuration. It's not ideal for testing, but it's useful to
+    # unify the behavior of the Dispatch class everywhere the signature module
+    # is used.
+    if isinstance(verification_key, Ed25519PublicKey):
+        return verification_key
+
+    # Keep track of whether the key was obtained from the environment, so that
+    # we can tweak the error messages accordingly.
+    from_env = False
+    if not verification_key:
+        try:
+            verification_key = os.environ["DISPATCH_VERIFICATION_KEY"]
+        except KeyError:
+            return None
+        from_env = verification_key is not None
+
+    if isinstance(verification_key, bytes):
+        verification_key = verification_key.decode()
+
+    # Be forgiving when accepting keys in PEM format, which may span
+    # multiple lines. Users attempting to pass a PEM key via an environment
+    # variable may accidentally include literal "\n" bytes rather than a
+    # newline char (0xA).
+    public_key: Optional[Ed25519PublicKey] = None
+    try:
+        public_key = public_key_from_pem(verification_key.replace("\\n", "\n"))
+    except ValueError:
+        pass
+
+    # If the key is not in PEM format, try to decode it as base64 string.
+    if not public_key:
+        try:
+            public_key = public_key_from_bytes(
+                base64.b64decode(verification_key.encode())
+            )
+        except ValueError:
+            if from_env:
+                raise ValueError(
+                    f"invalid DISPATCH_VERIFICATION_KEY '{verification_key}'"
+                )
+            raise ValueError(f"invalid verification key '{verification_key}'")
+
+    # Print diagostic information about the key, this is useful for debugging.
+    url_scheme = ""
+    if endpoint:
+        try:
+            parsed_url = urlparse(endpoint)
+            url_scheme = parsed_url.scheme
+        except:
+            pass
+
+    if public_key:
+        base64_key = base64.b64encode(public_key.public_bytes_raw()).decode()
+        logger.info("verifying request signatures using key %s", base64_key)
+    elif url_scheme != "bridge":
+        logger.warning(
+            "request verification is disabled because DISPATCH_VERIFICATION_KEY is not set"
+        )
+    return public_key

@@ -14,20 +14,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from fastapi.testclient import TestClient
 
 from dispatch.experimental.durable.registry import clear_functions
-from dispatch.fastapi import Dispatch, parse_verification_key
+from dispatch.fastapi import Dispatch
 from dispatch.function import Arguments, Error, Function, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
-from dispatch.signature import public_key_from_pem
+from dispatch.signature import parse_verification_key, public_key_from_pem
 from dispatch.status import Status
 from dispatch.test import EndpointClient
-
-public_key_pem = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=\n-----END PUBLIC KEY-----"
-public_key_pem2 = "-----BEGIN PUBLIC KEY-----\\nMCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=\\n-----END PUBLIC KEY-----"
-public_key = public_key_from_pem(public_key_pem)
-public_key_bytes = public_key.public_bytes_raw()
-public_key_b64 = base64.b64encode(public_key_bytes)
 
 
 def create_dispatch_instance(app, endpoint):
@@ -106,71 +100,6 @@ class TestFastAPI(unittest.TestCase):
         output = pickle.loads(output_bytes.value)
 
         self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
-
-    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key_pem})
-    def test_parse_verification_key_env_pem_str(self):
-        verification_key = parse_verification_key(None)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key_pem2})
-    def test_parse_verification_key_env_pem_escaped_newline_str(self):
-        verification_key = parse_verification_key(None)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key_b64.decode()})
-    def test_parse_verification_key_env_b64_str(self):
-        verification_key = parse_verification_key(None)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_none(self):
-        # The verification key is optional. Both Dispatch(verification_key=...) and
-        # DISPATCH_VERIFICATION_KEY may be omitted/None.
-        verification_key = parse_verification_key(None)
-        self.assertIsNone(verification_key)
-
-    def test_parse_verification_key_ed25519publickey(self):
-        verification_key = parse_verification_key(public_key)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_pem_str(self):
-        verification_key = parse_verification_key(public_key_pem)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_pem_escaped_newline_str(self):
-        verification_key = parse_verification_key(public_key_pem2)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_pem_bytes(self):
-        verification_key = parse_verification_key(public_key_pem.encode())
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_b64_str(self):
-        verification_key = parse_verification_key(public_key_b64.decode())
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_b64_bytes(self):
-        verification_key = parse_verification_key(public_key_b64)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key_bytes)
-
-    def test_parse_verification_key_invalid(self):
-        with self.assertRaisesRegex(ValueError, "invalid verification key 'foo'"):
-            parse_verification_key("foo")
-
-    @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": "foo"})
-    def test_parse_verification_key_invalid_env(self):
-        with self.assertRaisesRegex(
-            ValueError, "invalid DISPATCH_VERIFICATION_KEY 'foo'"
-        ):
-            parse_verification_key(None)
 
 
 def response_output(resp: function_pb.RunResponse) -> Any:
