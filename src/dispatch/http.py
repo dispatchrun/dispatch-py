@@ -194,4 +194,3 @@ class FunctionService(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/proto")
         self.end_headers()
         self.wfile.write(response.SerializeToString())
-        return

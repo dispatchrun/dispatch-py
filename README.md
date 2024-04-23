@@ -21,10 +21,11 @@ Python package to develop applications with the Dispatch platform.
   - [Installing the Dispatch CLI](#installing-the-dispatch-cli)
   - [Installing the Dispatch SDK](#installing-the-dispatch-sdk)
 - [Usage](#usage)
-  - [Configuration](#configuration)
+  - [Writing Dispatch Applications](#writing-dispatch-applications)
   - [Running Dispatch Applications](#running-dispatch-applications)
-  - [Distributed Coroutines for Python](#distributed-coroutines-for-python)
+  - [Writing Transactional Applications with Dispatch](#writing-transactional-applications-with-dispatch)
   - [Integration with FastAPI](#integration-with-fastapi)
+  - [Configuration](#configuration)
   - [Serialization](#serialization)
 - [Examples](#examples)
 - [Contributing](#contributing)
@@ -98,7 +99,7 @@ dispatch login
 
 Then we are ready to run the example program we wrote above:
 ```console
-dispatch run -- main.py
+dispatch run -- python3 main.py
 ```
 
 ### Writing Transactional Applications with Dispatch
@@ -192,6 +193,10 @@ In this example, GET requests on the HTTP server dispatch calls to the
 program, driven by the Dispatch SDK.
 
 ### Configuration
+
+The Dispatch CLI automatically configures the SDK, so manual configuration is
+usually not required when running Dispatch applications. However, in some
+advanced cases, it might be useful to explicitly set configuration options.
 
 In order for Dispatch to interact with functions remotely, the SDK needs to be
 configured with the address at which the server can be reached. The Dispatch
