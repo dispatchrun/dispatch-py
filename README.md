@@ -39,7 +39,7 @@ To get started, follow the instructions to [sign up for Dispatch][signup] 🚀.
 
 ### Installing the Dispatch CLI
 
-As a pre-requisite, we recommend to install the Dispatch CLI to simplify the
+As a pre-requisite, we recommend installing the Dispatch CLI to simplify the
 configuration and execution of applications that use Dispatch. On OSX, this
 can be done easily using the [Homebrew](https://docs.brew.sh/) tap:
 
