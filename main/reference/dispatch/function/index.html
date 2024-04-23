@@ -12,7 +12,7 @@
         <link rel="prev" href="../fastapi/">
       
       
-        <link rel="next" href="../id/">
+        <link rel="next" href="../http/">
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
@@ -331,6 +331,8 @@
       
         
           
+        
+      
         
       
         
@@ -910,6 +912,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../http/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> http
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../id/" class="md-nav__link">
         
   
@@ -954,7 +977,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_9" >
         
           
           
@@ -970,14 +993,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_1_1_1_8" id="__nav_1_1_1_8_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_1_1_1_9" id="__nav_1_1_1_9_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1_1_1_8">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1_1_9">
             <span class="md-nav__icon md-icon"></span>
             <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> integrations
           </label>
@@ -1166,7 +1189,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_12" >
         
           
           
@@ -1182,14 +1205,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_1_1_1_11" id="__nav_1_1_1_11_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_1_1_1_12" id="__nav_1_1_1_12_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1_1_1_11">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1_1_12">
             <span class="md-nav__icon md-icon"></span>
             <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> signature
           </label>
@@ -1315,7 +1338,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_13" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_14" >
         
           
           
@@ -1331,14 +1354,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_1_1_1_13" id="__nav_1_1_1_13_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_1_1_1_14" id="__nav_1_1_1_14_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_13_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1_1_1_13">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1_1_14">
             <span class="md-nav__icon md-icon"></span>
             <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> test
           </label>
@@ -2074,7 +2097,7 @@ the call embedded in this exception.</p>
 
 <a href="#dispatch.function.Registry" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">Registry</span><span class="p">(</span>
-    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
+    <span class="n">endpoint</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
@@ -2102,15 +2125,17 @@ the call embedded in this exception.</p>
         <tr>
           <td><code>endpoint</code></td>
           <td>
-                <code>str</code>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>URL of the endpoint that the function is accessible from.</p>
+              <p>URL of the endpoint that the function is accessible from.
+Uses the value of the DISPATCH_ENDPOINT_URL environment variable
+by default.</p>
             </div>
           </td>
           <td>
-              <em>required</em>
+                <code>None</code>
           </td>
         </tr>
         <tr>
@@ -2144,6 +2169,30 @@ variable if set, otherwise defaults to the public Dispatch API
           </td>
           <td>
                 <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>ValueError</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If any of the required arguments are missing.</p>
+            </div>
           </td>
         </tr>
     </tbody>
