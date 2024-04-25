@@ -255,7 +255,7 @@ class TestOneShotScheduler(unittest.TestCase):
             result3 = await call_concurrently("g", "h")
             return [result1, result2, result3]
 
-        correlation_ids = set()
+        correlation_ids: set[int] = set()
 
         output = self.start(main)
         # a, b, c, d are called first. e is not because it depends on a.

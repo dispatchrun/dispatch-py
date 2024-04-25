@@ -40,7 +40,9 @@ class RegisteredFunction:
                 f"hash mismatch for function {key}: {code_hash} vs. expected {rfn.hash}"
             )
 
-        self.fn = rfn.fn
+        # mypy 1.10.0 seems to report a false positive here:
+        # error: Incompatible types in assignment (expression has type "FunctionType", variable has type "MethodType")  [assignment]
+        self.fn = rfn.fn # type: ignore
         self.key = key
         self.filename = filename
         self.lineno = lineno

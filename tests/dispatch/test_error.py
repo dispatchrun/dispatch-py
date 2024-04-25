@@ -65,7 +65,7 @@ class TestError(unittest.TestCase):
             original_exception = e
 
         error = Error.from_exception(original_exception)
-        error.traceback = ""
+        error.traceback = b""
 
         reconstructed_exception = error.to_exception()
         assert type(reconstructed_exception) is type(original_exception)

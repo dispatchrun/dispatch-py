@@ -146,58 +146,58 @@ class TestSignature(unittest.TestCase):
     @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key2_pem})
     def test_parse_verification_key_env_pem_str(self):
         verification_key = parse_verification_key(None)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw(), public_key2_bytes
 
     @mock.patch.dict(os.environ, {"DISPATCH_VERIFICATION_KEY": public_key2_pem2})
     def test_parse_verification_key_env_pem_escaped_newline_str(self):
         verification_key = parse_verification_key(None)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw(), public_key2_bytes
 
     @mock.patch.dict(
         os.environ, {"DISPATCH_VERIFICATION_KEY": public_key2_b64.decode()}
     )
     def test_parse_verification_key_env_b64_str(self):
         verification_key = parse_verification_key(None)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_none(self):
         # The verification key is optional. Both Dispatch(verification_key=...) and
         # DISPATCH_VERIFICATION_KEY may be omitted/None.
         verification_key = parse_verification_key(None)
-        self.assertIsNone(verification_key)
+        assert verification_key is None
 
     def test_parse_verification_key_ed25519publickey(self):
         verification_key = parse_verification_key(public_key2)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_pem_str(self):
         verification_key = parse_verification_key(public_key2_pem)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_pem_escaped_newline_str(self):
         verification_key = parse_verification_key(public_key2_pem2)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_pem_bytes(self):
         verification_key = parse_verification_key(public_key2_pem.encode())
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_b64_str(self):
         verification_key = parse_verification_key(public_key2_b64.decode())
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_b64_bytes(self):
         verification_key = parse_verification_key(public_key2_b64)
-        self.assertIsInstance(verification_key, Ed25519PublicKey)
-        self.assertEqual(verification_key.public_bytes_raw(), public_key2_bytes)
+        assert isinstance(verification_key, Ed25519PublicKey)
+        assert verification_key.public_bytes_raw() == public_key2_bytes
 
     def test_parse_verification_key_invalid(self):
         with self.assertRaisesRegex(ValueError, "invalid verification key 'foo'"):

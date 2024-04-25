@@ -256,9 +256,9 @@ class Registry:
             return OneShotScheduler(func).run(input)
 
         primitive_func.__qualname__ = f"{name}_primitive"
-        primitive_func = durable(primitive_func)
+        durable_primitive_func = durable(primitive_func)
 
-        wrapped_func = Function[P, T](self.endpoint, self.client, name, primitive_func)
+        wrapped_func = Function[P, T](self.endpoint, self.client, name, durable_primitive_func)
         self._register(name, wrapped_func)
         return wrapped_func
 
