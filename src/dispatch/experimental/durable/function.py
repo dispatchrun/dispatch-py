@@ -137,7 +137,9 @@ class Serializable:
             if frame_state < FRAME_CLEARED:
                 print(f"IP = {ip}")
                 print(f"SP = {sp}")
-                for i, (is_null, value) in enumerate(stack if stack is not None else []):
+                for i, (is_null, value) in enumerate(
+                    stack if stack is not None else []
+                ):
                     if is_null:
                         print(f"stack[{i}] = NULL")
                     else:

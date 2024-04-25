@@ -1,5 +1,5 @@
 import unittest
-from typing import Any, Callable, List, Optional, Type, Set
+from typing import Any, Callable, List, Optional, Set, Type
 
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
