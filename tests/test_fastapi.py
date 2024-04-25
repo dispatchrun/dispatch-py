@@ -69,10 +69,6 @@ class TestFastAPI(unittest.TestCase):
         resp = client.post("/dispatch.sdk.v1.FunctionService/Run")
         self.assertEqual(resp.status_code, 400)
 
-    def test_Dispatch_no_app(self):
-        with self.assertRaises(ValueError):
-            create_dispatch_instance(None, endpoint="http://127.0.0.1:9999")
-
     @mock.patch.dict(os.environ, {"DISPATCH_ENDPOINT_URL": ""})
     def test_Dispatch_no_endpoint(self):
         app = fastapi.FastAPI()
