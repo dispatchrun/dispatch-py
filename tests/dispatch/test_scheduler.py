@@ -1,5 +1,5 @@
 import unittest
-from typing import Any, Callable, List, Optional, Type
+from typing import Any, Callable, List, Optional, Type, Set
 
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
@@ -255,7 +255,7 @@ class TestOneShotScheduler(unittest.TestCase):
             result3 = await call_concurrently("g", "h")
             return [result1, result2, result3]
 
-        correlation_ids: set[int] = set()
+        correlation_ids: Set[int] = set()
 
         output = self.start(main)
         # a, b, c, d are called first. e is not because it depends on a.
