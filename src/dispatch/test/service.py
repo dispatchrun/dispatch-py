@@ -87,9 +87,8 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
         self.pollers: Dict[DispatchID, Poller] = {}
         self.parents: Dict[DispatchID, Poller] = {}
 
-        self.roundtrips: Optional[OrderedDict[DispatchID, List[RoundTrip]]] = None
-        if collect_roundtrips:
-            self.roundtrips = OrderedDict()
+        self.roundtrips: OrderedDict[DispatchID, List[RoundTrip]] = OrderedDict()
+        self.collect_roundtrips = collect_roundtrips
 
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
@@ -142,7 +141,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
     def dispatch_calls(self):
         """Synchronously dispatch pending function calls to the
         configured endpoint."""
-        _next_queue = []
+        _next_queue: List[Tuple[DispatchID, function_pb.RunRequest, CallType]] = []
         while self.queue:
             dispatch_id, request, call_type = self.queue.pop(0)
 
@@ -161,7 +160,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                 self.queue.append((dispatch_id, request, CallType.RETRY))
                 raise
 
-            if self.roundtrips is not None:
+            if self.collect_roundtrips:
                 try:
                     roundtrips = self.roundtrips[dispatch_id]
                 except KeyError:

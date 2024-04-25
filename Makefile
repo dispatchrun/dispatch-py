@@ -30,7 +30,7 @@ fmt-check:
     exit $$((isort_status + black_status))
 
 typecheck:
-	$(PYTHON) -m mypy src tests
+	$(PYTHON) -m mypy --check-untyped-defs src tests examples
 
 unittest:
 	$(PYTHON) -m pytest tests

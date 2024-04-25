@@ -83,7 +83,7 @@ _ERROR_TYPES: Dict[Type[Exception], Callable[[Exception], Status]] = {}
 _OUTPUT_TYPES: Dict[Type[Any], Callable[[Any], Status]] = {}
 
 
-def status_for_error(error: Exception) -> Status:
+def status_for_error(error: BaseException) -> Status:
     """Returns a Status that corresponds to the specified error."""
     # See if the error matches one of the registered types.
     handler = _find_handler(error, _ERROR_TYPES)

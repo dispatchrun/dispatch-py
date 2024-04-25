@@ -72,7 +72,7 @@ class TestHTTP(unittest.TestCase):
     def test_content_length_too_large(self):
         resp = self.client.post(
             f"{self.endpoint}/dispatch.sdk.v1.FunctionService/Run",
-            data=b"a" * 16_000_001,
+            data={"msg": "a" * 16_000_001},
         )
         body = resp.read()
         self.assertEqual(resp.status_code, 400)

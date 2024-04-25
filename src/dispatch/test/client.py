@@ -1,10 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
-import fastapi
 import grpc
 import httpx
-from fastapi.testclient import TestClient
 
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
@@ -22,7 +20,7 @@ class EndpointClient:
     Note that this is different from dispatch.Client, which is a client
     for the Dispatch API. The EndpointClient is a client similar to the one
     that Dispatch itself would use to interact with an endpoint that provides
-    functions, for example a FastAPI app.
+    functions.
     """
 
     def __init__(
@@ -52,15 +50,6 @@ class EndpointClient:
     def from_url(cls, url: str, signing_key: Optional[Ed25519PrivateKey] = None):
         """Returns an EndpointClient for a Dispatch endpoint URL."""
         http_client = httpx.Client(base_url=url)
-        return EndpointClient(http_client, signing_key)
-
-    @classmethod
-    def from_app(
-        cls, app: fastapi.FastAPI, signing_key: Optional[Ed25519PrivateKey] = None
-    ):
-        """Returns an EndpointClient for a Dispatch endpoint bound to a
-        FastAPI app instance."""
-        http_client = TestClient(app)
         return EndpointClient(http_client, signing_key)
 
 

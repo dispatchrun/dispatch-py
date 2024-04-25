@@ -117,7 +117,7 @@ class FunctionService(BaseHTTPRequestHandler):
             )
             max_age = timedelta(minutes=5)
             try:
-                verify_request(signed_request, verification_key, max_age)
+                verify_request(signed_request, self.verification_key, max_age)
             except ValueError as e:
                 self.send_error_response_unauthenticated(str(e))
                 return
