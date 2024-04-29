@@ -6,6 +6,7 @@ from typing import Union as _Union
 from google.protobuf import any_pb2 as _any_pb2
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
+from google.protobuf import timestamp_pb2 as _timestamp_pb2
 
 from dispatch.sdk.v1 import exit_pb2 as _exit_pb2
 from dispatch.sdk.v1 import poll_pb2 as _poll_pb2
@@ -21,6 +22,8 @@ class RunRequest(_message.Message):
         "dispatch_id",
         "parent_dispatch_id",
         "root_dispatch_id",
+        "creation_time",
+        "expiration_time",
     )
     FUNCTION_FIELD_NUMBER: _ClassVar[int]
     INPUT_FIELD_NUMBER: _ClassVar[int]
@@ -28,12 +31,16 @@ class RunRequest(_message.Message):
     DISPATCH_ID_FIELD_NUMBER: _ClassVar[int]
     PARENT_DISPATCH_ID_FIELD_NUMBER: _ClassVar[int]
     ROOT_DISPATCH_ID_FIELD_NUMBER: _ClassVar[int]
+    CREATION_TIME_FIELD_NUMBER: _ClassVar[int]
+    EXPIRATION_TIME_FIELD_NUMBER: _ClassVar[int]
     function: str
     input: _any_pb2.Any
     poll_result: _poll_pb2.PollResult
     dispatch_id: str
     parent_dispatch_id: str
     root_dispatch_id: str
+    creation_time: _timestamp_pb2.Timestamp
+    expiration_time: _timestamp_pb2.Timestamp
     def __init__(
         self,
         function: _Optional[str] = ...,
@@ -42,6 +49,8 @@ class RunRequest(_message.Message):
         dispatch_id: _Optional[str] = ...,
         parent_dispatch_id: _Optional[str] = ...,
         root_dispatch_id: _Optional[str] = ...,
+        creation_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
+        expiration_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...,
     ) -> None: ...
 
 class RunResponse(_message.Message):
