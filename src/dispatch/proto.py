@@ -55,6 +55,8 @@ class Input:
         "dispatch_id",
         "parent_dispatch_id",
         "root_dispatch_id",
+        "creation_time",
+        "expiration_time",
         "_has_input",
         "_input",
         "_coroutine_state",
@@ -66,6 +68,12 @@ class Input:
         self.dispatch_id = req.dispatch_id
         self.parent_dispatch_id = req.parent_dispatch_id
         self.root_dispatch_id = req.root_dispatch_id
+        self.creation_time = (
+            req.creation_time.ToDatetime() if req.creation_time else None
+        )
+        self.expiration_time = (
+            req.expiration_time.ToDatetime() if req.expiration_time else None
+        )
 
         self._has_input = req.HasField("input")
         if self._has_input:
