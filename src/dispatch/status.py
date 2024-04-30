@@ -1,7 +1,6 @@
 import enum
 from typing import Any, Callable, Dict, Type
 
-from dispatch.error import IncompatibleStateError
 from dispatch.sdk.v1 import status_pb2 as status_pb
 
 
@@ -92,9 +91,7 @@ def status_for_error(error: BaseException) -> Status:
     # If not, resort to standard error categorization.
     #
     # See https://docs.python.org/3/library/exceptions.html
-    if isinstance(error, IncompatibleStateError):
-        return Status.INCOMPATIBLE_STATE
-    elif isinstance(error, TimeoutError):
+    if isinstance(error, TimeoutError):
         return Status.TIMEOUT
     elif isinstance(error, TypeError) or isinstance(error, ValueError):
         return Status.INVALID_ARGUMENT

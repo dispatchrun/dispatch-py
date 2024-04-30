@@ -17,6 +17,7 @@ Logs will show a pipeline of functions being called and their results.
 import httpx
 from fastapi import FastAPI
 
+from dispatch.error import ThrottleError
 from dispatch.fastapi import Dispatch
 
 app = FastAPI()
@@ -29,7 +30,7 @@ def get_gh_api(url):
     response = httpx.get(url)
     X_RateLimit_Remaining = response.headers.get("X-RateLimit-Remaining")
     if response.status_code == 403 and X_RateLimit_Remaining == "0":
-        raise EOFError("Rate limit exceeded")
+        raise ThrottleError("Rate limit exceeded")
     response.raise_for_status()
     return response.json()
 
