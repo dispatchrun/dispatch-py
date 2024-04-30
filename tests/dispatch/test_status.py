@@ -1,5 +1,6 @@
 import unittest
 
+from dispatch import error
 from dispatch.integrations.http import http_response_code_status
 from dispatch.status import Status, status_for_error
 
@@ -67,6 +68,27 @@ class TestErrorStatus(unittest.TestCase):
             pass
 
         assert status_for_error(CustomError()) is Status.TIMEOUT
+
+    def test_status_for_DispatchError(self):
+        assert status_for_error(error.TimeoutError()) is Status.TIMEOUT
+        assert status_for_error(error.ThrottleError()) is Status.THROTTLED
+        assert status_for_error(error.InvalidArgumentError()) is Status.INVALID_ARGUMENT
+        assert status_for_error(error.InvalidResponseError()) is Status.INVALID_RESPONSE
+        assert status_for_error(error.TemporaryError()) is Status.TEMPORARY_ERROR
+        assert status_for_error(error.PermanentError()) is Status.PERMANENT_ERROR
+        assert (
+            status_for_error(error.IncompatibleStateError())
+            is Status.INCOMPATIBLE_STATE
+        )
+        assert status_for_error(error.DNSError()) is Status.DNS_ERROR
+        assert status_for_error(error.TCPError()) is Status.TCP_ERROR
+        assert status_for_error(error.HTTPError()) is Status.HTTP_ERROR
+        assert status_for_error(error.UnauthenticatedError()) is Status.UNAUTHENTICATED
+        assert (
+            status_for_error(error.PermissionDeniedError()) is Status.PERMISSION_DENIED
+        )
+        assert status_for_error(error.NotFoundError()) is Status.NOT_FOUND
+        assert status_for_error(error.DispatchError()) is Status.UNSPECIFIED
 
 
 class TestHTTPStatusCodes(unittest.TestCase):
