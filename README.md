@@ -1,12 +1,12 @@
 <p align="center">
-<img src="https://github.com/stealthrocket/dispatch-proto/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
+<img src="https://github.com/dispatchrun/dispatch-proto/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
 </p>
 
 # dispatch-py
 
-[![Docs](https://github.com/stealthrocket/dispatch-py/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/docs.yml)
-[![PyPI](https://github.com/stealthrocket/dispatch-py/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/pypi.yml)
-[![Test](https://github.com/stealthrocket/dispatch-py/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/stealthrocket/dispatch-py/actions/workflows/test.yml)
+[![Docs](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml)
+[![PyPI](https://github.com/dispatchrun/dispatch-py/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/pypi.yml)
+[![Test](https://github.com/dispatchrun/dispatch-py/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/dispatch-py.svg)](https://badge.fury.io/py/dispatch-py)
 [![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.dispatch.run/main/reference/dispatch/)
 
@@ -45,12 +45,12 @@ configuration and execution of applications that use Dispatch. On macOS, this
 can be done easily using [Homebrew](https://docs.brew.sh/):
 
 ```console
-brew tap stealthrocket/dispatch
+brew tap dispatchrun/dispatch
 brew install dispatch
 ```
 
 Alternatively, you can download the latest `dispatch` binary from the
-[Releases](https://github.com/stealthrocket/dispatch/releases) page.
+[Releases](https://github.com/dispatchrun/dispatch/releases) page.
 
 *Note that this step is optional, applications that use Dispatch can run without
 the CLI, passing configuration through environment variables or directly in the
@@ -156,7 +156,7 @@ async def transform(msg):
 Dispatch converts Python coroutines to *Distributed Coroutines*, which can be
 suspended and resumed on any instance of a service across a fleet. For a deep
 dive on these concepts, read our blog post on
-[*Distributed Coroutines with a Native Python Extension and Dispatch*](https://stealthrocket.tech/blog/distributed-coroutines-in-python).
+[*Distributed Coroutines with a Native Python Extension and Dispatch*](https://dispatch.run/blog/distributed-coroutines-in-python).
 
 ### Integration with FastAPI
 
@@ -231,7 +231,7 @@ the pickle library attempts serialization.
 
 For help with a serialization issues, please submit a [GitHub issue][issues].
 
-[issues]: https://github.com/stealthrocket/dispatch-py/issues
+[issues]: https://github.com/dispatchrun/dispatch-py/issues
 
 ## Examples
 
