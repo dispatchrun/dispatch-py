@@ -1,7 +1,3 @@
-<p align="center">
-<img src="https://github.com/dispatchrun/dispatch-proto/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
-</p>
-
 # dispatch-py
 
 [![Docs](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml)
