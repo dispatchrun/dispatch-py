@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/dispatchrun/dispatch-proto/assets/865510/87162355-e184-4058-a733-650eee53f333" width="160"/>
+<img src="https://github.com/dispatchrun/.github/blob/main/profile/dispatch_logo_light.png?raw=true" height="64"/>
 </p>
 
 # dispatch-py
