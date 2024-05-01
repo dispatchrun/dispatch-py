@@ -51,7 +51,7 @@ async def get_contributors(repo_info: dict):
 
 @dispatch.function
 async def main():
-    repo_info = await get_repo_info("stealthrocket", "coroutine")
+    repo_info = await get_repo_info("dispatchrun", "coroutine")
     print(
         f"""Repository: {repo_info['full_name']}
 Stars: {repo_info['stargazers_count']}

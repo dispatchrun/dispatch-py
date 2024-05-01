@@ -54,9 +54,9 @@ async def reduce_stargazers(repos):
 async def fanout():
     # Using gather, we fan-out the four following requests.
     repos = await gather(
-        get_repo("stealthrocket", "coroutine"),
-        get_repo("stealthrocket", "dispatch-py"),
-        get_repo("stealthrocket", "wzprof"),
+        get_repo("dispatchrun", "coroutine"),
+        get_repo("dispatchrun", "dispatch-py"),
+        get_repo("dispatchrun", "wzprof"),
     )
 
     stars = await reduce_stargazers(repos)
