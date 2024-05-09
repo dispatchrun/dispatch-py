@@ -51,7 +51,9 @@ class Dispatch(Registry):
 
         """
 
-        super().__init__(endpoint="not configured", api_key=api_key, api_url=api_url)
+        # We use a fake endpoint to initialize the base class. The actual endpoint (the Lambda ARN)
+        # is only known when the handler is invoked.
+        super().__init__(endpoint="http://lambda", api_key=api_key, api_url=api_url)
 
     def handle(
         self, event: str, context: LambdaContext, entrypoint: Optional[str] = None
