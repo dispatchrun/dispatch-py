@@ -4,17 +4,17 @@
 
 # dispatch-py
 
-[![Docs](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml)
-[![PyPI](https://github.com/dispatchrun/dispatch-py/actions/workflows/pypi.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/pypi.yml)
-[![Test](https://github.com/dispatchrun/dispatch-py/actions/workflows/test.yml/badge.svg?branch=)](https://github.com/dispatchrun/dispatch-py/actions/workflows/test.yml)
+[![Docs](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/dispatchrun/dispatch-py/actions/workflows/docs.yml)
+[![PyPI](https://github.com/dispatchrun/dispatch-py/actions/workflows/pypi.yml/badge.svg?branch=main)](https://github.com/dispatchrun/dispatch-py/actions/workflows/pypi.yml)
+[![Test](https://github.com/dispatchrun/dispatch-py/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dispatchrun/dispatch-py/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/dispatch-py.svg)](https://badge.fury.io/py/dispatch-py)
 [![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.dispatch.run/main/reference/dispatch/)
 
 Python package to develop applications with the Dispatch platform.
 
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
-[pypi]:    https://pypi.org/project/dispatch-py/
-[signup]:  https://console.dispatch.run/
+[pypi]: https://pypi.org/project/dispatch-py/
+[signup]: https://console.dispatch.run/
 
 - [What is Dispatch?](#what-is-dispatch)
 - [Installation](#installation)
@@ -52,14 +52,15 @@ brew install dispatch
 Alternatively, you can download the latest `dispatch` binary from the
 [Releases](https://github.com/dispatchrun/dispatch/releases) page.
 
-*Note that this step is optional, applications that use Dispatch can run without
+_Note that this step is optional, applications that use Dispatch can run without
 the CLI, passing configuration through environment variables or directly in the
 code. However, the CLI automates the onboarding flow and simplifies the
-configuration, so we recommend starting with it.*
+configuration, so we recommend starting with it._
 
 ### Installing the Dispatch SDK
 
 The Python package is published on [PyPI][pypi] as **dispatch-py**, to install:
+
 ```console
 pip install dispatch-py
 ```
@@ -93,11 +94,13 @@ interesting work, but it's a good start to get a sense of how to use Dispatch.
 
 The simplest way to run a Dispatch application is to use the Dispatch CLI, first
 we need to login:
+
 ```console
 dispatch login
 ```
 
 Then we are ready to run the example program we wrote above:
+
 ```console
 dispatch run -- python3 main.py
 ```
@@ -105,7 +108,7 @@ dispatch run -- python3 main.py
 ### Writing Transactional Applications with Dispatch
 
 The `@dispatch.function` decorator can also be applied to Python coroutines
-(a.k.a. *async* functions), in which case each `await` point becomes a
+(a.k.a. _async_ functions), in which case each `await` point becomes a
 durability step in the execution. If the awaited operation fails, it is
 automatically retried, and the parent function is paused until the result are
 available or a permanent error is raised.
@@ -153,10 +156,10 @@ async def transform(msg):
     ...
 ```
 
-Dispatch converts Python coroutines to *Distributed Coroutines*, which can be
+Dispatch converts Python coroutines to _Distributed Coroutines_, which can be
 suspended and resumed on any instance of a service across a fleet. For a deep
 dive on these concepts, read our blog post on
-[*Distributed Coroutines with a Native Python Extension and Dispatch*](https://dispatch.run/blog/distributed-coroutines-in-python).
+[_Distributed Coroutines with a Native Python Extension and Dispatch_](https://dispatch.run/blog/distributed-coroutines-in-python).
 
 ### Integration with FastAPI
 
