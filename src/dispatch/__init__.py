@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+import threading
 from concurrent import futures
 from http.server import ThreadingHTTPServer
-from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
+from typing import Any, Callable, Coroutine, List, Optional, TypeVar, overload
 from urllib.parse import urlsplit
 
 from typing_extensions import ParamSpec, TypeAlias
@@ -31,6 +32,7 @@ __all__ = [
     "Status",
     "all",
     "any",
+    "batch",
     "call",
     "function",
     "gather",
@@ -44,7 +46,8 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 _registry: Optional[Registry] = None
-
+_workers: List[Callable[None, None]] = []
+_threads: List[threading.Thread] = []
 
 def default_registry():
     global _registry
@@ -89,6 +92,18 @@ def run(init: Optional[Callable[P, None]] = None, *args: P.args, **kwargs: P.kwa
     parsed_url = urlsplit("//" + address)
     server_address = (parsed_url.hostname or "", parsed_url.port or 0)
     server = ThreadingHTTPServer(server_address, Dispatch(default_registry()))
+
+    for worker in _workers:
+        def entrypoint():
+            try:
+                worker()
+            finally:
+                server.shutdown()
+        _threads.append(threading.Thread(target=entrypoint))
+
+    for thread in _threads:
+        thread.start()
+
     try:
         if init is not None:
             init(*args, **kwargs)
@@ -97,7 +112,16 @@ def run(init: Optional[Callable[P, None]] = None, *args: P.args, **kwargs: P.kwa
         server.shutdown()
         server.server_close()
 
+        for thread in _threads:
+            thread.join()
+
 
 def batch() -> Batch:
     """Create a new batch object."""
     return default_registry().batch()
+
+
+def worker(fn: Callable[None, None]) -> Callable[None, None]:
+    """Decorator declaring workers that will be started when dipatch.run is called."""
+    _workers.append(fn)
+    return fn
