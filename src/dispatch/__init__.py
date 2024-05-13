@@ -12,7 +12,7 @@ from typing_extensions import ParamSpec, TypeAlias
 
 import dispatch.integrations
 from dispatch.coroutine import all, any, call, gather, race
-from dispatch.function import DEFAULT_API_URL, Client, Function, Registry, Reset
+from dispatch.function import DEFAULT_API_URL, Batch, Client, Function, Registry, Reset
 from dispatch.http import Dispatch
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
@@ -96,3 +96,8 @@ def run(init: Optional[Callable[P, None]] = None, *args: P.args, **kwargs: P.kwa
     finally:
         server.shutdown()
         server.server_close()
+
+
+def batch() -> Batch:
+    """Create a new batch object."""
+    return default_registry().batch()
