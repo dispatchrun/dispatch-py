@@ -1518,14 +1518,19 @@ of functions.</p>
 <a href="#dispatch.status.register_error_type" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">register_error_type</span><span class="p">(</span>
     <span class="n">error_type</span><span class="p">:</span> <span class="n"><span title="typing.Type">Type</span></span><span class="p">[</span><span class="n">Exception</span><span class="p">],</span>
-    <span class="n">handler</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n">Exception</span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="#dispatch.status.Status">Status</a></span><span class="p">],</span>
+    <span class="n">status_or_handler</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="#dispatch.status.Status">Status</a></span><span class="p">,</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n">Exception</span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="#dispatch.status.Status">Status</a></span><span class="p">]</span>
+    <span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Register an error type, and a handler which derives a Status from
-errors of this type.</p>
+      <p>Register an error type to Status mapping.</p>
+<p>The caller can either register a base exception and a handler, which
+derives a Status from errors of this type. Or, if there's only one
+exception to Status mapping to register, the caller can simply pass
+the exception class and the associated Status.</p>
 
   </div>
 
@@ -1542,14 +1547,20 @@ errors of this type.</p>
 
 <a href="#dispatch.status.register_output_type" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">register_output_type</span><span class="p">(</span>
-    <span class="n">output_type</span><span class="p">:</span> <span class="n"><span title="typing.Type">Type</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="#dispatch.status.Status">Status</a></span><span class="p">]</span>
+    <span class="n">output_type</span><span class="p">:</span> <span class="n"><span title="typing.Type">Type</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">],</span>
+    <span class="n">status_or_handler</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="#dispatch.status.Status">Status</a></span><span class="p">,</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.status.Status" href="#dispatch.status.Status">Status</a></span><span class="p">]</span>
+    <span class="p">],</span>
 <span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Register an output type, and a handler which derives a Status from
-outputs of this type.</p>
+      <p>Register an output type to Status mapping.</p>
+<p>The caller can either register a base class and a handler, which
+derives a Status from other classes of this type. Or, if there's
+only one output class to Status mapping to register, the caller can
+simply pass the class and the associated Status.</p>
 
   </div>
 
