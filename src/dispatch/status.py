@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, Type, Union
 
 from dispatch.sdk.v1 import status_pb2 as status_pb
 
@@ -78,16 +78,18 @@ Status.PERMISSION_DENIED._proto = status_pb.STATUS_PERMISSION_DENIED
 Status.NOT_FOUND.__doc__ = "An operation was performed on a non-existent resource"
 Status.NOT_FOUND._proto = status_pb.STATUS_NOT_FOUND
 
-_ERROR_TYPES: Dict[Type[Exception], Callable[[Exception], Status]] = {}
-_OUTPUT_TYPES: Dict[Type[Any], Callable[[Any], Status]] = {}
+_ERROR_TYPES: Dict[Type[Exception], Union[Status, Callable[[Exception], Status]]] = {}
+_OUTPUT_TYPES: Dict[Type[Any], Union[Status, Callable[[Any], Status]]] = {}
 
 
 def status_for_error(error: BaseException) -> Status:
     """Returns a Status that corresponds to the specified error."""
     # See if the error matches one of the registered types.
-    handler = _find_handler(error, _ERROR_TYPES)
-    if handler is not None:
-        return handler(error)
+    status_or_handler = _find_status_or_handler(error, _ERROR_TYPES)
+    if status_or_handler is not None:
+        if isinstance(status_or_handler, Status):
+            return status_or_handler
+        return status_or_handler(error)
     # If not, resort to standard error categorization.
     #
     # See https://docs.python.org/3/library/exceptions.html
@@ -120,28 +122,43 @@ def status_for_error(error: BaseException) -> Status:
 def status_for_output(output: Any) -> Status:
     """Returns a Status that corresponds to the specified output value."""
     # See if the output value matches one of the registered types.
-    handler = _find_handler(output, _OUTPUT_TYPES)
-    if handler is not None:
-        return handler(output)
+    status_or_handler = _find_status_or_handler(output, _OUTPUT_TYPES)
+    if status_or_handler is not None:
+        if isinstance(status_or_handler, Status):
+            return status_or_handler
+        return status_or_handler(output)
 
     return Status.OK
 
 
 def register_error_type(
-    error_type: Type[Exception], handler: Callable[[Exception], Status]
+    error_type: Type[Exception],
+    status_or_handler: Union[Status, Callable[[Exception], Status]],
 ):
-    """Register an error type, and a handler which derives a Status from
-    errors of this type."""
-    _ERROR_TYPES[error_type] = handler
+    """Register an error type to Status mapping.
+
+    The caller can either register a base exception and a handler, which
+    derives a Status from errors of this type. Or, if there's only one
+    exception to Status mapping to register, the caller can simply pass
+    the exception class and the associated Status.
+    """
+    _ERROR_TYPES[error_type] = status_or_handler
 
 
-def register_output_type(output_type: Type[Any], handler: Callable[[Any], Status]):
-    """Register an output type, and a handler which derives a Status from
-    outputs of this type."""
-    _OUTPUT_TYPES[output_type] = handler
+def register_output_type(
+    output_type: Type[Any], status_or_handler: Union[Status, Callable[[Any], Status]]
+):
+    """Register an output type to Status mapping.
+
+    The caller can either register a base class and a handler, which
+    derives a Status from other classes of this type. Or, if there's
+    only one output class to Status mapping to register, the caller can
+    simply pass the class and the associated Status.
+    """
+    _OUTPUT_TYPES[output_type] = status_or_handler
 
 
-def _find_handler(obj, types):
+def _find_status_or_handler(obj, types):
     for cls in type(obj).__mro__:
         try:
             return types[cls]

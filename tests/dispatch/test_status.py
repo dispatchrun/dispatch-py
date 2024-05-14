@@ -1,8 +1,15 @@
 import unittest
+from typing import Any
 
 from dispatch import error
 from dispatch.integrations.http import http_response_code_status
-from dispatch.status import Status, status_for_error
+from dispatch.status import (
+    Status,
+    register_error_type,
+    register_output_type,
+    status_for_error,
+    status_for_output,
+)
 
 
 class TestErrorStatus(unittest.TestCase):
@@ -56,12 +63,48 @@ class TestErrorStatus(unittest.TestCase):
             pass
 
         def handler(error: Exception) -> Status:
+            assert isinstance(error, CustomError)
             return Status.OK
-
-        from dispatch.status import register_error_type
 
         register_error_type(CustomError, handler)
         assert status_for_error(CustomError()) is Status.OK
+
+    def test_status_for_custom_error_with_base_handler(self):
+        class CustomBaseError(Exception):
+            pass
+
+        class CustomError(CustomBaseError):
+            pass
+
+        def handler(error: Exception) -> Status:
+            assert isinstance(error, CustomBaseError)
+            assert isinstance(error, CustomError)
+            return Status.TCP_ERROR
+
+        register_error_type(CustomBaseError, handler)
+        assert status_for_error(CustomError()) is Status.TCP_ERROR
+
+    def test_status_for_custom_error_with_status(self):
+        class CustomError(Exception):
+            pass
+
+        register_error_type(CustomError, Status.THROTTLED)
+        assert status_for_error(CustomError()) is Status.THROTTLED
+
+    def test_status_for_custom_error_with_base_status(self):
+        class CustomBaseError(Exception):
+            pass
+
+        class CustomError(CustomBaseError):
+            pass
+
+        class CustomError2(CustomBaseError):
+            pass
+
+        register_error_type(CustomBaseError, Status.THROTTLED)
+        register_error_type(CustomError2, Status.INVALID_ARGUMENT)
+        assert status_for_error(CustomError()) is Status.THROTTLED
+        assert status_for_error(CustomError2()) is Status.INVALID_ARGUMENT
 
     def test_status_for_custom_timeout(self):
         class CustomError(TimeoutError):
@@ -89,6 +132,66 @@ class TestErrorStatus(unittest.TestCase):
         )
         assert status_for_error(error.NotFoundError()) is Status.NOT_FOUND
         assert status_for_error(error.DispatchError()) is Status.UNSPECIFIED
+
+    def test_status_for_custom_output(self):
+        class CustomOutput:
+            pass
+
+        assert status_for_output(CustomOutput()) is Status.OK  # default
+
+    def test_status_for_custom_output_with_handler(self):
+        class CustomOutput:
+            pass
+
+        def handler(output: Any) -> Status:
+            assert isinstance(output, CustomOutput)
+            return Status.DNS_ERROR
+
+        register_output_type(CustomOutput, handler)
+        assert status_for_output(CustomOutput()) is Status.DNS_ERROR
+
+    def test_status_for_custom_output_with_base_handler(self):
+        class CustomOutputBase:
+            pass
+
+        class CustomOutputError(CustomOutputBase):
+            pass
+
+        class CustomOutputSuccess(CustomOutputBase):
+            pass
+
+        def handler(output: Any) -> Status:
+            assert isinstance(output, CustomOutputBase)
+            if isinstance(output, CustomOutputError):
+                return Status.DNS_ERROR
+            assert isinstance(output, CustomOutputSuccess)
+            return Status.OK
+
+        register_output_type(CustomOutputBase, handler)
+        assert status_for_output(CustomOutputSuccess()) is Status.OK
+        assert status_for_output(CustomOutputError()) is Status.DNS_ERROR
+
+    def test_status_for_custom_output_with_status(self):
+        class CustomOutputBase:
+            pass
+
+        class CustomOutputChild1(CustomOutputBase):
+            pass
+
+        class CustomOutputChild2(CustomOutputBase):
+            pass
+
+        register_output_type(CustomOutputBase, Status.PERMISSION_DENIED)
+        register_output_type(CustomOutputChild1, Status.TCP_ERROR)
+        assert status_for_output(CustomOutputChild1()) is Status.TCP_ERROR
+        assert status_for_output(CustomOutputChild2()) is Status.PERMISSION_DENIED
+
+    def test_status_for_custom_output_with_base_status(self):
+        class CustomOutput(Exception):
+            pass
+
+        register_output_type(CustomOutput, Status.THROTTLED)
+        assert status_for_output(CustomOutput()) is Status.THROTTLED
 
 
 class TestHTTPStatusCodes(unittest.TestCase):
