@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/blob/main/profile/dispatch_logo_dark.png?raw=true">
-    <img alt="dispatch logo" src=".github/blob/main/profile/dispatch_logo_light.png?raw=true" height="64">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/dispatchrun/.github/blob/main/profile/dispatch_logo_dark.png?raw=true">
+    <img alt="dispatch logo" src="https://github.com/dispatchrun/.github/blob/main/profile/dispatch_logo_light.png?raw=true" height="64">
   </picture>
 </p>
 
