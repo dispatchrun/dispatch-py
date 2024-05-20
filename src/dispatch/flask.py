@@ -1,11 +1,11 @@
-"""Integration of Dispatch functions with FastAPI.
+"""Integration of Dispatch functions with Flask.
 
 Example:
 
-    import fastapi
-    from dispatch.fastapi import Dispatch
+    from flask import Flask
+    from dispatch.flask import Dispatch
 
-    app = fastapi.FastAPI()
+    app = Flask(__name__)
     dispatch = Dispatch(app, api_key="test-key")
 
     @dispatch.function
@@ -17,12 +17,10 @@ Example:
         my_function.dispatch()
     """
 
-import asyncio
 import logging
 from typing import Optional, Union
 
-import fastapi
-import fastapi.responses
+from flask import Flask, make_response, request
 
 from dispatch.function import Registry
 from dispatch.http import FunctionServiceError, function_service_run
@@ -32,22 +30,22 @@ logger = logging.getLogger(__name__)
 
 
 class Dispatch(Registry):
-    """A Dispatch instance, powered by FastAPI."""
+    """A Dispatch instance, powered by Flask."""
 
     def __init__(
         self,
-        app: fastapi.FastAPI,
+        app: Flask,
         endpoint: Optional[str] = None,
         verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
     ):
-        """Initialize a Dispatch endpoint, and integrate it into a FastAPI app.
+        """Initialize a Dispatch endpoint, and integrate it into a Flask app.
 
         It mounts a sub-app that implements the Dispatch gRPC interface.
 
         Args:
-            app: The FastAPI app to configure.
+            app: The Flask app to configure.
 
             endpoint: Full URL of the application the Dispatch instance will
                 be running on. Uses the value of the DISPATCH_ENDPOINT_URL
@@ -72,49 +70,34 @@ class Dispatch(Registry):
         """
         if not app:
             raise ValueError(
-                "missing FastAPI app as first argument of the Dispatch constructor"
+                "missing Flask app as first argument of the Dispatch constructor"
             )
+
         super().__init__(endpoint, api_key=api_key, api_url=api_url)
-        verification_key = parse_verification_key(verification_key, endpoint=endpoint)
-        function_service = _new_app(self, verification_key)
-        app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
-
-def _new_app(function_registry: Registry, verification_key: Optional[Ed25519PublicKey]):
-    app = fastapi.FastAPI()
-
-    @app.exception_handler(FunctionServiceError)
-    async def on_error(request: fastapi.Request, exc: FunctionServiceError):
-        # https://connectrpc.com/docs/protocol/#error-end-stream
-        return fastapi.responses.JSONResponse(
-            status_code=exc.status, content={"code": exc.code, "message": exc.message}
+        self._verification_key = parse_verification_key(
+            verification_key, endpoint=endpoint
         )
 
-    @app.post(
-        # The endpoint for execution is hardcoded at the moment. If the service
-        # gains more endpoints, this should be turned into a dynamic dispatch
-        # like the official gRPC server does.
-        "/Run",
-    )
-    async def execute(request: fastapi.Request):
-        # Raw request body bytes are only available through the underlying
-        # starlette Request object's body method, which returns an awaitable,
-        # forcing execute() to be async.
-        data: bytes = await request.body()
+        app.errorhandler(FunctionServiceError)(self._handle_error)
 
-        loop = asyncio.get_running_loop()
+        app.post("/dispatch.sdk.v1.FunctionService/Run")(self._execute)
 
-        content = await loop.run_in_executor(
-            None,
-            function_service_run,
-            str(request.url),
+    def _handle_error(self, exc: FunctionServiceError):
+        return {"code": exc.code, "message": exc.message}, exc.status
+
+    def _execute(self):
+        data: bytes = request.get_data(cache=False)
+
+        content = function_service_run(
+            request.url,
             request.method,
-            request.headers,
+            dict(request.headers),
             data,
-            function_registry,
-            verification_key,
+            self,
+            self._verification_key,
         )
 
-        return fastapi.Response(content=content, media_type="application/proto")
-
-    return app
+        res = make_response(content)
+        res.content_type = "application/proto"
+        return res

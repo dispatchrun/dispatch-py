@@ -33,6 +33,8 @@ dev = [
     "requests >= 2.31.0",
     "types-requests >= 2.31.0.20240125",
     "uvicorn >= 0.28.0",
+    "types-Flask >= 1.1.6",
+    "flask >= 3",
     "awslambdaric-stubs"
 ]
 
