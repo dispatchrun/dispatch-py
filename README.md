@@ -28,7 +28,7 @@ Python package to develop applications with the Dispatch platform.
   - [Running Dispatch Applications](#running-dispatch-applications)
   - [Writing Transactional Applications with Dispatch](#writing-transactional-applications-with-dispatch)
   - [Integration with FastAPI](#integration-with-fastapi)
-  - [Integration with FastAPI](#integration-with-flask)
+  - [Integration with Flask](#integration-with-flask)
   - [Configuration](#configuration)
   - [Serialization](#serialization)
 - [Examples](#examples)
@@ -201,7 +201,7 @@ program, driven by the Dispatch SDK.
 
 ### Integration with Flask
 
-Dispatch can also be integrated with web applications built on [Flask].
+Dispatch can also be integrated with web applications built on [Flask][flask].
 
 The API is nearly identical to FastAPI above, instead use:
 
@@ -212,7 +212,7 @@ app = Flask(__name__)
 dispatch = Dispatch(app)
 ```
 
-Flask: https://flask.palletsprojects.com/en/3.0.x/
+[flask]: https://flask.palletsprojects.com/en/3.0.x/
 
 ### Configuration
 
