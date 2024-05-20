@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Mapping, Optional, Protocol, Union
 
 import grpc
 import httpx
@@ -12,6 +12,7 @@ from dispatch.signature import (
     Request,
     sign_request,
 )
+from dispatch.test.http import HttpClient
 
 
 class EndpointClient:
@@ -24,7 +25,7 @@ class EndpointClient:
     """
 
     def __init__(
-        self, http_client: httpx.Client, signing_key: Optional[Ed25519PrivateKey] = None
+        self, http_client: HttpClient, signing_key: Optional[Ed25519PrivateKey] = None
     ):
         """Initialize the client.
 
@@ -32,7 +33,7 @@ class EndpointClient:
             http_client: Client to use to make HTTP requests.
             signing_key: Optional Ed25519 private key to use to sign requests.
         """
-        channel = _HttpxGrpcChannel(http_client, signing_key=signing_key)
+        channel = _HttpGrpcChannel(http_client, signing_key=signing_key)
         self._stub = function_grpc.FunctionServiceStub(channel)
 
     def run(self, request: function_pb.RunRequest) -> function_pb.RunResponse:
@@ -46,16 +47,10 @@ class EndpointClient:
         """
         return self._stub.Run(request)
 
-    @classmethod
-    def from_url(cls, url: str, signing_key: Optional[Ed25519PrivateKey] = None):
-        """Returns an EndpointClient for a Dispatch endpoint URL."""
-        http_client = httpx.Client(base_url=url)
-        return EndpointClient(http_client, signing_key)
 
-
-class _HttpxGrpcChannel(grpc.Channel):
+class _HttpGrpcChannel(grpc.Channel):
     def __init__(
-        self, http_client: httpx.Client, signing_key: Optional[Ed25519PrivateKey] = None
+        self, http_client: HttpClient, signing_key: Optional[Ed25519PrivateKey] = None
     ):
         self.http_client = http_client
         self.signing_key = signing_key
@@ -120,9 +115,11 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         wait_for_ready=None,
         compression=None,
     ):
+        url = self.client.url_for(self.method)  # note: method==path in gRPC parlance
+
         request = Request(
             method="POST",
-            url=str(httpx.URL(self.client.base_url).join(self.method)),
+            url=url,
             body=self.request_serializer(request),
             headers=CaseInsensitiveDict({"Content-Type": "application/grpc+proto"}),
         )
@@ -131,10 +128,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             sign_request(request, self.signing_key, datetime.now())
 
         response = self.client.post(
-            request.url, content=request.body, headers=request.headers
+            request.url, body=request.body, headers=request.headers
         )
         response.raise_for_status()
-        return self.response_deserializer(response.content)
+        return self.response_deserializer(response.body)
 
     def with_call(
         self,

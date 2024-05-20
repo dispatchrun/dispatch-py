@@ -14,6 +14,7 @@ import google.protobuf.wrappers_pb2
 import httpx
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+import dispatch.test.httpx
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.function import Arguments, Error, Function, Input, Output, Registry
 from dispatch.http import Dispatch
@@ -87,7 +88,8 @@ class TestHTTP(unittest.TestCase):
                 f"You told me: '{input.input}' ({len(input.input)} characters)"
             )
 
-        client = EndpointClient.from_url(self.endpoint)
+        http_client = dispatch.test.httpx.Client(httpx.Client(base_url=self.endpoint))
+        client = EndpointClient(http_client)
 
         pickled = pickle.dumps("Hello World!")
         input_any = google.protobuf.any_pb2.Any()

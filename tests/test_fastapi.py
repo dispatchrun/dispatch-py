@@ -30,6 +30,7 @@ from dispatch.signature import (
 )
 from dispatch.status import Status
 from dispatch.test import DispatchServer, DispatchService, EndpointClient
+from dispatch.test.fastapi import http_client
 
 
 def create_dispatch_instance(app: fastapi.FastAPI, endpoint: str):
@@ -44,8 +45,7 @@ def create_dispatch_instance(app: fastapi.FastAPI, endpoint: str):
 def create_endpoint_client(
     app: fastapi.FastAPI, signing_key: Optional[Ed25519PrivateKey] = None
 ):
-    http_client = TestClient(app)
-    return EndpointClient(http_client, signing_key)
+    return EndpointClient(http_client(app), signing_key)
 
 
 class TestFastAPI(unittest.TestCase):

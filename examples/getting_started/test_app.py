@@ -6,10 +6,9 @@ import os
 import unittest
 from unittest import mock
 
-from fastapi.testclient import TestClient
-
 from dispatch import Client
 from dispatch.test import DispatchServer, DispatchService, EndpointClient
+from dispatch.test.fastapi import http_client
 
 
 class TestGettingStarted(unittest.TestCase):
@@ -24,14 +23,14 @@ class TestGettingStarted(unittest.TestCase):
         from .app import app, dispatch
 
         # Setup a fake Dispatch server.
-        endpoint_client = EndpointClient(TestClient(app))
+        app_client = http_client(app)
+        endpoint_client = EndpointClient(app_client)
         dispatch_service = DispatchService(endpoint_client, collect_roundtrips=True)
         with DispatchServer(dispatch_service) as dispatch_server:
             # Use it when dispatching function calls.
             dispatch.set_client(Client(api_url=dispatch_server.url))
 
-            http_client = TestClient(app)
-            response = http_client.get("/")
+            response = app_client.get("/")
             self.assertEqual(response.status_code, 200)
 
             dispatch_service.dispatch_calls()
