@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
 import grpc
-import httpx
 from typing_extensions import TypeAlias
 
 import dispatch.sdk.v1.call_pb2 as call_pb
@@ -325,17 +324,6 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
 
             try:
                 self.dispatch_calls()
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 403:
-                    logger.error(
-                        "error dispatching function call to endpoint (403). Is the endpoint's DISPATCH_VERIFICATION_KEY correct?"
-                    )
-                else:
-                    logger.exception(e)
-            except httpx.ConnectError as e:
-                logger.error(
-                    "error connecting to the endpoint. Is it running and accessible from DISPATCH_ENDPOINT_URL?"
-                )
             except Exception as e:
                 logger.exception(e)
 

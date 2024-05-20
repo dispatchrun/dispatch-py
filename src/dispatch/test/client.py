@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Mapping, Optional, Protocol, Union
 
 import grpc
-import httpx
 
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.sdk.v1 import function_pb2_grpc as function_grpc
