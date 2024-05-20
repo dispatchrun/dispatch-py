@@ -206,6 +206,7 @@ Dispatch can also be integrated with web applications built on [Flask][flask].
 The API is nearly identical to FastAPI above, instead use:
 
 ```python
+from flask import Flask
 from dispatch.flask import Dispatch
 
 app = Flask(__name__)
