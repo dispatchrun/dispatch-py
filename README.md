@@ -28,6 +28,7 @@ Python package to develop applications with the Dispatch platform.
   - [Running Dispatch Applications](#running-dispatch-applications)
   - [Writing Transactional Applications with Dispatch](#writing-transactional-applications-with-dispatch)
   - [Integration with FastAPI](#integration-with-fastapi)
+  - [Integration with FastAPI](#integration-with-flask)
   - [Configuration](#configuration)
   - [Serialization](#serialization)
 - [Examples](#examples)
@@ -197,6 +198,21 @@ def root():
 In this example, GET requests on the HTTP server dispatch calls to the
 `publish` function. The function runs concurrently to the rest of the
 program, driven by the Dispatch SDK.
+
+### Integration with Flask
+
+Dispatch can also be integrated with web applications built on [Flask].
+
+The API is nearly identical to FastAPI above, instead use:
+
+```python
+from dispatch.flask import Dispatch
+
+app = Flask(__name__)
+dispatch = Dispatch(app)
+```
+
+Flask: https://flask.palletsprojects.com/en/3.0.x/
 
 ### Configuration
 
