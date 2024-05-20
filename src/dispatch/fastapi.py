@@ -19,26 +19,14 @@ Example:
 
 import asyncio
 import logging
-import os
-from datetime import timedelta
 from typing import Optional, Union
-from urllib.parse import urlparse
 
 import fastapi
 import fastapi.responses
-from http_message_signatures import InvalidSignature
 
-from dispatch.function import Batch, Registry
-from dispatch.proto import Input
-from dispatch.sdk.v1 import function_pb2 as function_pb
-from dispatch.signature import (
-    CaseInsensitiveDict,
-    Ed25519PublicKey,
-    Request,
-    parse_verification_key,
-    verify_request,
-)
-from dispatch.status import Status
+from dispatch.function import Registry
+from dispatch.http import FunctionServiceError, function_service_run
+from dispatch.signature import Ed25519PublicKey, parse_verification_key
 
 logger = logging.getLogger(__name__)
 
@@ -92,25 +80,11 @@ class Dispatch(Registry):
         app.mount("/dispatch.sdk.v1.FunctionService", function_service)
 
 
-class _ConnectResponse(fastapi.Response):
-    media_type = "application/grpc+proto"
-
-
-class _ConnectError(fastapi.HTTPException):
-    __slots__ = ("status", "code", "message")
-
-    def __init__(self, status, code, message):
-        super().__init__(status)
-        self.status = status
-        self.code = code
-        self.message = message
-
-
-def _new_app(function_registry: Dispatch, verification_key: Optional[Ed25519PublicKey]):
+def _new_app(function_registry: Registry, verification_key: Optional[Ed25519PublicKey]):
     app = fastapi.FastAPI()
 
-    @app.exception_handler(_ConnectError)
-    async def on_error(request: fastapi.Request, exc: _ConnectError):
+    @app.exception_handler(FunctionServiceError)
+    async def on_error(request: fastapi.Request, exc: FunctionServiceError):
         # https://connectrpc.com/docs/protocol/#error-end-stream
         return fastapi.responses.JSONResponse(
             status_code=exc.status, content={"code": exc.code, "message": exc.message}
@@ -121,103 +95,26 @@ def _new_app(function_registry: Dispatch, verification_key: Optional[Ed25519Publ
         # gains more endpoints, this should be turned into a dynamic dispatch
         # like the official gRPC server does.
         "/Run",
-        response_class=_ConnectResponse,
     )
     async def execute(request: fastapi.Request):
         # Raw request body bytes are only available through the underlying
         # starlette Request object's body method, which returns an awaitable,
         # forcing execute() to be async.
         data: bytes = await request.body()
-        logger.debug("handling run request with %d byte body", len(data))
-
-        if verification_key is None:
-            logger.debug("skipping request signature verification")
-        else:
-            signed_request = Request(
-                method=request.method,
-                url=str(request.url),
-                headers=CaseInsensitiveDict(request.headers),
-                body=data,
-            )
-            max_age = timedelta(minutes=5)
-            try:
-                verify_request(signed_request, verification_key, max_age)
-            except ValueError as e:
-                raise _ConnectError(401, "unauthenticated", str(e))
-            except InvalidSignature as e:
-                # The http_message_signatures package sometimes wraps does not
-                # attach a message to the exception, so we set a default to
-                # have some context about the reason for the error.
-                message = str(e) or "invalid signature"
-                raise _ConnectError(403, "permission_denied", message)
-
-        req = function_pb.RunRequest.FromString(data)
-        if not req.function:
-            raise _ConnectError(400, "invalid_argument", "function is required")
-
-        try:
-            func = function_registry.functions[req.function]
-        except KeyError:
-            logger.debug("function '%s' not found", req.function)
-            raise _ConnectError(
-                404, "not_found", f"function '{req.function}' does not exist"
-            )
-
-        input = Input(req)
-        logger.info("running function '%s'", req.function)
 
         loop = asyncio.get_running_loop()
 
-        try:
-            output = await loop.run_in_executor(None, func._primitive_call, input)
-        except Exception:
-            # This indicates that an exception was raised in a primitive
-            # function. Primitive functions must catch exceptions, categorize
-            # them in order to derive a Status, and then return a RunResponse
-            # that carries the Status and the error details. A failure to do
-            # so indicates a problem, and we return a 500 rather than attempt
-            # to catch and categorize the error here.
-            logger.error("function '%s' fatal error", req.function, exc_info=True)
-            raise _ConnectError(
-                500, "internal", f"function '{req.function}' fatal error"
-            )
-
-        response = output._message
-        status = Status(response.status)
-
-        if response.HasField("poll"):
-            logger.debug(
-                "function '%s' polling with %d call(s)",
-                req.function,
-                len(response.poll.calls),
-            )
-        elif response.HasField("exit"):
-            exit = response.exit
-            if not exit.HasField("result"):
-                logger.debug("function '%s' exiting with no result", req.function)
-            else:
-                result = exit.result
-                if result.HasField("output"):
-                    logger.debug(
-                        "function '%s' exiting with output value", req.function
-                    )
-                elif result.HasField("error"):
-                    err = result.error
-                    logger.debug(
-                        "function '%s' exiting with error: %s (%s)",
-                        req.function,
-                        err.message,
-                        err.type,
-                    )
-            if exit.HasField("tail_call"):
-                logger.debug(
-                    "function '%s' tail calling function '%s'",
-                    exit.tail_call.function,
-                )
-
-        logger.debug("finished handling run request with status %s", status.name)
-        return fastapi.Response(
-            content=response.SerializeToString(), media_type="application/proto"
+        content = await loop.run_in_executor(
+            None,
+            function_service_run,
+            str(request.url),
+            request.method,
+            request.headers,
+            data,
+            function_registry,
+            verification_key,
         )
+
+        return fastapi.Response(content=content, media_type="application/proto")
 
     return app

@@ -23,28 +23,10 @@ from typing import Optional, Union
 from flask import Flask, make_response, request
 
 from dispatch.function import Registry
-from dispatch.proto import Input
-from dispatch.sdk.v1 import function_pb2 as function_pb
-from dispatch.signature import (
-    CaseInsensitiveDict,
-    Ed25519PublicKey,
-    Request,
-    parse_verification_key,
-    verify_request,
-)
-from dispatch.status import Status
+from dispatch.http import FunctionServiceError, function_service_run
+from dispatch.signature import Ed25519PublicKey, parse_verification_key
 
 logger = logging.getLogger(__name__)
-
-
-class _ConnectError(Exception):
-    __slots__ = ("status", "code", "message")
-
-    def __init__(self, status, code, message):
-        super().__init__(status)
-        self.status = status
-        self.code = code
-        self.message = message
 
 
 class Dispatch(Registry):
@@ -97,82 +79,25 @@ class Dispatch(Registry):
             verification_key, endpoint=endpoint
         )
 
-        app.errorhandler(_ConnectError)(self._handle_error)
+        app.errorhandler(FunctionServiceError)(self._handle_error)
 
         app.post("/dispatch.sdk.v1.FunctionService/Run")(self._execute)
 
-    def _handle_error(self, exc: _ConnectError):
+    def _handle_error(self, exc: FunctionServiceError):
         return {"code": exc.code, "message": exc.message}, exc.status
 
     def _execute(self):
         data: bytes = request.get_data(cache=False)
-        logger.debug("handling run request with %d byte body", len(data))
 
-        # TODO: verification key
+        content = function_service_run(
+            request.url,
+            request.method,
+            dict(request.headers),
+            data,
+            self,
+            self._verification_key,
+        )
 
-        req = function_pb.RunRequest.FromString(data)
-        if not req.function:
-            raise _ConnectError(400, "invalid_argument", "function is required")
-
-        try:
-            func = self.functions[req.function]
-        except KeyError:
-            logger.debug("function '%s' not found", req.function)
-            raise _ConnectError(
-                404, "not_found", f"function '{req.function}' does not exist"
-            )
-
-        input = Input(req)
-        logger.info("running function '%s'", req.function)
-
-        try:
-            output = func._primitive_call(input)
-        except Exception:
-            # This indicates that an exception was raised in a primitive
-            # function. Primitive functions must catch exceptions, categorize
-            # them in order to derive a Status, and then return a RunResponse
-            # that carries the Status and the error details. A failure to do
-            # so indicates a problem, and we return a 500 rather than attempt
-            # to catch and categorize the error here.
-            logger.error("function '%s' fatal error", req.function, exc_info=True)
-            raise _ConnectError(
-                500, "internal", f"function '{req.function}' fatal error"
-            )
-
-        response = output._message
-        status = Status(response.status)
-
-        if response.HasField("poll"):
-            logger.debug(
-                "function '%s' polling with %d call(s)",
-                req.function,
-                len(response.poll.calls),
-            )
-        elif response.HasField("exit"):
-            exit = response.exit
-            if not exit.HasField("result"):
-                logger.debug("function '%s' exiting with no result", req.function)
-            else:
-                result = exit.result
-                if result.HasField("output"):
-                    logger.debug(
-                        "function '%s' exiting with output value", req.function
-                    )
-                elif result.HasField("error"):
-                    err = result.error
-                    logger.debug(
-                        "function '%s' exiting with error: %s (%s)",
-                        req.function,
-                        err.message,
-                        err.type,
-                    )
-            if exit.HasField("tail_call"):
-                logger.debug(
-                    "function '%s' tail calling function '%s'",
-                    exit.tail_call.function,
-                )
-
-        logger.debug("finished handling run request with status %s", status.name)
-        res = make_response(response.SerializeToString())
+        res = make_response(content)
         res.content_type = "application/proto"
         return res
