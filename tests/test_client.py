@@ -2,6 +2,9 @@ import os
 import unittest
 from unittest import mock
 
+import httpx
+
+import dispatch.test.httpx
 from dispatch import Call, Client
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.test import DispatchServer, DispatchService, EndpointClient
@@ -9,7 +12,10 @@ from dispatch.test import DispatchServer, DispatchService, EndpointClient
 
 class TestClient(unittest.TestCase):
     def setUp(self):
-        endpoint_client = EndpointClient.from_url("http://function-service")
+        http_client = dispatch.test.httpx.Client(
+            httpx.Client(base_url="http://function-service")
+        )
+        endpoint_client = EndpointClient(http_client)
 
         api_key = "0000000000000000"
         self.dispatch_service = DispatchService(endpoint_client, api_key)
