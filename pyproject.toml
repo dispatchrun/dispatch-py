@@ -20,6 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 fastapi = ["fastapi", "httpx"]
+flask = ["flask"]
 lambda = ["awslambdaric"]
 
 dev = [
