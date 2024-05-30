@@ -13,7 +13,7 @@ dependencies = [
     "protobuf >= 4.24.0",
     "types-protobuf >= 4.24.0.20240129",
     "grpc-stubs >= 1.53.0.5",
-    "http-message-signatures >= 0.4.4",
+    "http-message-signatures >= 0.5.0",
     "tblib >= 3.0.0",
     "typing_extensions >= 4.10"
 ]
