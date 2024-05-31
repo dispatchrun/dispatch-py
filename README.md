@@ -13,7 +13,7 @@
 [![PyPI version](https://badge.fury.io/py/dispatch-py.svg)](https://badge.fury.io/py/dispatch-py)
 [![Reference](https://img.shields.io/badge/API-Reference-lightblue.svg)](https://python.dispatch.run/main/reference/dispatch/)
 
-Python package to develop applications with the Dispatch platform.
+Python package to develop applications with Dispatch.
 
 [fastapi]: https://fastapi.tiangolo.com/tutorial/first-steps/
 [pypi]: https://pypi.org/project/dispatch-py/
@@ -36,7 +36,19 @@ Python package to develop applications with the Dispatch platform.
 
 ## What is Dispatch?
 
-Dispatch is a platform for developing scalable & reliable distributed systems.
+Dispatch is a cloud service for developing scalable and reliable applications in
+Python, including:
+
+- **Background Jobs**
+- **Transactional Workflows**
+- **Multi-Tenant Data Pipelines**
+- **Reliable Webhooks**
+
+Dispatch differs from alternative solutions by allowing developers top write
+simple Python code as if it was a local application: it has a **minimal API
+footprint**, which usually only requires using a function decorator (no complex
+framework to learn), failure recovery is built-in by default for transient
+errors like rate limits or timeouts, with a **zero-configuration** model.
 
 To get started, follow the instructions to [sign up for Dispatch][signup] 🚀.
 
@@ -62,6 +74,8 @@ code. However, the CLI automates the onboarding flow and simplifies the
 configuration, so we recommend starting with it._
 
 ### Installing the Dispatch SDK
+
+> :bulb: The Dispatch SDK requires Python 3.8 or higher.
 
 The Python package is published on [PyPI][pypi] as **dispatch-py**, to install:
 

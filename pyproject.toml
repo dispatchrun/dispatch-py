@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dispatch-py"
-description = "Develop reliable distributed systems on the Dispatch platform."
+description = "Develop reliable distributed systems with Dispatch."
 readme = "README.md"
 dynamic = ["version"]
 requires-python = ">= 3.8"
