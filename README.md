@@ -39,10 +39,10 @@ Python package to develop applications with Dispatch.
 Dispatch is a cloud service for developing scalable and reliable applications in
 Python, including:
 
+- **Event-Driven Architectures**
 - **Background Jobs**
 - **Transactional Workflows**
 - **Multi-Tenant Data Pipelines**
-- **Reliable Webhooks**
 
 Dispatch differs from alternative solutions by allowing developers top write
 simple Python code as if it was a local application: it has a **minimal API
