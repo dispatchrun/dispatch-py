@@ -75,11 +75,6 @@ configuration, so we recommend starting with it._
 
 ### Installing the Dispatch SDK
 
-> :bulb: The Python SDK has integrations with **FastAPI**, **Flask**,
-> or the standard `http.server` package.
->
-> For requests to integrate other frameworks, open an issue on [GitHub](https://github.com/dispatchrun/dispatch-py/issues/new)
-
 > :warning: The Dispatch SDK requires **Python 3.8** or higher.
 
 The Python package is published on [PyPI][pypi] as **dispatch-py**, to install:
@@ -87,6 +82,11 @@ The Python package is published on [PyPI][pypi] as **dispatch-py**, to install:
 ```console
 pip install dispatch-py
 ```
+
+> :bulb: The Python SDK has integrations with **FastAPI**, **Flask**,
+> or the standard `http.server` package.
+>
+> For requests to integrate other frameworks, open an issue on [GitHub](https://github.com/dispatchrun/dispatch-py/issues/new
 
 ## Usage
 
