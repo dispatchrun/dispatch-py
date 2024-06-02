@@ -44,7 +44,7 @@ Python, including:
 - **Transactional Workflows**
 - **Multi-Tenant Data Pipelines**
 
-Dispatch differs from alternative solutions by allowing developers top write
+Dispatch differs from alternative solutions by allowing developers to write
 simple Python code: it has a **minimal API footprint**, which usually only
 requires using a function decorator (no complex framework to learn), failure
 recovery is built-in by default for transient errors like rate limits or
