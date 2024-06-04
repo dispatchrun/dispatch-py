@@ -17,7 +17,6 @@ Example:
         my_function.dispatch()
     """
 
-import asyncio
 import logging
 from typing import Optional, Union
 

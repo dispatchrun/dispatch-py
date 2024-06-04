@@ -1,6 +1,5 @@
 """Integration of Dispatch functions with http."""
 
-import asyncio
 import logging
 import os
 from datetime import timedelta

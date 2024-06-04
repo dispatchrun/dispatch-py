@@ -18,7 +18,6 @@ Example:
         dispatch.handle(event, context, entrypoint="entrypoint")
     """
 
-import asyncio
 import base64
 import json
 import logging
