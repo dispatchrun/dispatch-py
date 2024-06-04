@@ -4,6 +4,7 @@ import inspect
 import signal
 import threading
 
+
 class Runner:
     """Runner is a class similar to asyncio.Runner but that we use for backward
     compatibility with Python 3.10 and earlier.
@@ -24,7 +25,7 @@ class Runner:
             loop = self._loop
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
-            if hasattr(loop, 'shutdown_default_executor'): # Python 3.9+
+            if hasattr(loop, "shutdown_default_executor"):  # Python 3.9+
                 loop.run_until_complete(loop.shutdown_default_executor())
         finally:
             loop.close()
@@ -41,12 +42,15 @@ class Runner:
         except RuntimeError:
             pass
         else:
-            raise RuntimeError("Runner.run() cannot be called from a running event loop")
+            raise RuntimeError(
+                "Runner.run() cannot be called from a running event loop"
+            )
 
         task = self._loop.create_task(coro)
         sigint_handler = None
 
-        if (threading.current_thread() is threading.main_thread()
+        if (
+            threading.current_thread() is threading.main_thread()
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
         ):
             sigint_handler = functools.partial(self._on_sigint, main_task=task)
@@ -70,7 +74,8 @@ class Runner:
             raise  # CancelledError
         finally:
             asyncio.set_event_loop(None)
-            if (sigint_handler is not None
+            if (
+                sigint_handler is not None
                 and signal.getsignal(signal.SIGINT) is sigint_handler
             ):
                 signal.signal(signal.SIGINT, signal.default_int_handler)
@@ -83,6 +88,7 @@ class Runner:
             self._loop.call_soon_threadsafe(lambda: None)
             return
         raise KeyboardInterrupt()
+
 
 def _cancel_all_tasks(loop):
     to_cancel = asyncio.all_tasks(loop)
@@ -98,8 +104,10 @@ def _cancel_all_tasks(loop):
         if task.cancelled():
             continue
         if task.exception() is not None:
-            loop.call_exception_handler({
-                'message': 'unhandled exception during asyncio.run() shutdown',
-                'exception': task.exception(),
-                'task': task,
-            })
+            loop.call_exception_handler(
+                {
+                    "message": "unhandled exception during asyncio.run() shutdown",
+                    "exception": task.exception(),
+                    "task": task,
+                }
+            )
