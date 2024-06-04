@@ -9,6 +9,7 @@ from typing import Mapping, Optional, Union
 
 from http_message_signatures import InvalidSignature
 
+from dispatch.asyncio import Runner
 from dispatch.function import Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -121,7 +122,7 @@ class FunctionService(BaseHTTPRequestHandler):
         url = self.requestline  # TODO: need full URL
 
         try:
-            with asyncio.Runner() as runner:
+            with Runner() as runner:
                 content = runner.run(
                     function_service_run(
                         url,

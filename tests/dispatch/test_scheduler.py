@@ -1,7 +1,7 @@
-import asyncio
 import unittest
 from typing import Any, Callable, List, Optional, Set, Type
 
+from dispatch.asyncio import Runner
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
 from dispatch.proto import Arguments, Call, CallResult, Error, Input, Output, TailCall
@@ -55,7 +55,7 @@ async def raises_error():
 
 class TestOneShotScheduler(unittest.TestCase):
     def setUp(self):
-        self.runner = asyncio.Runner()
+        self.runner = Runner()
 
     def tearDown(self):
         self.runner.close()
