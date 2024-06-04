@@ -15,10 +15,10 @@ import httpx
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 import dispatch.test.httpx
+from dispatch.aiohttp import Dispatch, Server
+from dispatch.asyncio import Runner
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.function import Arguments, Error, Function, Input, Output, Registry
-from dispatch.asyncio import Runner
-from dispatch.aiohttp import Dispatch, Server
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -40,11 +40,12 @@ def run(runner: Runner, server: Server, ready: threading.Event):
         with runner:
             runner.run(serve(server, ready))
     except RuntimeError as e:
-        pass # silence errors triggered by stopping the loop after tests are done
+        pass  # silence errors triggered by stopping the loop after tests are done
+
 
 async def serve(server: Server, ready: threading.Event):
     async with server:
-        ready.set() # allow the test to continue after the server started
+        ready.set()  # allow the test to continue after the server started
         await asyncio.Event().wait()
 
 
@@ -67,7 +68,9 @@ class TestAIOHTTP(unittest.TestCase):
 
         self.client = httpx.Client(timeout=1.0)
         self.server = Server(host, port, self.dispatch)
-        self.thread = threading.Thread(target=lambda: run(self.runner, self.server, ready))
+        self.thread = threading.Thread(
+            target=lambda: run(self.runner, self.server, ready)
+        )
         self.thread.start()
         ready.wait()
 
