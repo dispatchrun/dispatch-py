@@ -1,10 +1,10 @@
+import asyncio
 import base64
 import os
 import pickle
 import struct
 import threading
 import unittest
-from http.server import HTTPServer
 from typing import Any, Tuple
 from unittest import mock
 
@@ -17,7 +17,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import dispatch.test.httpx
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.function import Arguments, Error, Function, Input, Output, Registry
-from dispatch.http import Dispatch
+from dispatch.asyncio import Runner
+from dispatch.aiohttp import Dispatch, Server
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -34,12 +35,27 @@ public_key_b64 = base64.b64encode(public_key_bytes)
 from datetime import datetime
 
 
-class TestHTTP(unittest.TestCase):
-    def setUp(self):
-        host = "127.0.0.1"
-        port = 9999
+def run(runner: Runner, server: Server, ready: threading.Event):
+    try:
+        with runner:
+            runner.run(serve(server, ready))
+    except RuntimeError as e:
+        pass # silence errors triggered by stopping the loop after tests are done
 
-        self.server_address = (host, port)
+async def serve(server: Server, ready: threading.Event):
+    async with server:
+        ready.set() # allow the test to continue after the server started
+        await asyncio.Event().wait()
+
+
+class TestAIOHTTP(unittest.TestCase):
+    def setUp(self):
+        ready = threading.Event()
+        self.runner = Runner()
+
+        host = "127.0.0.1"
+        port = 9997
+
         self.endpoint = f"http://{host}:{port}"
         self.dispatch = Dispatch(
             Registry(
@@ -50,17 +66,16 @@ class TestHTTP(unittest.TestCase):
         )
 
         self.client = httpx.Client(timeout=1.0)
-        self.server = HTTPServer(self.server_address, self.dispatch)
-        self.thread = threading.Thread(
-            target=lambda: self.server.serve_forever(poll_interval=0.05)
-        )
+        self.server = Server(host, port, self.dispatch)
+        self.thread = threading.Thread(target=lambda: run(self.runner, self.server, ready))
         self.thread.start()
+        ready.wait()
 
     def tearDown(self):
-        self.server.shutdown()
+        loop = self.runner.get_loop()
+        loop.call_soon_threadsafe(loop.stop)
         self.thread.join(timeout=1.0)
         self.client.close()
-        self.server.server_close()
 
     def test_content_length_missing(self):
         resp = self.client.post(f"{self.endpoint}/dispatch.sdk.v1.FunctionService/Run")

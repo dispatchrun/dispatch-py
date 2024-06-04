@@ -25,9 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class Dispatch:
-    """A Dispatch instance to be serviced by a http server. The Dispatch class
-    acts as a factory for DispatchHandler objects, by capturing the variables
-    that would be shared between all DispatchHandler instances it created."""
+    """A Dispatch instance servicing as a http server."""
+
+    registry: Registry
+    verification_key: Optional[Ed25519PublicKey]
 
     def __init__(
         self,
@@ -38,6 +39,8 @@ class Dispatch:
 
         Args:
             registry: The registry of functions to be serviced.
+
+            verification_key: The verification key to use for requests.
         """
         self.registry = registry
         self.verification_key = parse_verification_key(verification_key)
@@ -92,7 +95,7 @@ class FunctionService(BaseHTTPRequestHandler):
         self.send_error_response(500, "internal", message)
 
     def send_error_response(self, status: int, code: str, message: str):
-        body = f'{{"code":"{code}","message":"{message}"}}'.encode()
+        body = make_error_response_body(code, message)
         self.send_response(status)
         self.send_header("Content-Type", self.error_content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -234,3 +237,7 @@ async def function_service_run(
 
     logger.debug("finished handling run request with status %s", status.name)
     return response.SerializeToString()
+
+
+def make_error_response_body(code: str, message: str) -> bytes:
+    return f'{{"code":"{code}","message":"{message}"}}'.encode()
