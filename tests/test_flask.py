@@ -50,7 +50,7 @@ class TestFlask(unittest.TestCase):
         dispatch = create_dispatch_instance(app, endpoint="http://127.0.0.1:9999/")
 
         @dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             return Output.value(
                 f"You told me: '{input.input}' ({len(input.input)} characters)"
             )

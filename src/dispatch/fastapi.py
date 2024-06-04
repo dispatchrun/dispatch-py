@@ -102,11 +102,7 @@ def _new_app(function_registry: Registry, verification_key: Optional[Ed25519Publ
         # forcing execute() to be async.
         data: bytes = await request.body()
 
-        loop = asyncio.get_running_loop()
-
-        content = await loop.run_in_executor(
-            None,
-            function_service_run,
+        content = await function_service_run(
             str(request.url),
             request.method,
             request.headers,

@@ -17,6 +17,7 @@ Example:
         my_function.dispatch()
     """
 
+import asyncio
 import logging
 from typing import Optional, Union
 
@@ -89,14 +90,17 @@ class Dispatch(Registry):
     def _execute(self):
         data: bytes = request.get_data(cache=False)
 
-        content = function_service_run(
-            request.url,
-            request.method,
-            dict(request.headers),
-            data,
-            self,
-            self._verification_key,
-        )
+        with asyncio.Runner() as runner:
+            content = runner.run(
+                function_service_run(
+                    request.url,
+                    request.method,
+                    dict(request.headers),
+                    data,
+                    self,
+                    self._verification_key,
+                ),
+            )
 
         res = make_response(content)
         res.content_type = "application/proto"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import logging
 import os
@@ -7,6 +8,7 @@ from functools import wraps
 from types import CoroutineType
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Coroutine,
     Dict,
@@ -33,7 +35,7 @@ from dispatch.scheduler import OneShotScheduler
 logger = logging.getLogger(__name__)
 
 
-PrimitiveFunctionType: TypeAlias = Callable[[Input], Output]
+PrimitiveFunctionType: TypeAlias = Callable[[Input], Awaitable[Output]]
 """A primitive function is a function that accepts a dispatch.proto.Input
 and unconditionally returns a dispatch.proto.Output. It must not raise
 exceptions.
@@ -70,8 +72,8 @@ class PrimitiveFunction:
     def name(self) -> str:
         return self._name
 
-    def _primitive_call(self, input: Input) -> Output:
-        return self._primitive_func(input)
+    async def _primitive_call(self, input: Input) -> Output:
+        return await self._primitive_func(input)
 
     def _primitive_dispatch(self, input: Any = None) -> DispatchID:
         [dispatch_id] = self._client.dispatch([self._build_primitive_call(input)])
@@ -226,6 +228,7 @@ class Registry:
     def function(self, func):
         """Decorator that registers functions."""
         name = func.__qualname__
+
         if not inspect.iscoroutinefunction(func):
             logger.info("registering function: %s", name)
             return self._register_function(name, func)
@@ -237,23 +240,22 @@ class Registry:
         func = durable(func)
 
         @wraps(func)
-        async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-            return func(*args, **kwargs)
+        async def asyncio_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(None, func, *args, **kwargs)
 
-        async_wrapper.__qualname__ = f"{name}_async"
-
-        return self._register_coroutine(name, async_wrapper)
+        asyncio_wrapper.__qualname__ = f"{name}_asyncio"
+        return self._register_coroutine(name, asyncio_wrapper)
 
     def _register_coroutine(
         self, name: str, func: Callable[P, Coroutine[Any, Any, T]]
     ) -> Function[P, T]:
         logger.info("registering coroutine: %s", name)
-
         func = durable(func)
 
         @wraps(func)
-        def primitive_func(input: Input) -> Output:
-            return OneShotScheduler(func).run(input)
+        async def primitive_func(input: Input) -> Output:
+            return await OneShotScheduler(func).run(input)
 
         primitive_func.__qualname__ = f"{name}_primitive"
         durable_primitive_func = durable(primitive_func)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import pickle
 import sys
@@ -266,9 +267,7 @@ class State:
     ready: List[Coroutine]
     next_coroutine_id: int
     next_call_id: int
-
     prev_callers: List[Coroutine]
-
     outstanding_calls: int
 
 
@@ -327,9 +326,9 @@ class OneShotScheduler:
             version,
         )
 
-    def run(self, input: Input) -> Output:
+    async def run(self, input: Input) -> Output:
         try:
-            return self._run(input)
+            return await self._run(input)
         except Exception as e:
             logger.exception(
                 "unexpected exception occurred during coroutine scheduling"
@@ -374,7 +373,7 @@ class OneShotScheduler:
             logger.warning("state is incompatible", exc_info=True)
             raise IncompatibleStateError from e
 
-    def _run(self, input: Input) -> Output:
+    async def _run(self, input: Input) -> Output:
         if input.is_first_call:
             state = self._init_state(input)
         else:
@@ -430,19 +429,30 @@ class OneShotScheduler:
         )
 
         pending_calls: List[Call] = []
-        while state.ready:
-            coroutine = state.ready.pop(0)
-            logger.debug("running %s", coroutine)
+        asyncio_tasks: List[asyncio.Task] = []
 
-            assert coroutine.id not in state.suspended
-            coroutine_yield = run_coroutine(state, coroutine, pending_calls)
-
-            if coroutine_yield is not None:
-                if isinstance(coroutine_yield, Output):
-                    return coroutine_yield
-                raise RuntimeError(
-                    f"coroutine unexpectedly yielded '{coroutine_yield}'"
+        while state.ready or asyncio_tasks:
+            for coroutine in state.ready:
+                logger.debug("running %s", coroutine)
+                assert coroutine.id not in state.suspended
+                asyncio_tasks.append(
+                    asyncio.create_task(run_coroutine(state, coroutine, pending_calls))
                 )
+            state.ready.clear()
+
+            done, pending = await asyncio.wait(
+                asyncio_tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            asyncio_tasks = list(pending)
+
+            for task in done:
+                coroutine_result = task.result()
+                if coroutine_result is None:
+                    continue
+                for task in asyncio_tasks:
+                    task.cancel()
+                await asyncio.gather(*asyncio_tasks, return_exceptions=True)
+                return coroutine_result
 
         # Serialize coroutines and scheduler state.
         logger.debug("serializing state")
@@ -472,40 +482,47 @@ class OneShotScheduler:
         )
 
 
-def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
-    coroutine_yield = None
-    coroutine_result: Optional[CoroutineResult] = None
-    try:
-        coroutine_yield = coroutine.run()
-    except TailCall as tc:
-        coroutine_result = CoroutineResult(
-            coroutine_id=coroutine.id, call=tc.call, status=tc.status
-        )
-    except StopIteration as e:
-        coroutine_result = CoroutineResult(coroutine_id=coroutine.id, value=e.value)
-    except Exception as e:
-        coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
-        logger.debug(
-            f"@dispatch.function: '{coroutine}' raised an exception", exc_info=e
-        )
+async def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
+    return await make_coroutine(state, coroutine, pending_calls)
 
-    if coroutine_result is not None:
-        return set_coroutine_result(state, coroutine, coroutine_result)
-    logger.debug("%s yielded %s", coroutine, coroutine_yield)
 
-    if isinstance(coroutine_yield, Call):
-        return set_coroutine_call(state, coroutine, coroutine_yield, pending_calls)
+@coroutine
+def make_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
+    while True:
+        coroutine_yield = None
+        coroutine_result: Optional[CoroutineResult] = None
+        try:
+            coroutine_yield = coroutine.run()
+        except TailCall as tc:
+            coroutine_result = CoroutineResult(
+                coroutine_id=coroutine.id, call=tc.call, status=tc.status
+            )
+        except StopIteration as e:
+            coroutine_result = CoroutineResult(coroutine_id=coroutine.id, value=e.value)
+        except Exception as e:
+            coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
+            logger.debug(
+                f"@dispatch.function: '{coroutine}' raised an exception", exc_info=e
+            )
 
-    if isinstance(coroutine_yield, AllDirective):
-        return set_coroutine_all(state, coroutine, coroutine_yield.awaitables)
+        if coroutine_result is not None:
+            return set_coroutine_result(state, coroutine, coroutine_result)
 
-    if isinstance(coroutine_yield, AnyDirective):
-        return set_coroutine_any(state, coroutine, coroutine_yield.awaitables)
+        logger.debug("%s yielded %s", coroutine, coroutine_yield)
 
-    if isinstance(coroutine_yield, RaceDirective):
-        return set_coroutine_race(state, coroutine, coroutine_yield.awaitables)
+        if isinstance(coroutine_yield, Call):
+            return set_coroutine_call(state, coroutine, coroutine_yield, pending_calls)
 
-    return coroutine_yield
+        if isinstance(coroutine_yield, AllDirective):
+            return set_coroutine_all(state, coroutine, coroutine_yield.awaitables)
+
+        if isinstance(coroutine_yield, AnyDirective):
+            return set_coroutine_any(state, coroutine, coroutine_yield.awaitables)
+
+        if isinstance(coroutine_yield, RaceDirective):
+            return set_coroutine_race(state, coroutine, coroutine_yield.awaitables)
+
+        yield coroutine_yield
 
 
 def set_coroutine_result(

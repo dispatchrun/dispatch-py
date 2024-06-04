@@ -18,6 +18,7 @@ Example:
         dispatch.handle(event, context, entrypoint="entrypoint")
     """
 
+import asyncio
 import base64
 import json
 import logging
@@ -92,7 +93,8 @@ class Dispatch(Registry):
 
         input = Input(req)
         try:
-            output = func._primitive_call(input)
+            with asyncio.Runner() as runner:
+                output = runner.run(func._primitive_call(input))
         except Exception:
             logger.error("function '%s' fatal error", req.function, exc_info=True)
             raise  # FIXME

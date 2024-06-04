@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from typing import Any, Callable, List, Optional, Set, Type
 
@@ -53,6 +54,12 @@ async def raises_error():
 
 
 class TestOneShotScheduler(unittest.TestCase):
+    def setUp(self):
+        self.runner = asyncio.Runner()
+
+    def tearDown(self):
+        self.runner.close()
+
     def test_main_return(self):
         @durable
         async def main():
@@ -105,7 +112,7 @@ class TestOneShotScheduler(unittest.TestCase):
 
         self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
-    def test_depth_first_run(self):
+    def test_depth_run(self):
         @durable
         async def main():
             return await gather(
@@ -116,10 +123,15 @@ class TestOneShotScheduler(unittest.TestCase):
             )
 
         output = self.start(main)
-
+        # In this test, the output is deterministic, but it does not follow the
+        # order in which the coroutines are declared due to interleaving of the
+        # asyncio event loop.
+        #
+        # Note that the order could change between Python versions, so we might
+        # choose to remove this test, or adapt it in the future.
         self.assert_poll_call_functions(
             output,
-            ["a", "b", "c", "d", "e", "f", "g", "h"],
+            ["d", "h", "e", "f", "g", "a", "b", "c"],
             min_results=1,
             max_results=8,
         )
@@ -331,7 +343,8 @@ class TestOneShotScheduler(unittest.TestCase):
         @durable
         async def main(c_then_d):
             return await gather(
-                call_concurrently("a", "b"),
+                call_one("a"),
+                call_one("b"),
                 c_then_d(),
             )
 
@@ -362,7 +375,7 @@ class TestOneShotScheduler(unittest.TestCase):
             ],
         )
 
-        self.assert_exit_result_value(output, [[a_result, b_result], c_result + 100])
+        self.assert_exit_result_value(output, [a_result, b_result, c_result + 100])
 
     def test_raise_indirect(self):
         @durable
@@ -417,12 +430,14 @@ class TestOneShotScheduler(unittest.TestCase):
         **kwargs: Any,
     ) -> Output:
         input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
-        return OneShotScheduler(
-            main,
-            poll_min_results=poll_min_results,
-            poll_max_results=poll_max_results,
-            poll_max_wait_seconds=poll_max_wait_seconds,
-        ).run(input)
+        return self.runner.run(
+            OneShotScheduler(
+                main,
+                poll_min_results=poll_min_results,
+                poll_max_results=poll_max_results,
+                poll_max_wait_seconds=poll_max_wait_seconds,
+            ).run(input)
+        )
 
     def resume(
         self,
@@ -438,7 +453,7 @@ class TestOneShotScheduler(unittest.TestCase):
             call_results,
             Error.from_exception(poll_error) if poll_error else None,
         )
-        return OneShotScheduler(main).run(input)
+        return self.runner.run(OneShotScheduler(main).run(input))
 
     def assert_exit(self, output: Output) -> exit_pb.Exit:
         response = output._message

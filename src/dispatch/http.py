@@ -1,5 +1,6 @@
 """Integration of Dispatch functions with http."""
 
+import asyncio
 import logging
 import os
 from datetime import timedelta
@@ -120,14 +121,17 @@ class FunctionService(BaseHTTPRequestHandler):
         url = self.requestline  # TODO: need full URL
 
         try:
-            content = function_service_run(
-                url,
-                method,
-                dict(self.headers),
-                data,
-                self.registry,
-                self.verification_key,
-            )
+            with asyncio.Runner() as runner:
+                content = runner.run(
+                    function_service_run(
+                        url,
+                        method,
+                        dict(self.headers),
+                        data,
+                        self.registry,
+                        self.verification_key,
+                    )
+                )
         except FunctionServiceError as e:
             return self.send_error_response(e.status, e.code, e.message)
 
@@ -137,7 +141,7 @@ class FunctionService(BaseHTTPRequestHandler):
         self.wfile.write(content)
 
 
-def function_service_run(
+async def function_service_run(
     url: str,
     method: str,
     headers: Mapping[str, str],
@@ -184,7 +188,7 @@ def function_service_run(
     logger.info("running function '%s'", req.function)
 
     try:
-        output = func._primitive_call(input)
+        output = await func._primitive_call(input)
     except Exception:
         # This indicates that an exception was raised in a primitive
         # function. Primitive functions must catch exceptions, categorize

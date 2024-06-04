@@ -85,7 +85,7 @@ class TestFastAPI(unittest.TestCase):
         dispatch = create_dispatch_instance(app, endpoint="http://127.0.0.1:9999/")
 
         @dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             return Output.value(
                 f"You told me: '{input.input}' ({len(input.input)} characters)"
             )
@@ -263,7 +263,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_no_input(self):
         @self.dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             return Output.value("Hello World!")
 
         resp = self.execute(my_function)
@@ -282,7 +282,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_string_input(self):
         @self.dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             return Output.value(f"You sent '{input.input}'")
 
         resp = self.execute(my_function, input="cool stuff")
@@ -291,7 +291,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_error_on_access_state_in_first_call(self):
         @self.dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             try:
                 print(input.coroutine_state)
             except ValueError:
@@ -310,7 +310,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_error_on_access_input_in_second_call(self):
         @self.dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             if input.is_first_call:
                 return Output.poll(coroutine_state=b"42")
             try:
@@ -334,22 +334,22 @@ class TestCoroutine(unittest.TestCase):
 
     def test_duplicate_coro(self):
         @self.dispatch.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             return Output.value("Do one thing")
 
         with self.assertRaises(ValueError):
 
             @self.dispatch.primitive_function
-            def my_function(input: Input) -> Output:
+            async def my_function(input: Input) -> Output:
                 return Output.value("Do something else")
 
     def test_two_simple_coroutines(self):
         @self.dispatch.primitive_function
-        def echoroutine(input: Input) -> Output:
+        async def echoroutine(input: Input) -> Output:
             return Output.value(f"Echo: '{input.input}'")
 
         @self.dispatch.primitive_function
-        def len_coroutine(input: Input) -> Output:
+        async def len_coroutine(input: Input) -> Output:
             return Output.value(f"Length: {len(input.input)}")
 
         data = "cool stuff"
@@ -363,7 +363,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_coroutine_with_state(self):
         @self.dispatch.primitive_function
-        def coroutine3(input: Input) -> Output:
+        async def coroutine3(input: Input) -> Output:
             if input.is_first_call:
                 counter = input.input
             else:
@@ -398,11 +398,11 @@ class TestCoroutine(unittest.TestCase):
 
     def test_coroutine_poll(self):
         @self.dispatch.primitive_function
-        def coro_compute_len(input: Input) -> Output:
+        async def coro_compute_len(input: Input) -> Output:
             return Output.value(len(input.input))
 
         @self.dispatch.primitive_function
-        def coroutine_main(input: Input) -> Output:
+        async def coroutine_main(input: Input) -> Output:
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
@@ -439,11 +439,11 @@ class TestCoroutine(unittest.TestCase):
 
     def test_coroutine_poll_error(self):
         @self.dispatch.primitive_function
-        def coro_compute_len(input: Input) -> Output:
+        async def coro_compute_len(input: Input) -> Output:
             return Output.error(Error(Status.PERMANENT_ERROR, "type", "Dead"))
 
         @self.dispatch.primitive_function
-        def coroutine_main(input: Input) -> Output:
+        async def coroutine_main(input: Input) -> Output:
             if input.is_first_call:
                 text: str = input.input
                 return Output.poll(
@@ -479,7 +479,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_coroutine_error(self):
         @self.dispatch.primitive_function
-        def mycoro(input: Input) -> Output:
+        async def mycoro(input: Input) -> Output:
             return Output.error(Error(Status.PERMANENT_ERROR, "sometype", "dead"))
 
         resp = self.execute(mycoro)
@@ -488,7 +488,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_coroutine_expected_exception(self):
         @self.dispatch.primitive_function
-        def mycoro(input: Input) -> Output:
+        async def mycoro(input: Input) -> Output:
             try:
                 1 / 0
             except ZeroDivisionError as e:
@@ -513,7 +513,7 @@ class TestCoroutine(unittest.TestCase):
 
     def test_specific_status(self):
         @self.dispatch.primitive_function
-        def mycoro(input: Input) -> Output:
+        async def mycoro(input: Input) -> Output:
             return Output.error(Error(Status.THROTTLED, "foo", "bar"))
 
         resp = self.execute(mycoro)
@@ -527,7 +527,7 @@ class TestCoroutine(unittest.TestCase):
             return f"Hello {value}"
 
         @self.dispatch.primitive_function
-        def mycoro(input: Input) -> Output:
+        async def mycoro(input: Input) -> Output:
             return Output.tail_call(other_coroutine._build_primitive_call(42))
 
         resp = self.call(mycoro)
