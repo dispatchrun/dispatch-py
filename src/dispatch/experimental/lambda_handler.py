@@ -25,6 +25,7 @@ from typing import Optional
 
 from awslambdaric.lambda_context import LambdaContext
 
+from dispatch.asyncio import Runner
 from dispatch.function import Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -92,7 +93,8 @@ class Dispatch(Registry):
 
         input = Input(req)
         try:
-            output = func._primitive_call(input)
+            with Runner() as runner:
+                output = runner.run(func._primitive_call(input))
         except Exception:
             logger.error("function '%s' fatal error", req.function, exc_info=True)
             raise  # FIXME

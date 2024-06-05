@@ -83,7 +83,7 @@ class TestHTTP(unittest.TestCase):
 
     def test_simple_request(self):
         @self.dispatch.registry.primitive_function
-        def my_function(input: Input) -> Output:
+        async def my_function(input: Input) -> Output:
             return Output.value(
                 f"You told me: '{input.input}' ({len(input.input)} characters)"
             )
