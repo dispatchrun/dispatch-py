@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os
 import pickle
@@ -28,7 +29,7 @@ from dispatch.signature import (
     public_key_from_pem,
 )
 from dispatch.status import Status
-from dispatch.test import DispatchServer, DispatchService, EndpointClient
+from dispatch.test import Client, DispatchServer, DispatchService, EndpointClient
 from dispatch.test.flask import http_client
 
 
@@ -98,9 +99,7 @@ class TestFlaskE2E(unittest.TestCase):
             endpoint_client, api_key, collect_roundtrips=True
         )
         self.dispatch_server = DispatchServer(self.dispatch_service)
-        self.dispatch_client = dispatch.Client(
-            api_key, api_url=self.dispatch_server.url
-        )
+        self.dispatch_client = Client(api_key, api_url=self.dispatch_server.url)
 
         self.dispatch = Dispatch(
             self.endpoint_app,
@@ -121,11 +120,13 @@ class TestFlaskE2E(unittest.TestCase):
         def my_function(name: str) -> str:
             return f"Hello world: {name}"
 
-        call = my_function.build_call(52)
+        call = my_function.build_call("52")
         self.assertEqual(call.function.split(".")[-1], "my_function")
 
         # The client.
-        [dispatch_id] = self.dispatch_client.dispatch([my_function.build_call(52)])
+        [dispatch_id] = asyncio.run(
+            self.dispatch_client.dispatch([my_function.build_call("52")])
+        )
 
         # Simulate execution for testing purposes.
         self.dispatch_service.dispatch_calls()

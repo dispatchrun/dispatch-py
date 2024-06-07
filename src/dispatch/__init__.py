@@ -12,7 +12,7 @@ from typing_extensions import ParamSpec, TypeAlias
 
 import dispatch.integrations
 from dispatch.coroutine import all, any, call, gather, race
-from dispatch.function import DEFAULT_API_URL, Batch, Client, Function, Registry, Reset
+from dispatch.function import Batch, Client, ClientError, Function, Registry, Reset
 from dispatch.http import Dispatch
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
@@ -21,7 +21,7 @@ from dispatch.status import Status
 __all__ = [
     "Call",
     "Client",
-    "DEFAULT_API_URL",
+    "ClientError",
     "DispatchID",
     "Error",
     "Input",

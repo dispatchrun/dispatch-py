@@ -1,14 +1,15 @@
 """Integration of Dispatch functions with http."""
 
+import asyncio
 import logging
 import os
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler
-from typing import Mapping, Optional, Union
+from typing import Iterable, List, Mapping, Optional, Union
 
+from aiohttp import web
 from http_message_signatures import InvalidSignature
 
-from dispatch.asyncio import Runner
 from dispatch.function import Registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
@@ -22,37 +23,6 @@ from dispatch.signature import (
 from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
-
-
-class Dispatch:
-    """A Dispatch instance servicing as a http server."""
-
-    registry: Registry
-    verification_key: Optional[Ed25519PublicKey]
-
-    def __init__(
-        self,
-        registry: Registry,
-        verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
-    ):
-        """Initialize a Dispatch http handler.
-
-        Args:
-            registry: The registry of functions to be serviced.
-
-            verification_key: The verification key to use for requests.
-        """
-        self.registry = registry
-        self.verification_key = parse_verification_key(verification_key)
-
-    def __call__(self, request, client_address, server):
-        return FunctionService(
-            request,
-            client_address,
-            server,
-            registry=self.registry,
-            verification_key=self.verification_key,
-        )
 
 
 class FunctionServiceError(Exception):
@@ -124,17 +94,16 @@ class FunctionService(BaseHTTPRequestHandler):
         url = self.requestline  # TODO: need full URL
 
         try:
-            with Runner() as runner:
-                content = runner.run(
-                    function_service_run(
-                        url,
-                        method,
-                        dict(self.headers),
-                        data,
-                        self.registry,
-                        self.verification_key,
-                    )
+            content = asyncio.run(
+                function_service_run(
+                    url,
+                    method,
+                    dict(self.headers),
+                    data,
+                    self.registry,
+                    self.verification_key,
                 )
+            )
         except FunctionServiceError as e:
             return self.send_error_response(e.status, e.code, e.message)
 
@@ -142,6 +111,145 @@ class FunctionService(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/proto")
         self.end_headers()
         self.wfile.write(content)
+
+
+class Dispatch(web.Application):
+    """A Dispatch instance servicing as a http server."""
+
+    registry: Registry
+    verification_key: Optional[Ed25519PublicKey]
+
+    def __init__(
+        self,
+        registry: Registry,
+        verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
+    ):
+        """Initialize a Dispatch application.
+
+        Args:
+            registry: The registry of functions to be serviced.
+
+            verification_key: The verification key to use for requests.
+        """
+        super().__init__()
+        self.registry = registry
+        self.verification_key = parse_verification_key(verification_key)
+        self.add_routes(
+            [
+                web.post(
+                    "/dispatch.sdk.v1.FunctionService/Run", self.handle_run_request
+                ),
+            ]
+        )
+
+    def __call__(self, request, client_address, server):
+        return FunctionService(
+            request,
+            client_address,
+            server,
+            registry=self.registry,
+            verification_key=self.verification_key,
+        )
+
+    async def handle_run_request(self, request: web.Request) -> web.Response:
+        return await function_service_run_handler(
+            request, self.registry, self.verification_key
+        )
+
+
+class Server:
+    host: str
+    port: int
+    app: web.Application
+
+    _runner: web.AppRunner
+    _site: web.TCPSite
+
+    def __init__(self, host: str, port: int, app: web.Application):
+        self.host = host
+        self.port = port
+        self.app = app
+
+    async def __aenter__(self):
+        await self.start()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.stop()
+
+    async def start(self):
+        self._runner = web.AppRunner(self.app)
+        await self._runner.setup()
+
+        self._site = web.TCPSite(self._runner, self.host, self.port)
+        await self._site.start()
+
+        if self.port == 0:
+            assert self._site._server is not None
+            assert hasattr(self._site._server, "sockets")
+            sockets = self._site._server.sockets
+            self.port = sockets[0].getsockname()[1] if sockets else 0
+
+    async def stop(self):
+        await self._site.stop()
+        await self._runner.cleanup()
+
+
+def make_error_response_body(code: str, message: str) -> bytes:
+    return f'{{"code":"{code}","message":"{message}"}}'.encode()
+
+
+def make_error_response(status: int, code: str, message: str) -> web.Response:
+    body = make_error_response_body(code, message)
+    return web.Response(status=status, content_type="application/json", body=body)
+
+
+def make_error_response_invalid_argument(message: str) -> web.Response:
+    return make_error_response(400, "invalid_argument", message)
+
+
+def make_error_response_not_found(message: str) -> web.Response:
+    return make_error_response(404, "not_found", message)
+
+
+def make_error_response_unauthenticated(message: str) -> web.Response:
+    return make_error_response(401, "unauthenticated", message)
+
+
+def make_error_response_permission_denied(message: str) -> web.Response:
+    return make_error_response(403, "permission_denied", message)
+
+
+def make_error_response_internal(message: str) -> web.Response:
+    return make_error_response(500, "internal", message)
+
+
+async def function_service_run_handler(
+    request: web.Request,
+    function_registry: Registry,
+    verification_key: Optional[Ed25519PublicKey],
+) -> web.Response:
+    content_length = request.content_length
+    if content_length is None or content_length == 0:
+        return make_error_response_invalid_argument("content length is required")
+    if content_length < 0:
+        return make_error_response_invalid_argument("content length is negative")
+    if content_length > 16_000_000:
+        return make_error_response_invalid_argument("content length is too large")
+
+    data: bytes = await request.read()
+    try:
+        content = await function_service_run(
+            str(request.url),
+            request.method,
+            dict(request.headers),
+            data,
+            function_registry,
+            verification_key,
+        )
+    except FunctionServiceError as e:
+        return make_error_response(e.status, e.code, e.message)
+    return web.Response(status=200, content_type="application/proto", body=content)
 
 
 async def function_service_run(
@@ -237,7 +345,3 @@ async def function_service_run(
 
     logger.debug("finished handling run request with status %s", status.name)
     return response.SerializeToString()
-
-
-def make_error_response_body(code: str, message: str) -> bytes:
-    return f'{{"code":"{code}","message":"{message}"}}'.encode()

@@ -1,105 +1,57 @@
-import base64
-import os
-import pickle
-import struct
-import threading
-import unittest
+import asyncio
+import socket
 from http.server import HTTPServer
-from typing import Any, Tuple
-from unittest import mock
 
-import fastapi
-import google.protobuf.any_pb2
-import google.protobuf.wrappers_pb2
-import httpx
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-
-import dispatch.test.httpx
-from dispatch.experimental.durable.registry import clear_functions
-from dispatch.function import Arguments, Error, Function, Input, Output, Registry
-from dispatch.http import Dispatch
-from dispatch.proto import _any_unpickle as any_unpickle
-from dispatch.proto import _pb_any_pickle as any_pickle
-from dispatch.sdk.v1 import call_pb2 as call_pb
-from dispatch.sdk.v1 import function_pb2 as function_pb
-from dispatch.signature import parse_verification_key, public_key_from_pem
-from dispatch.status import Status
-from dispatch.test import EndpointClient
-
-public_key_pem = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=\n-----END PUBLIC KEY-----"
-public_key_pem2 = "-----BEGIN PUBLIC KEY-----\\nMCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=\\n-----END PUBLIC KEY-----"
-public_key = public_key_from_pem(public_key_pem)
-public_key_bytes = public_key.public_bytes_raw()
-public_key_b64 = base64.b64encode(public_key_bytes)
-
-from datetime import datetime
+import dispatch.test
+from dispatch.asyncio import Runner
+from dispatch.function import Registry
+from dispatch.http import Dispatch, FunctionService, Server
 
 
-class TestHTTP(unittest.TestCase):
-    def setUp(self):
+class TestHTTP(dispatch.test.TestCase):
+
+    def dispatch_test_init(self, reg: Registry) -> str:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(128)
+
+        (host, port) = sock.getsockname()
+
+        self.httpserver = HTTPServer(
+            server_address=(host, port),
+            RequestHandlerClass=Dispatch(reg),
+            bind_and_activate=False,
+        )
+        self.httpserver.socket = sock
+        return f"http://{host}:{port}"
+
+    def dispatch_test_run(self):
+        self.httpserver.serve_forever(poll_interval=0.05)
+
+    def dispatch_test_stop(self):
+        self.httpserver.shutdown()
+        self.httpserver.server_close()
+        self.httpserver.socket.close()
+
+
+class TestAIOHTTP(dispatch.test.TestCase):
+
+    def dispatch_test_init(self, reg: Registry) -> str:
         host = "127.0.0.1"
-        port = 9999
+        port = 0
 
-        self.server_address = (host, port)
-        self.endpoint = f"http://{host}:{port}"
-        self.dispatch = Dispatch(
-            Registry(
-                endpoint=self.endpoint,
-                api_key="0000000000000000",
-                api_url="http://127.0.0.1:10000",
-            ),
-        )
+        self.aiowait = asyncio.Event()
+        self.aioloop = Runner()
+        self.aiohttp = Server(host, port, Dispatch(reg))
+        self.aioloop.run(self.aiohttp.start())
 
-        self.client = httpx.Client(timeout=1.0)
-        self.server = HTTPServer(self.server_address, self.dispatch)
-        self.thread = threading.Thread(
-            target=lambda: self.server.serve_forever(poll_interval=0.05)
-        )
-        self.thread.start()
+        return f"http://{self.aiohttp.host}:{self.aiohttp.port}"
 
-    def tearDown(self):
-        self.server.shutdown()
-        self.thread.join(timeout=1.0)
-        self.client.close()
-        self.server.server_close()
+    def dispatch_test_run(self):
+        self.aioloop.run(self.aiowait.wait())
+        self.aioloop.run(self.aiohttp.stop())
+        self.aioloop.close()
 
-    def test_content_length_missing(self):
-        resp = self.client.post(f"{self.endpoint}/dispatch.sdk.v1.FunctionService/Run")
-        body = resp.read()
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
-            body, b'{"code":"invalid_argument","message":"content length is required"}'
-        )
-
-    def test_content_length_too_large(self):
-        resp = self.client.post(
-            f"{self.endpoint}/dispatch.sdk.v1.FunctionService/Run",
-            data={"msg": "a" * 16_000_001},
-        )
-        body = resp.read()
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(
-            body, b'{"code":"invalid_argument","message":"content length is too large"}'
-        )
-
-    def test_simple_request(self):
-        @self.dispatch.registry.primitive_function
-        async def my_function(input: Input) -> Output:
-            return Output.value(
-                f"You told me: '{input.input}' ({len(input.input)} characters)"
-            )
-
-        http_client = dispatch.test.httpx.Client(httpx.Client(base_url=self.endpoint))
-        client = EndpointClient(http_client)
-
-        req = function_pb.RunRequest(
-            function=my_function.name, input=any_pickle("Hello World!")
-        )
-
-        resp = client.run(req)
-
-        self.assertIsInstance(resp, function_pb.RunResponse)
-
-        output = any_unpickle(resp.exit.result.output)
-
-        self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
+    def dispatch_test_stop(self):
+        self.aioloop.get_loop().call_soon_threadsafe(self.aiowait.set)

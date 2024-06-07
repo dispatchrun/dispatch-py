@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Mapping, Protocol
 
+import aiohttp
+
+from dispatch.function import Client as DefaultClient
+
 
 @dataclass
 class HttpResponse(Protocol):

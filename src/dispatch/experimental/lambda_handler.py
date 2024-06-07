@@ -1,4 +1,4 @@
-"""Integration of Dispatch programmable endpoints for FastAPI.
+"""Integration of Dispatch programmable endpoints for AWS Lambda.
 
 Example:
 
