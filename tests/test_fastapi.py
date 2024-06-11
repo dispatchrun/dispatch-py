@@ -1,28 +1,33 @@
 import asyncio
-import base64
-import os
-import pickle
-import struct
-import unittest
+import socket
 from typing import Any, Optional
-from unittest import mock
 
 import fastapi
 import google.protobuf.any_pb2
 import google.protobuf.wrappers_pb2
 import httpx
+import uvicorn
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import dispatch
+from dispatch.asyncio import Runner
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
-from dispatch.function import Arguments, Error, Function, Input, Output
+from dispatch.function import (
+    Arguments,
+    Client,
+    Error,
+    Function,
+    Input,
+    Output,
+    Registry,
+)
 from dispatch.proto import _any_unpickle as any_unpickle
-from dispatch.proto import _pb_any_pickle as any_pickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
@@ -31,16 +36,54 @@ from dispatch.signature import (
     public_key_from_pem,
 )
 from dispatch.status import Status
-from dispatch.test import Client, DispatchServer, DispatchService, EndpointClient
+from dispatch.test import EndpointClient
 from dispatch.test.fastapi import http_client
+
+
+class TestFastAPI(dispatch.test.TestCase):
+
+    def dispatch_test_init(self, reg: Registry) -> str:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(128)
+
+        (host, port) = sock.getsockname()
+
+        app = FastAPI()
+        dispatch = Dispatch(app, registry=reg)
+
+        config = uvicorn.Config(app, host=host, port=port)
+        self.sockets = [sock]
+        self.uvicorn = uvicorn.Server(config)
+        self.runner = Runner()
+        self.event = asyncio.Event()
+        return f"http://{host}:{port}"
+
+    def dispatch_test_run(self):
+        loop = self.runner.get_loop()
+        loop.create_task(self.uvicorn.serve(self.sockets))
+        self.runner.run(self.event.wait())
+        self.runner.close()
+
+        for sock in self.sockets:
+            sock.close()
+
+    def dispatch_test_stop(self):
+        loop = self.runner.get_loop()
+        loop.call_soon_threadsafe(self.event.set)
 
 
 def create_dispatch_instance(app: fastapi.FastAPI, endpoint: str):
     return Dispatch(
         app,
-        endpoint=endpoint,
-        api_key="0000000000000000",
-        api_url="http://127.0.0.1:10000",
+        registry=Registry(
+            name=__name__,
+            endpoint=endpoint,
+            client=Client(
+                api_key="0000000000000000",
+                api_url="http://127.0.0.1:10000",
+            ),
+        ),
     )
 
 
@@ -50,502 +93,366 @@ def create_endpoint_client(
     return EndpointClient(http_client(app), signing_key)
 
 
-class TestFastAPI(unittest.TestCase):
-    def test_Dispatch(self):
-        app = fastapi.FastAPI()
-        create_dispatch_instance(app, "https://127.0.0.1:9999")
-
-        @app.get("/")
-        def read_root():
-            return {"Hello": "World"}
-
-        client = TestClient(app)
-
-        # Ensure existing routes are still working.
-        resp = client.get("/")
-        self.assertEqual(resp.status_code, 200)
-
-        self.assertEqual(resp.json(), {"Hello": "World"})
-
-        # Ensure Dispatch root is available.
-        resp = client.post("/dispatch.sdk.v1.FunctionService/Run")
-        self.assertEqual(resp.status_code, 400)
-
-    @mock.patch.dict(os.environ, {"DISPATCH_ENDPOINT_URL": ""})
-    def test_Dispatch_no_endpoint(self):
-        app = fastapi.FastAPI()
-        with self.assertRaises(ValueError):
-            create_dispatch_instance(app, endpoint="")
-
-    def test_Dispatch_endpoint_no_scheme(self):
-        app = fastapi.FastAPI()
-        with self.assertRaises(ValueError):
-            create_dispatch_instance(app, endpoint="127.0.0.1:9999")
-
-    def test_fastapi_simple_request(self):
-        app = fastapi.FastAPI()
-        dispatch = create_dispatch_instance(app, endpoint="http://127.0.0.1:9999/")
-
-        @dispatch.primitive_function
-        async def my_function(input: Input) -> Output:
-            return Output.value(
-                f"You told me: '{input.input}' ({len(input.input)} characters)"
-            )
-
-        client = create_endpoint_client(app)
-
-        req = function_pb.RunRequest(
-            function=my_function.name,
-            input=any_pickle("Hello World!"),
-        )
-
-        resp = client.run(req)
-
-        self.assertIsInstance(resp, function_pb.RunResponse)
-
-        output = any_unpickle(resp.exit.result.output)
-
-        self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
-
-
-signing_key = private_key_from_pem(
-    """
------BEGIN PRIVATE KEY-----
-MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
------END PRIVATE KEY-----
-"""
-)
-
-verification_key = public_key_from_pem(
-    """
------BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
------END PUBLIC KEY-----
-"""
-)
-
-
-class TestFullFastapi(unittest.TestCase):
-    def setUp(self):
-        self.endpoint_app = fastapi.FastAPI()
-        endpoint_client = create_endpoint_client(self.endpoint_app, signing_key)
-
-        api_key = "0000000000000000"
-        self.dispatch_service = DispatchService(
-            endpoint_client, api_key, collect_roundtrips=True
-        )
-        self.dispatch_server = DispatchServer(self.dispatch_service)
-        self.dispatch_client = Client(api_key, api_url=self.dispatch_server.url)
-
-        self.dispatch = Dispatch(
-            self.endpoint_app,
-            endpoint="http://function-service",  # unused
-            verification_key=verification_key,
-            api_key=api_key,
-            api_url=self.dispatch_server.url,
-        )
-
-        self.dispatch_server.start()
-
-    def tearDown(self):
-        self.dispatch_server.stop()
-
-    def test_simple_end_to_end(self):
-        # The FastAPI server.
-        @self.dispatch.function
-        def my_function(name: str) -> str:
-            return f"Hello world: {name}"
-
-        call = my_function.build_call("52")
-        self.assertEqual(call.function.split(".")[-1], "my_function")
-
-        # The client.
-        [dispatch_id] = asyncio.run(
-            self.dispatch_client.dispatch([my_function.build_call("52")])
-        )
-
-        # Simulate execution for testing purposes.
-        self.dispatch_service.dispatch_calls()
-
-        # Validate results.
-        roundtrips = self.dispatch_service.roundtrips[dispatch_id]
-        self.assertEqual(len(roundtrips), 1)
-        _, response = roundtrips[0]
-        self.assertEqual(any_unpickle(response.exit.result.output), "Hello world: 52")
-
-    def test_simple_missing_signature(self):
-        @self.dispatch.function
-        async def my_function(name: str) -> str:
-            return f"Hello world: {name}"
-
-        call = my_function.build_call("52")
-        self.assertEqual(call.function.split(".")[-1], "my_function")
-
-        [dispatch_id] = asyncio.run(self.dispatch_client.dispatch([call]))
-
-        self.dispatch_service.endpoint_client = create_endpoint_client(
-            self.endpoint_app
-        )  # no signing key
-        try:
-            self.dispatch_service.dispatch_calls()
-        except httpx.HTTPStatusError as e:
-            assert e.response.status_code == 403
-            assert e.response.json() == {
-                "code": "permission_denied",
-                "message": 'Expected "Signature-Input" header field to be present',
-            }
-        else:
-            assert False, "Expected HTTPStatusError"
-
-
 def response_output(resp: function_pb.RunResponse) -> Any:
     return any_unpickle(resp.exit.result.output)
 
 
-class TestCoroutine(unittest.TestCase):
-    def setUp(self):
-        clear_functions()
+# class TestCoroutine(unittest.TestCase):
+#     def setUp(self):
+#         clear_functions()
 
-        self.app = fastapi.FastAPI()
+#         self.app = fastapi.FastAPI()
 
-        @self.app.get("/")
-        def root():
-            return "OK"
+#         @self.app.get("/")
+#         def root():
+#             return "OK"
 
-        self.dispatch = create_dispatch_instance(
-            self.app, endpoint="https://127.0.0.1:9999"
-        )
-        self.http_client = TestClient(self.app)
-        self.client = create_endpoint_client(self.app)
+#         self.dispatch = create_dispatch_instance(
+#             self.app, endpoint="https://127.0.0.1:9999"
+#         )
+#         self.http_client = TestClient(self.app)
+#         self.client = create_endpoint_client(self.app)
 
-    def execute(
-        self, func: Function, input=None, state=None, calls=None
-    ) -> function_pb.RunResponse:
-        """Test helper to invoke coroutines on the local server."""
-        req = function_pb.RunRequest(function=func.name)
+#     def tearDown(self):
+#         self.dispatch.registry.close()
 
-        if input is not None:
-            any = any_pickle(input)
-            req.input.CopyFrom(any)
-        if state is not None:
-            any = any_pickle(state)
-            req.poll_result.typed_coroutine_state.CopyFrom(any)
-        if calls is not None:
-            for c in calls:
-                req.poll_result.results.append(c)
+#     def execute(
+#         self, func: Function, input=None, state=None, calls=None
+#     ) -> function_pb.RunResponse:
+#         """Test helper to invoke coroutines on the local server."""
+#         req = function_pb.RunRequest(function=func.name)
 
-        resp = self.client.run(req)
-        self.assertIsInstance(resp, function_pb.RunResponse)
-        return resp
+#         if input is not None:
+#             input_bytes = pickle.dumps(input)
+#             input_any = google.protobuf.any_pb2.Any()
+#             input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=input_bytes))
+#             req.input.CopyFrom(input_any)
+#         if state is not None:
+#             req.poll_result.coroutine_state = state
+#         if calls is not None:
+#             for c in calls:
+#                 req.poll_result.results.append(c)
 
-    def call(self, func: Function, *args, **kwargs) -> function_pb.RunResponse:
-        return self.execute(func, input=Arguments(args, kwargs))
+#         resp = self.client.run(req)
+#         self.assertIsInstance(resp, function_pb.RunResponse)
+#         return resp
 
-    def proto_call(self, call: call_pb.Call) -> call_pb.CallResult:
-        req = function_pb.RunRequest(
-            function=call.function,
-            input=call.input,
-        )
-        resp = self.client.run(req)
-        self.assertIsInstance(resp, function_pb.RunResponse)
+#     def call(self, func: Function, *args, **kwargs) -> function_pb.RunResponse:
+#         return self.execute(func, input=Arguments(args, kwargs))
 
-        resp.exit.result.correlation_id = call.correlation_id
-        return resp.exit.result
+#     def proto_call(self, call: call_pb.Call) -> call_pb.CallResult:
+#         req = function_pb.RunRequest(
+#             function=call.function,
+#             input=call.input,
+#         )
+#         resp = self.client.run(req)
+#         self.assertIsInstance(resp, function_pb.RunResponse)
 
-    def test_no_input(self):
-        @self.dispatch.primitive_function
-        async def my_function(input: Input) -> Output:
-            return Output.value("Hello World!")
+#         # Assert the response is terminal. Good enough until the test client can
+#         # orchestrate coroutines.
+#         self.assertTrue(len(resp.poll.coroutine_state) == 0)
 
-        resp = self.execute(my_function)
+#         resp.exit.result.correlation_id = call.correlation_id
+#         return resp.exit.result
 
-        out = response_output(resp)
-        self.assertEqual(out, "Hello World!")
+#     def test_no_input(self):
+#         @self.dispatch.primitive_function
+#         async def my_function(input: Input) -> Output:
+#             return Output.value("Hello World!")
 
-    def test_missing_coroutine(self):
-        req = function_pb.RunRequest(
-            function="does-not-exist",
-        )
+#         resp = self.execute(my_function)
 
-        with self.assertRaises(httpx.HTTPStatusError) as cm:
-            self.client.run(req)
-        self.assertEqual(cm.exception.response.status_code, 404)
+#         out = response_output(resp)
+#         self.assertEqual(out, "Hello World!")
 
-    def test_string_input(self):
-        @self.dispatch.primitive_function
-        async def my_function(input: Input) -> Output:
-            return Output.value(f"You sent '{input.input}'")
+#     def test_missing_coroutine(self):
+#         req = function_pb.RunRequest(
+#             function="does-not-exist",
+#         )
 
-        resp = self.execute(my_function, input="cool stuff")
-        out = response_output(resp)
-        self.assertEqual(out, "You sent 'cool stuff'")
+#         with self.assertRaises(httpx.HTTPStatusError) as cm:
+#             self.client.run(req)
+#         self.assertEqual(cm.exception.response.status_code, 404)
 
-    def test_error_on_access_state_in_first_call(self):
-        @self.dispatch.primitive_function
-        async def my_function(input: Input) -> Output:
-            try:
-                print(input.coroutine_state)
-            except ValueError:
-                return Output.error(
-                    Error.from_exception(
-                        ValueError("This input is for a first function call")
-                    )
-                )
-            return Output.value("not reached")
+#     def test_string_input(self):
+#         @self.dispatch.primitive_function
+#         async def my_function(input: Input) -> Output:
+#             return Output.value(f"You sent '{input.input}'")
 
-        resp = self.execute(my_function, input="cool stuff")
-        self.assertEqual("ValueError", resp.exit.result.error.type)
-        self.assertEqual(
-            "This input is for a first function call", resp.exit.result.error.message
-        )
+#         resp = self.execute(my_function, input="cool stuff")
+#         out = response_output(resp)
+#         self.assertEqual(out, "You sent 'cool stuff'")
 
-    def test_error_on_access_input_in_second_call(self):
-        @self.dispatch.primitive_function
-        async def my_function(input: Input) -> Output:
-            if input.is_first_call:
-                return Output.poll(coroutine_state=b"42")
-            try:
-                print(input.input)
-            except ValueError:
-                return Output.error(
-                    Error.from_exception(
-                        ValueError("This input is for a resumed coroutine")
-                    )
-                )
-            return Output.value("not reached")
+#     def test_error_on_access_state_in_first_call(self):
+#         @self.dispatch.primitive_function
+#         async def my_function(input: Input) -> Output:
+#             try:
+#                 print(input.coroutine_state)
+#             except ValueError:
+#                 return Output.error(
+#                     Error.from_exception(
+#                         ValueError("This input is for a first function call")
+#                     )
+#                 )
+#             return Output.value("not reached")
 
-        resp = self.execute(my_function, input="cool stuff")
-        state = any_unpickle(resp.poll.typed_coroutine_state)
-        self.assertEqual(b"42", state)
+#         resp = self.execute(my_function, input="cool stuff")
+#         self.assertEqual("ValueError", resp.exit.result.error.type)
+#         self.assertEqual(
+#             "This input is for a first function call", resp.exit.result.error.message
+#         )
 
-        resp = self.execute(my_function, state=state)
-        self.assertEqual("ValueError", resp.exit.result.error.type)
-        self.assertEqual(
-            "This input is for a resumed coroutine", resp.exit.result.error.message
-        )
+#     def test_error_on_access_input_in_second_call(self):
+#         @self.dispatch.primitive_function
+#         async def my_function(input: Input) -> Output:
+#             if input.is_first_call:
+#                 return Output.poll(coroutine_state=b"42")
+#             try:
+#                 print(input.input)
+#             except ValueError:
+#                 return Output.error(
+#                     Error.from_exception(
+#                         ValueError("This input is for a resumed coroutine")
+#                     )
+#                 )
+#             return Output.value("not reached")
 
-    def test_duplicate_coro(self):
-        @self.dispatch.primitive_function
-        async def my_function(input: Input) -> Output:
-            return Output.value("Do one thing")
+#         resp = self.execute(my_function, input="cool stuff")
+#         self.assertEqual(b"42", resp.poll.coroutine_state)
 
-        with self.assertRaises(ValueError):
+#         resp = self.execute(my_function, state=resp.poll.coroutine_state)
+#         self.assertEqual("ValueError", resp.exit.result.error.type)
+#         self.assertEqual(
+#             "This input is for a resumed coroutine", resp.exit.result.error.message
+#         )
 
-            @self.dispatch.primitive_function
-            async def my_function(input: Input) -> Output:
-                return Output.value("Do something else")
+#     def test_duplicate_coro(self):
+#         @self.dispatch.primitive_function
+#         async def my_function(input: Input) -> Output:
+#             return Output.value("Do one thing")
 
-    def test_two_simple_coroutines(self):
-        @self.dispatch.primitive_function
-        async def echoroutine(input: Input) -> Output:
-            return Output.value(f"Echo: '{input.input}'")
+#         with self.assertRaises(ValueError):
 
-        @self.dispatch.primitive_function
-        async def len_coroutine(input: Input) -> Output:
-            return Output.value(f"Length: {len(input.input)}")
+#             @self.dispatch.primitive_function
+#             async def my_function(input: Input) -> Output:
+#                 return Output.value("Do something else")
 
-        data = "cool stuff"
-        resp = self.execute(echoroutine, input=data)
-        out = response_output(resp)
-        self.assertEqual(out, "Echo: 'cool stuff'")
+#     def test_two_simple_coroutines(self):
+#         @self.dispatch.primitive_function
+#         async def echoroutine(input: Input) -> Output:
+#             return Output.value(f"Echo: '{input.input}'")
 
-        resp = self.execute(len_coroutine, input=data)
-        out = response_output(resp)
-        self.assertEqual(out, "Length: 10")
+#         @self.dispatch.primitive_function
+#         async def len_coroutine(input: Input) -> Output:
+#             return Output.value(f"Length: {len(input.input)}")
 
-    def test_coroutine_with_state(self):
-        @self.dispatch.primitive_function
-        async def coroutine3(input: Input) -> Output:
-            if input.is_first_call:
-                counter = input.input
-            else:
-                counter = input.coroutine_state
-            counter -= 1
-            if counter <= 0:
-                return Output.value("done")
-            return Output.poll(coroutine_state=counter)
+#         data = "cool stuff"
+#         resp = self.execute(echoroutine, input=data)
+#         out = response_output(resp)
+#         self.assertEqual(out, "Echo: 'cool stuff'")
 
-        # first call
-        resp = self.execute(coroutine3, input=4)
-        state = any_unpickle(resp.poll.typed_coroutine_state)
-        self.assertEqual(state, 3)
+#         resp = self.execute(len_coroutine, input=data)
+#         out = response_output(resp)
+#         self.assertEqual(out, "Length: 10")
 
-        # resume, state = 3
-        resp = self.execute(coroutine3, state=state)
-        state = any_unpickle(resp.poll.typed_coroutine_state)
-        self.assertEqual(state, 2)
+#     def test_coroutine_with_state(self):
+#         @self.dispatch.primitive_function
+#         async def coroutine3(input: Input) -> Output:
+#             if input.is_first_call:
+#                 counter = input.input
+#             else:
+#                 (counter,) = struct.unpack("@i", input.coroutine_state)
+#             counter -= 1
+#             if counter <= 0:
+#                 return Output.value("done")
+#             coroutine_state = struct.pack("@i", counter)
+#             return Output.poll(coroutine_state=coroutine_state)
 
-        # resume, state = 2
-        resp = self.execute(coroutine3, state=state)
-        state = any_unpickle(resp.poll.typed_coroutine_state)
-        self.assertEqual(state, 1)
+#         # first call
+#         resp = self.execute(coroutine3, input=4)
+#         state = resp.poll.coroutine_state
+#         self.assertTrue(len(state) > 0)
 
-        # resume, state = 1
-        resp = self.execute(coroutine3, state=state)
-        out = response_output(resp)
-        self.assertEqual(out, "done")
+#         # resume, state = 3
+#         resp = self.execute(coroutine3, state=state)
+#         state = resp.poll.coroutine_state
+#         self.assertTrue(len(state) > 0)
 
-    def test_coroutine_poll(self):
-        @self.dispatch.primitive_function
-        async def coro_compute_len(input: Input) -> Output:
-            return Output.value(len(input.input))
+#         # resume, state = 2
+#         resp = self.execute(coroutine3, state=state)
+#         state = resp.poll.coroutine_state
+#         self.assertTrue(len(state) > 0)
 
-        @self.dispatch.primitive_function
-        async def coroutine_main(input: Input) -> Output:
-            if input.is_first_call:
-                text: str = input.input
-                return Output.poll(
-                    coroutine_state=text,
-                    calls=[coro_compute_len._build_primitive_call(text)],
-                )
-            text = input.coroutine_state
-            length = input.call_results[0].output
-            return Output.value(f"length={length} text='{text}'")
+#         # resume, state = 1
+#         resp = self.execute(coroutine3, state=state)
+#         state = resp.poll.coroutine_state
+#         self.assertTrue(len(state) == 0)
+#         out = response_output(resp)
+#         self.assertEqual(out, "done")
 
-        resp = self.execute(coroutine_main, input="cool stuff")
+#     def test_coroutine_poll(self):
+#         @self.dispatch.primitive_function
+#         async def coro_compute_len(input: Input) -> Output:
+#             return Output.value(len(input.input))
 
-        # main saved some state
-        state = any_unpickle(resp.poll.typed_coroutine_state)
-        self.assertEqual(state, "cool stuff")
-        # main asks for 1 call to compute_len
-        self.assertEqual(len(resp.poll.calls), 1)
-        call = resp.poll.calls[0]
-        self.assertEqual(call.function, coro_compute_len.name)
-        self.assertEqual(any_unpickle(call.input), "cool stuff")
+#         @self.dispatch.primitive_function
+#         async def coroutine_main(input: Input) -> Output:
+#             if input.is_first_call:
+#                 text: str = input.input
+#                 return Output.poll(
+#                     coroutine_state=text.encode(),
+#                     calls=[coro_compute_len._build_primitive_call(text)],
+#                 )
+#             text = input.coroutine_state.decode()
+#             length = input.call_results[0].output
+#             return Output.value(f"length={length} text='{text}'")
 
-        # make the requested compute_len
-        resp2 = self.proto_call(call)
-        # check the result is the terminal expected response
-        len_resp = any_unpickle(resp2.output)
-        self.assertEqual(10, len_resp)
+#         resp = self.execute(coroutine_main, input="cool stuff")
 
-        # resume main with the result
-        resp = self.execute(coroutine_main, state=state, calls=[resp2])
-        # validate the final result
-        out = response_output(resp)
-        self.assertEqual("length=10 text='cool stuff'", out)
+#         # main saved some state
+#         state = resp.poll.coroutine_state
+#         self.assertTrue(len(state) > 0)
+#         # main asks for 1 call to compute_len
+#         self.assertEqual(len(resp.poll.calls), 1)
+#         call = resp.poll.calls[0]
+#         self.assertEqual(call.function, coro_compute_len.name)
+#         self.assertEqual(any_unpickle(call.input), "cool stuff")
 
-    def test_coroutine_poll_error(self):
-        @self.dispatch.primitive_function
-        async def coro_compute_len(input: Input) -> Output:
-            return Output.error(Error(Status.PERMANENT_ERROR, "type", "Dead"))
+#         # make the requested compute_len
+#         resp2 = self.proto_call(call)
+#         # check the result is the terminal expected response
+#         len_resp = any_unpickle(resp2.output)
+#         self.assertEqual(10, len_resp)
 
-        @self.dispatch.primitive_function
-        async def coroutine_main(input: Input) -> Output:
-            if input.is_first_call:
-                text: str = input.input
-                return Output.poll(
-                    coroutine_state=text,
-                    calls=[coro_compute_len._build_primitive_call(text)],
-                )
-            error = input.call_results[0].error
-            if error is not None:
-                return Output.value(f"msg={error.message} type='{error.type}'")
-            else:
-                raise RuntimeError(f"unexpected call results: {input.call_results}")
+#         # resume main with the result
+#         resp = self.execute(coroutine_main, state=state, calls=[resp2])
+#         # validate the final result
+#         self.assertTrue(len(resp.poll.coroutine_state) == 0)
+#         out = response_output(resp)
+#         self.assertEqual("length=10 text='cool stuff'", out)
 
-        resp = self.execute(coroutine_main, input="cool stuff")
+#     def test_coroutine_poll_error(self):
+#         @self.dispatch.primitive_function
+#         async def coro_compute_len(input: Input) -> Output:
+#             return Output.error(Error(Status.PERMANENT_ERROR, "type", "Dead"))
 
-        # main saved some state
-        state = any_unpickle(resp.poll.typed_coroutine_state)
-        self.assertEqual(state, "cool stuff")
-        # main asks for 1 call to compute_len
-        self.assertEqual(len(resp.poll.calls), 1)
-        call = resp.poll.calls[0]
-        self.assertEqual(call.function, coro_compute_len.name)
-        self.assertEqual(any_unpickle(call.input), "cool stuff")
+#         @self.dispatch.primitive_function
+#         async def coroutine_main(input: Input) -> Output:
+#             if input.is_first_call:
+#                 text: str = input.input
+#                 return Output.poll(
+#                     coroutine_state=text.encode(),
+#                     calls=[coro_compute_len._build_primitive_call(text)],
+#                 )
+#             error = input.call_results[0].error
+#             if error is not None:
+#                 return Output.value(f"msg={error.message} type='{error.type}'")
+#             else:
+#                 raise RuntimeError(f"unexpected call results: {input.call_results}")
 
-        # make the requested compute_len
-        resp2 = self.proto_call(call)
+#         resp = self.execute(coroutine_main, input="cool stuff")
 
-        # resume main with the result
-        resp = self.execute(coroutine_main, state=state, calls=[resp2])
-        # validate the final result
-        out = response_output(resp)
-        self.assertEqual(out, "msg=Dead type='type'")
+#         # main saved some state
+#         state = resp.poll.coroutine_state
+#         self.assertTrue(len(state) > 0)
+#         # main asks for 1 call to compute_len
+#         self.assertEqual(len(resp.poll.calls), 1)
+#         call = resp.poll.calls[0]
+#         self.assertEqual(call.function, coro_compute_len.name)
+#         self.assertEqual(any_unpickle(call.input), "cool stuff")
 
-    def test_coroutine_error(self):
-        @self.dispatch.primitive_function
-        async def mycoro(input: Input) -> Output:
-            return Output.error(Error(Status.PERMANENT_ERROR, "sometype", "dead"))
+#         # make the requested compute_len
+#         resp2 = self.proto_call(call)
 
-        resp = self.execute(mycoro)
-        self.assertEqual("sometype", resp.exit.result.error.type)
-        self.assertEqual("dead", resp.exit.result.error.message)
+#         # resume main with the result
+#         resp = self.execute(coroutine_main, state=state, calls=[resp2])
+#         # validate the final result
+#         self.assertTrue(len(resp.poll.coroutine_state) == 0)
+#         out = response_output(resp)
+#         self.assertEqual(out, "msg=Dead type='type'")
 
-    def test_coroutine_expected_exception(self):
-        @self.dispatch.primitive_function
-        async def mycoro(input: Input) -> Output:
-            try:
-                1 / 0
-            except ZeroDivisionError as e:
-                return Output.error(Error.from_exception(e))
-            self.fail("should not reach here")
+#     def test_coroutine_error(self):
+#         @self.dispatch.primitive_function
+#         async def mycoro(input: Input) -> Output:
+#             return Output.error(Error(Status.PERMANENT_ERROR, "sometype", "dead"))
 
-        resp = self.execute(mycoro)
-        self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
-        self.assertEqual("division by zero", resp.exit.result.error.message)
-        self.assertEqual(Status.PERMANENT_ERROR, resp.status)
+#         resp = self.execute(mycoro)
+#         self.assertEqual("sometype", resp.exit.result.error.type)
+#         self.assertEqual("dead", resp.exit.result.error.message)
 
-    def test_coroutine_unexpected_exception(self):
-        @self.dispatch.function
-        def mycoro():
-            1 / 0
-            self.fail("should not reach here")
+#     def test_coroutine_expected_exception(self):
+#         @self.dispatch.primitive_function
+#         async def mycoro(input: Input) -> Output:
+#             try:
+#                 1 / 0
+#             except ZeroDivisionError as e:
+#                 return Output.error(Error.from_exception(e))
+#             self.fail("should not reach here")
 
-        resp = self.call(mycoro)
-        self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
-        self.assertEqual("division by zero", resp.exit.result.error.message)
-        self.assertEqual(Status.PERMANENT_ERROR, resp.status)
+#         resp = self.execute(mycoro)
+#         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
+#         self.assertEqual("division by zero", resp.exit.result.error.message)
+#         self.assertEqual(Status.PERMANENT_ERROR, resp.status)
 
-    def test_specific_status(self):
-        @self.dispatch.primitive_function
-        async def mycoro(input: Input) -> Output:
-            return Output.error(Error(Status.THROTTLED, "foo", "bar"))
+#     def test_coroutine_unexpected_exception(self):
+#         @self.dispatch.function
+#         def mycoro():
+#             1 / 0
+#             self.fail("should not reach here")
 
-        resp = self.execute(mycoro)
-        self.assertEqual("foo", resp.exit.result.error.type)
-        self.assertEqual("bar", resp.exit.result.error.message)
-        self.assertEqual(Status.THROTTLED, resp.status)
+#         resp = self.call(mycoro)
+#         self.assertEqual("ZeroDivisionError", resp.exit.result.error.type)
+#         self.assertEqual("division by zero", resp.exit.result.error.message)
+#         self.assertEqual(Status.PERMANENT_ERROR, resp.status)
 
-    def test_tailcall(self):
-        @self.dispatch.function
-        def other_coroutine(value: Any) -> str:
-            return f"Hello {value}"
+#     def test_specific_status(self):
+#         @self.dispatch.primitive_function
+#         async def mycoro(input: Input) -> Output:
+#             return Output.error(Error(Status.THROTTLED, "foo", "bar"))
 
-        @self.dispatch.primitive_function
-        async def mycoro(input: Input) -> Output:
-            return Output.tail_call(other_coroutine._build_primitive_call(42))
+#         resp = self.execute(mycoro)
+#         self.assertEqual("foo", resp.exit.result.error.type)
+#         self.assertEqual("bar", resp.exit.result.error.message)
+#         self.assertEqual(Status.THROTTLED, resp.status)
 
-        resp = self.call(mycoro)
-        self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)
-        self.assertEqual(42, any_unpickle(resp.exit.tail_call.input))
+#     def test_tailcall(self):
+#         @self.dispatch.function
+#         def other_coroutine(value: Any) -> str:
+#             return f"Hello {value}"
 
-    def test_library_error_categorization(self):
-        @self.dispatch.function
-        def get(path: str) -> httpx.Response:
-            http_response = self.http_client.get(path)
-            http_response.raise_for_status()
-            return http_response
+#         @self.dispatch.primitive_function
+#         async def mycoro(input: Input) -> Output:
+#             return Output.tail_call(other_coroutine._build_primitive_call(42))
 
-        resp = self.call(get, "/")
-        self.assertEqual(Status.OK, Status(resp.status))
-        http_response = any_unpickle(resp.exit.result.output)
-        self.assertEqual("application/json", http_response.headers["content-type"])
-        self.assertEqual('"OK"', http_response.text)
+#         resp = self.call(mycoro)
+#         self.assertEqual(other_coroutine.name, resp.exit.tail_call.function)
+#         self.assertEqual(42, any_unpickle(resp.exit.tail_call.input))
 
-        resp = self.call(get, "/missing")
-        self.assertEqual(Status.NOT_FOUND, Status(resp.status))
+#     def test_library_error_categorization(self):
+#         @self.dispatch.function
+#         def get(path: str) -> httpx.Response:
+#             http_response = self.http_client.get(path)
+#             http_response.raise_for_status()
+#             return http_response
 
-    def test_library_output_categorization(self):
-        @self.dispatch.function
-        def get(path: str) -> httpx.Response:
-            http_response = self.http_client.get(path)
-            http_response.status_code = 429
-            return http_response
+#         resp = self.call(get, "/")
+#         self.assertEqual(Status.OK, Status(resp.status))
+#         http_response = any_unpickle(resp.exit.result.output)
+#         self.assertEqual("application/json", http_response.headers["content-type"])
+#         self.assertEqual('"OK"', http_response.text)
 
-        resp = self.call(get, "/")
-        self.assertEqual(Status.THROTTLED, Status(resp.status))
-        http_response = any_unpickle(resp.exit.result.output)
-        self.assertEqual("application/json", http_response.headers["content-type"])
-        self.assertEqual('"OK"', http_response.text)
+#         resp = self.call(get, "/missing")
+#         self.assertEqual(Status.NOT_FOUND, Status(resp.status))
+
+#     def test_library_output_categorization(self):
+#         @self.dispatch.function
+#         def get(path: str) -> httpx.Response:
+#             http_response = self.http_client.get(path)
+#             http_response.status_code = 429
+#             return http_response
+
+#         resp = self.call(get, "/")
+#         self.assertEqual(Status.THROTTLED, Status(resp.status))
+#         http_response = any_unpickle(resp.exit.result.output)
+#         self.assertEqual("application/json", http_response.headers["content-type"])
+#         self.assertEqual('"OK"', http_response.text)

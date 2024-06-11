@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import unittest
 from datetime import datetime, timedelta
 from functools import wraps
@@ -7,9 +8,11 @@ from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
 import aiohttp
 from aiohttp import web
 from google.protobuf.timestamp_pb2 import Timestamp
+from typing_extensions import ParamSpec
 
 import dispatch.experimental.durable.registry
 from dispatch.function import Client as BaseClient
+from dispatch.function import ClientError
 from dispatch.function import Registry as BaseRegistry
 from dispatch.http import Dispatch
 from dispatch.http import Server as BaseServer
@@ -41,6 +44,7 @@ __all__ = [
     "DISPATCH_API_KEY",
 ]
 
+P = ParamSpec("P")
 R = TypeVar("R", bound=BaseRegistry)
 T = TypeVar("T")
 
@@ -79,8 +83,9 @@ class Server(BaseServer):
 
 class Service(web.Application):
     tasks: dict[str, asyncio.Task[CallResult]]
+    _session: Optional[aiohttp.ClientSession] = None
 
-    def __init__(self):
+    def __init__(self, session: Optional[aiohttp.ClientSession] = None):
         super().__init__()
         self.dispatch_ids = (str(i) for i in range(2**32 - 1))
         self.tasks = {}
@@ -97,6 +102,9 @@ class Service(web.Application):
             ]
         )
 
+    async def close(self):
+        await self.session.close()
+
     async def authenticate(self, request: web.Request):
         auth = request.headers.get("Authorization")
         if not auth or not auth.startswith("Bearer "):
@@ -109,8 +117,7 @@ class Service(web.Application):
     async def handle_dispatch_request(self, request: web.Request):
         await self.authenticate(request)
         req = DispatchRequest.FromString(await request.read())
-        async with aiohttp.ClientSession() as session:
-            res = await self.dispatch(session, req)
+        res = await self.dispatch(req)
         return web.Response(
             content_type="application/proto", body=res.SerializeToString()
         )
@@ -123,25 +130,24 @@ class Service(web.Application):
             content_type="application/proto", body=res.SerializeToString()
         )
 
-    async def dispatch(
-        self, session: aiohttp.ClientSession, req: DispatchRequest
-    ) -> DispatchResponse:
+    async def dispatch(self, req: DispatchRequest) -> DispatchResponse:
         dispatch_ids = [next(self.dispatch_ids) for _ in req.calls]
 
         for call, dispatch_id in zip(req.calls, dispatch_ids):
             self.tasks[dispatch_id] = asyncio.create_task(
-                self.call(session, call, dispatch_id)
+                self.call(call, dispatch_id),
+                name=f"dispatch:{dispatch_id}",
             )
 
         return DispatchResponse(dispatch_ids=dispatch_ids)
 
     # TODO: add to protobuf definitions
     async def wait(self, dispatch_id: str) -> CallResult:
-        return await self.tasks[dispatch_id]
+        task = self.tasks[dispatch_id]
+        return await task
 
     async def call(
         self,
-        session: aiohttp.ClientSession,
         call: Call,
         dispatch_id: str,
         parent_dispatch_id: Optional[str] = None,
@@ -165,19 +171,20 @@ class Service(web.Application):
         expiration_time = Timestamp()
         expiration_time.FromDatetime(exp)
 
-        req = RunRequest(
-            function=call.function,
-            input=call.input,
-            creation_time=creation_time,
-            expiration_time=expiration_time,
-            dispatch_id=dispatch_id,
-            parent_dispatch_id=parent_dispatch_id,
-            root_dispatch_id=root_dispatch_id,
-        )
+        def make_request(call: Call) -> RunRequest:
+            return RunRequest(
+                function=call.function,
+                input=call.input,
+                creation_time=creation_time,
+                expiration_time=expiration_time,
+                dispatch_id=dispatch_id,
+                parent_dispatch_id=parent_dispatch_id,
+                root_dispatch_id=root_dispatch_id,
+            )
 
-        endpoint = call.endpoint
+        req = make_request(call)
         while True:
-            res = await self.run(session, endpoint, req)
+            res = await self.run(call.endpoint, req)
 
             if res.status != STATUS_OK:
                 # TODO: emulate retries etc...
@@ -186,44 +193,60 @@ class Service(web.Application):
                     error=Error(type="status", message=str(res.status)),
                 )
 
-            if res.exit:
-                if res.exit.tail_call:
-                    req.function = res.exit.tail_call.function
-                    req.input = res.exit.tail_call.input
-                    req.poll_result = None  # type: ignore
+            if res.HasField("exit"):
+                if res.exit.HasField("tail_call"):
+                    req = make_request(res.exit.tail_call)
                     continue
+                result = res.exit.result
                 return CallResult(
                     dispatch_id=dispatch_id,
-                    output=res.exit.result.output,
-                    error=res.exit.result.error,
+                    output=result.output if result.HasField("output") else None,
+                    error=result.error if result.HasField("error") else None,
                 )
 
-            for call in res.poll.calls:
-                if not call.endpoint:
-                    call.endpoint = endpoint
-
             # TODO: enforce poll limits
-            req.input = None  # type: ignore
-            req.poll_result = PollResult(
-                coroutine_state=res.poll.coroutine_state,
-                results=await asyncio.gather(
-                    *[
-                        self.call(session, call, dispatch_id)
-                        for call, dispatch_id in zip(
-                            res.poll.calls, next(self.dispatch_ids)
-                        )
-                    ]
+            results = await asyncio.gather(
+                *[
+                    self.call(
+                        call=subcall,
+                        dispatch_id=subcall_dispatch_id,
+                        parent_dispatch_id=dispatch_id,
+                        root_dispatch_id=root_dispatch_id,
+                    )
+                    for subcall, subcall_dispatch_id in zip(
+                        res.poll.calls, next(self.dispatch_ids)
+                    )
+                ]
+            )
+
+            req = RunRequest(
+                function=req.function,
+                creation_time=creation_time,
+                expiration_time=expiration_time,
+                dispatch_id=dispatch_id,
+                parent_dispatch_id=parent_dispatch_id,
+                root_dispatch_id=root_dispatch_id,
+                poll_result=PollResult(
+                    coroutine_state=res.poll.coroutine_state,
+                    results=results,
                 ),
             )
 
-    async def run(
-        self, session: aiohttp.ClientSession, endpoint: str, req: RunRequest
-    ) -> RunResponse:
-        async with await session.post(
+    async def run(self, endpoint: str, req: RunRequest) -> RunResponse:
+        async with await self.session.post(
             f"{endpoint}/dispatch.sdk.v1.FunctionService/Run",
             data=req.SerializeToString(),
         ) as response:
-            return RunResponse.FromString(await response.read())
+            data = await response.read()
+            if response.status != 200:
+                raise ClientError.from_response(response.status, data)
+            return RunResponse.FromString(data)
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        if not self._session:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
 
 async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
@@ -238,6 +261,7 @@ async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
                 reg.endpoint = server.url
                 await fn(reg)
     finally:
+        await api.close()
         # TODO: let's figure out how to get rid of this global registry
         # state at some point, which forces tests to be run sequentially.
         dispatch.experimental.durable.registry.clear_functions()
@@ -263,3 +287,51 @@ def method(
         return run(Registry(), lambda reg: fn(self, reg))
 
     return wrapper
+
+
+class TestCase(unittest.TestCase):
+
+    def dispatch_test_init(self, api_key: str, api_url: str) -> BaseRegistry:
+        raise NotImplementedError
+
+    def dispatch_test_run(self):
+        raise NotImplementedError
+
+    def dispatch_test_stop(self):
+        raise NotImplementedError
+
+    def setUp(self):
+        self.service = Service()
+        self.server = Server(self.service)
+        self.loop = asyncio.new_event_loop()
+        self.loop.run_until_complete(self.server.start())
+
+        self.dispatch = self.dispatch_test_init(
+            api_key=DISPATCH_API_KEY, api_url=self.server.url
+        )
+        self.dispatch.client = Client(
+            api_key=self.dispatch.client.api_key.value,
+            api_url=self.dispatch.client.api_url.value,
+        )
+
+        self.thread = threading.Thread(target=self.dispatch_test_run)
+        self.thread.start()
+
+    def tearDown(self):
+        self.dispatch_test_stop()
+        self.thread.join()
+
+        self.loop.run_until_complete(self.service.close())
+        self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+        self.loop.close()
+
+    def test_simple_end_to_end(self):
+        @self.dispatch.function
+        def my_function(name: str) -> str:
+            return f"Hello world: {name}"
+
+        async def test():
+            msg = await my_function("52")
+            assert msg == "Hello world: 52"
+
+        self.loop.run_until_complete(test())

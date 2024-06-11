@@ -488,9 +488,13 @@ class ClientError(aiohttp.ClientError):
 
     @classmethod
     def from_response(cls, status: int, body: bytes) -> ClientError:
-        error_dict = json.loads(body)
-        error_code = str(error_dict.get("code")) or "unknown"
-        error_message = str(error_dict.get("message")) or "unknown"
+        try:
+            error_dict = json.loads(body)
+            error_code = str(error_dict.get("code")) or "unknown"
+            error_message = str(error_dict.get("message")) or "unknown"
+        except json.JSONDecodeError:
+            error_code = "unknown"
+            error_message = str(body)
         return cls(status, error_code, error_message)
 
 

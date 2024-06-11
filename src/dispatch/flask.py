@@ -17,12 +17,12 @@ Example:
         my_function.dispatch()
     """
 
+import asyncio
 import logging
 from typing import Optional, Union
 
 from flask import Flask, make_response, request
 
-from dispatch.asyncio import Runner
 from dispatch.function import Registry
 from dispatch.http import FunctionServiceError, function_service_run
 from dispatch.signature import Ed25519PublicKey, parse_verification_key
@@ -81,7 +81,6 @@ class Dispatch(Registry):
         )
 
         app.errorhandler(FunctionServiceError)(self._handle_error)
-
         app.post("/dispatch.sdk.v1.FunctionService/Run")(self._execute)
 
     def _handle_error(self, exc: FunctionServiceError):
@@ -90,17 +89,16 @@ class Dispatch(Registry):
     def _execute(self):
         data: bytes = request.get_data(cache=False)
 
-        with Runner() as runner:
-            content = runner.run(
-                function_service_run(
-                    request.url,
-                    request.method,
-                    dict(request.headers),
-                    data,
-                    self,
-                    self._verification_key,
-                ),
-            )
+        content = asyncio.run(
+            function_service_run(
+                request.url,
+                request.method,
+                dict(request.headers),
+                data,
+                self,
+                self._verification_key,
+            ),
+        )
 
         res = make_response(content)
         res.content_type = "application/proto"
