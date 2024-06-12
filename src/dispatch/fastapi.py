@@ -25,7 +25,11 @@ import fastapi
 import fastapi.responses
 
 from dispatch.function import Registry
-from dispatch.http import FunctionServiceError, function_service_run
+from dispatch.http import (
+    FunctionServiceError,
+    function_service_run,
+    validate_content_length,
+)
 from dispatch.signature import Ed25519PublicKey, parse_verification_key
 
 logger = logging.getLogger(__name__)
@@ -97,6 +101,12 @@ def _new_app(function_registry: Registry, verification_key: Optional[Ed25519Publ
         "/Run",
     )
     async def execute(request: fastapi.Request):
+        valid, reason = validate_content_length(
+            int(request.headers.get("content-length", 0))
+        )
+        if not valid:
+            raise FunctionServiceError(400, "invalid_argument", reason)
+
         # Raw request body bytes are only available through the underlying
         # starlette Request object's body method, which returns an awaitable,
         # forcing execute() to be async.

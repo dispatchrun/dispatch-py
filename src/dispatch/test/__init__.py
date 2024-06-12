@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 import unittest
 from datetime import datetime, timedelta
@@ -289,6 +290,16 @@ def method(
     return wrapper
 
 
+def aiotest(
+    fn: Callable[["TestCase"], Coroutine[Any, Any, None]]
+) -> Callable[["TestCase"], None]:
+    @wraps(fn)
+    def wrapper(self):
+        self.loop.run_until_complete(fn(self))
+
+    return wrapper
+
+
 class TestCase(unittest.TestCase):
 
     def dispatch_test_init(self, api_key: str, api_url: str) -> BaseRegistry:
@@ -325,6 +336,42 @@ class TestCase(unittest.TestCase):
         self.loop.run_until_complete(self.loop.shutdown_asyncgens())
         self.loop.close()
 
+        # TODO: let's figure out how to get rid of this global registry
+        # state at some point, which forces tests to be run sequentially.
+        dispatch.experimental.durable.registry.clear_functions()
+
+    @aiotest
+    async def test_content_length_missing(self):
+        async with aiohttp.ClientSession(
+            request_class=ClientRequestContentLengthMissing
+        ) as session:
+            async with await session.post(
+                f"{self.dispatch.endpoint}/dispatch.sdk.v1.FunctionService/Run",
+            ) as resp:
+                data = await resp.read()
+                print(data)
+                assert resp.status == 400
+                assert json.loads(data) == {
+                    "code": "invalid_argument",
+                    "message": "content length is required",
+                }
+
+    @aiotest
+    async def test_content_length_too_large(self):
+        async with aiohttp.ClientSession(
+            request_class=ClientRequestContentLengthTooLarge
+        ) as session:
+            async with await session.post(
+                f"{self.dispatch.endpoint}/dispatch.sdk.v1.FunctionService/Run",
+            ) as resp:
+                data = await resp.read()
+                print(data)
+                assert resp.status == 400
+                assert json.loads(data) == {
+                    "code": "invalid_argument",
+                    "message": "content length is too large",
+                }
+
     def test_simple_end_to_end(self):
         @self.dispatch.function
         def my_function(name: str) -> str:
@@ -335,3 +382,16 @@ class TestCase(unittest.TestCase):
             assert msg == "Hello world: 52"
 
         self.loop.run_until_complete(test())
+
+
+class ClientRequestContentLengthMissing(aiohttp.ClientRequest):
+    def update_headers(self, skip_auto_headers):
+        super().update_headers(skip_auto_headers)
+        if "Content-Length" in self.headers:
+            del self.headers["Content-Length"]
+
+
+class ClientRequestContentLengthTooLarge(aiohttp.ClientRequest):
+    def update_headers(self, skip_auto_headers):
+        super().update_headers(skip_auto_headers)
+        self.headers["Content-Length"] = "16000001"

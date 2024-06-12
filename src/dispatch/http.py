@@ -5,7 +5,7 @@ import logging
 import os
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler
-from typing import Iterable, List, Mapping, Optional, Union
+from typing import Iterable, List, Mapping, Optional, Tuple, Union
 
 from aiohttp import web
 from http_message_signatures import InvalidSignature
@@ -32,6 +32,16 @@ class FunctionServiceError(Exception):
         self.status = status
         self.code = code
         self.message = message
+
+
+def validate_content_length(content_length: int) -> Tuple[bool, str]:
+    if content_length == 0:
+        return False, "content length is required"
+    if content_length < 0:
+        return False, "content length is negative"
+    if content_length > 16_000_000:
+        return False, "content length is too large"
+    return True, ""
 
 
 class FunctionService(BaseHTTPRequestHandler):
@@ -78,14 +88,9 @@ class FunctionService(BaseHTTPRequestHandler):
             return
 
         content_length = int(self.headers.get("Content-Length", 0))
-        if content_length == 0:
-            self.send_error_response_invalid_argument("content length is required")
-            return
-        if content_length < 0:
-            self.send_error_response_invalid_argument("content length is negative")
-            return
-        if content_length > 16_000_000:
-            self.send_error_response_invalid_argument("content length is too large")
+        valid, reason = validate_content_length(content_length)
+        if not valid:
+            self.send_error_response_invalid_argument(reason)
             return
 
         data: bytes = self.rfile.read(content_length)
@@ -229,13 +234,9 @@ async def function_service_run_handler(
     function_registry: Registry,
     verification_key: Optional[Ed25519PublicKey],
 ) -> web.Response:
-    content_length = request.content_length
-    if content_length is None or content_length == 0:
-        return make_error_response_invalid_argument("content length is required")
-    if content_length < 0:
-        return make_error_response_invalid_argument("content length is negative")
-    if content_length > 16_000_000:
-        return make_error_response_invalid_argument("content length is too large")
+    valid, reason = validate_content_length(request.content_length or 0)
+    if not valid:
+        return make_error_response_invalid_argument(reason)
 
     data: bytes = await request.read()
     try:

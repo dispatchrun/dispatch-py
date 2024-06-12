@@ -24,7 +24,11 @@ from typing import Optional, Union
 from flask import Flask, make_response, request
 
 from dispatch.function import Registry
-from dispatch.http import FunctionServiceError, function_service_run
+from dispatch.http import (
+    FunctionServiceError,
+    function_service_run,
+    validate_content_length,
+)
 from dispatch.signature import Ed25519PublicKey, parse_verification_key
 
 logger = logging.getLogger(__name__)
@@ -87,6 +91,10 @@ class Dispatch(Registry):
         return {"code": exc.code, "message": exc.message}, exc.status
 
     def _execute(self):
+        valid, reason = validate_content_length(request.content_length or 0)
+        if not valid:
+            return {"code": "invalid_argument", "message": reason}, 400
+
         data: bytes = request.get_data(cache=False)
 
         content = asyncio.run(
