@@ -49,8 +49,8 @@ P = ParamSpec("P")
 R = TypeVar("R", bound=BaseRegistry)
 T = TypeVar("T")
 
-DISPATCH_ENDPOINT_URL = "http://localhost:0"
-DISPATCH_API_URL = "http://localhost:0"
+DISPATCH_ENDPOINT_URL = "http://127.0.0.1:0"
+DISPATCH_API_URL = "http://127.0.0.1:0"
 DISPATCH_API_KEY = "916CC3D280BB46DDBDA984B3DD10059A"
 
 
@@ -75,7 +75,7 @@ class Registry(BaseRegistry):
 
 class Server(BaseServer):
     def __init__(self, app: web.Application):
-        super().__init__("localhost", 0, app)
+        super().__init__("127.0.0.1", 0, app)
 
     @property
     def url(self):
@@ -189,9 +189,17 @@ class Service(web.Application):
 
             if res.status != STATUS_OK:
                 # TODO: emulate retries etc...
+                if (
+                    res.HasField("exit")
+                    and res.exit.HasField("result")
+                    and res.exit.result.HasField("error")
+                ):
+                    error = res.exit.result.error
+                else:
+                    error = Error(type="status", message=str(res.status))
                 return CallResult(
                     dispatch_id=dispatch_id,
-                    error=Error(type="status", message=str(res.status)),
+                    error=error,
                 )
 
             if res.HasField("exit"):
@@ -271,6 +279,21 @@ async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
 def run(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
     return asyncio.run(main(reg, fn))
 
+# TODO: these decorators still need work, until we figure out serialization
+# for cell objects, they are not very useful since the registry they receive
+# as argument cannot be used to register dispatch functions.
+#
+# The simplest would be to use a global registry for external application tests,
+# maybe we can figure out a way to make this easy with a syntax like:
+#
+# import main
+# import dispatch.test
+#
+# @dispatch.test.function(main.dispatch)
+# async def test_something():
+#     ...
+#
+# (WIP)
 
 def function(fn: Callable[[Registry], Coroutine[Any, Any, None]]) -> Callable[[], None]:
     @wraps(fn)
@@ -293,16 +316,37 @@ def method(
 def aiotest(
     fn: Callable[["TestCase"], Coroutine[Any, Any, None]]
 ) -> Callable[["TestCase"], None]:
-    @wraps(fn)
-    def wrapper(self):
-        self.loop.run_until_complete(fn(self))
+    """Decorator to run tests declared as async methods of the TestCase class
+    using the event loop of the test case instance.
 
-    return wrapper
+    This decorator is internal only, it shouldn't be exposed in the public API
+    of this module.
+    """
+    @wraps(fn)
+    def test(self):
+        self.server_loop.run_until_complete(fn(self))
+
+    return test
 
 
 class TestCase(unittest.TestCase):
+    """TestCase implements the generic test suite used in dispatch-py to test
+    various integrations of the SDK with frameworks like FastAPI, Flask, etc...
+
+    Applications typically don't use this class directly, the test suite is
+    mostly useful as an internal testing tool.
+
+    Implementation of the test suite need to override the dispatch_test_init,
+    dispatch_test_run, and dispatch_test_stop methods to integrate with the
+    testing infrastructure (see the documentation of each of these methods for
+    more details).
+    """
 
     def dispatch_test_init(self, api_key: str, api_url: str) -> BaseRegistry:
+        """Called to initialize each test case. The method returns the dispatch
+        function registry which can be used to register function instances
+        during tests.
+        """
         raise NotImplementedError
 
     def dispatch_test_run(self):
@@ -314,8 +358,8 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         self.service = Service()
         self.server = Server(self.service)
-        self.loop = asyncio.new_event_loop()
-        self.loop.run_until_complete(self.server.start())
+        self.server_loop = asyncio.new_event_loop()
+        self.server_loop.run_until_complete(self.server.start())
 
         self.dispatch = self.dispatch_test_init(
             api_key=DISPATCH_API_KEY, api_url=self.server.url
@@ -325,52 +369,73 @@ class TestCase(unittest.TestCase):
             api_url=self.dispatch.client.api_url.value,
         )
 
-        self.thread = threading.Thread(target=self.dispatch_test_run)
-        self.thread.start()
+        self.client_thread = threading.Thread(target=self.dispatch_test_run)
+        self.client_thread.start()
 
     def tearDown(self):
         self.dispatch_test_stop()
-        self.thread.join()
+        self.client_thread.join()
 
-        self.loop.run_until_complete(self.service.close())
-        self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-        self.loop.close()
+        self.server_loop.run_until_complete(self.service.close())
+        self.server_loop.run_until_complete(self.server_loop.shutdown_asyncgens())
+        self.server_loop.close()
 
         # TODO: let's figure out how to get rid of this global registry
         # state at some point, which forces tests to be run sequentially.
         dispatch.experimental.durable.registry.clear_functions()
+
+    @property
+    def function_service_run_url(self) -> str:
+        return f"{self.dispatch.endpoint}/dispatch.sdk.v1.FunctionService/Run"
+
+    def test_register_duplicate_functions(self):
+        @self.dispatch.function
+        def my_function(): ...
+
+        with self.assertRaises(ValueError):
+
+            @self.dispatch.function
+            def my_function(): ...
 
     @aiotest
     async def test_content_length_missing(self):
         async with aiohttp.ClientSession(
             request_class=ClientRequestContentLengthMissing
         ) as session:
-            async with await session.post(
-                f"{self.dispatch.endpoint}/dispatch.sdk.v1.FunctionService/Run",
-            ) as resp:
+            async with await session.post(self.function_service_run_url) as resp:
                 data = await resp.read()
-                print(data)
-                assert resp.status == 400
-                assert json.loads(data) == {
-                    "code": "invalid_argument",
-                    "message": "content length is required",
-                }
+                self.assertEqual(resp.status, 400)
+                self.assertEqual(
+                    json.loads(data),
+                    make_error_invalid_argument("content length is required"),
+                )
 
     @aiotest
     async def test_content_length_too_large(self):
         async with aiohttp.ClientSession(
             request_class=ClientRequestContentLengthTooLarge
         ) as session:
+            async with await session.post(self.function_service_run_url) as resp:
+                data = await resp.read()
+                self.assertEqual(resp.status, 400)
+                self.assertEqual(
+                    json.loads(data),
+                    make_error_invalid_argument("content length is too large"),
+                )
+
+    @aiotest
+    async def test_call_function_missing(self):
+        async with aiohttp.ClientSession() as session:
             async with await session.post(
-                f"{self.dispatch.endpoint}/dispatch.sdk.v1.FunctionService/Run",
+                self.function_service_run_url,
+                data=RunRequest(function="does-not-exist").SerializeToString(),
             ) as resp:
                 data = await resp.read()
-                print(data)
-                assert resp.status == 400
-                assert json.loads(data) == {
-                    "code": "invalid_argument",
-                    "message": "content length is too large",
-                }
+                self.assertEqual(resp.status, 404)
+                self.assertEqual(
+                    json.loads(data),
+                    make_error_not_found("function 'does-not-exist' does not exist"),
+                )
 
     @aiotest
     async def test_call_function_no_input(self):
@@ -379,7 +444,7 @@ class TestCase(unittest.TestCase):
             return "Hello World!"
 
         ret = await my_function()
-        assert ret == "Hello World!"
+        self.assertEqual(ret, "Hello World!")
 
     @aiotest
     async def test_call_function_with_input(self):
@@ -388,7 +453,66 @@ class TestCase(unittest.TestCase):
             return f"Hello world: {name}"
 
         ret = await my_function("52")
-        assert ret == "Hello world: 52"
+        self.assertEqual(ret, "Hello world: 52")
+
+    @aiotest
+    async def test_call_function_raise_error(self):
+        @self.dispatch.function
+        def my_function(name: str) -> str:
+            raise ValueError("something went wrong!")
+
+        with self.assertRaises(ValueError) as e:
+            await my_function("52")
+
+    @aiotest
+    async def test_call_two_functions(self):
+        @self.dispatch.function
+        def echo(name: str) -> str:
+            return name
+
+        @self.dispatch.function
+        def length(name: str) -> int:
+            return len(name)
+
+        self.assertEqual(await echo("hello"), "hello")
+        self.assertEqual(await length("hello"), 5)
+
+    # TODO:
+    #
+    # The declaration of nested functions in these tests causes CPython to
+    # generate cell objects since the local variables are referenced by multiple
+    # scopes.
+    #
+    # Maybe time to revisit https://github.com/dispatchrun/dispatch-py/pull/121
+    #
+    # Alternatively, we could rewrite the test suite to use a global registry
+    # where we register each function once in the globla scope, so no cells need
+    # to be created.
+
+    # @aiotest
+    # async def test_call_nested_function_with_result(self):
+    #     @self.dispatch.function
+    #     def echo(name: str) -> str:
+    #         return name
+
+    #     @self.dispatch.function
+    #     async def echo2(name: str) -> str:
+    #         return await echo(name)
+
+    #     self.assertEqual(await echo2("hello"), "hello")
+
+    # @aiotest
+    # async def test_call_nested_function_with_error(self):
+    #     @self.dispatch.function
+    #     def broken_function(name: str) -> str:
+    #         raise ValueError("something went wrong!")
+
+    #     @self.dispatch.function
+    #     async def working_function(name: str) -> str:
+    #         return await broken_function(name)
+
+    #     with self.assertRaises(ValueError) as e:
+    #         await working_function("hello")
 
 
 class ClientRequestContentLengthMissing(aiohttp.ClientRequest):
@@ -402,3 +526,15 @@ class ClientRequestContentLengthTooLarge(aiohttp.ClientRequest):
     def update_headers(self, skip_auto_headers):
         super().update_headers(skip_auto_headers)
         self.headers["Content-Length"] = "16000001"
+
+
+def make_error_invalid_argument(message: str) -> dict:
+    return make_error("invalid_argument", message)
+
+
+def make_error_not_found(message: str) -> dict:
+    return make_error("not_found", message)
+
+
+def make_error(code: str, message: str) -> dict:
+    return {"code": code, "message": message}

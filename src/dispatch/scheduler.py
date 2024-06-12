@@ -2,6 +2,7 @@ import asyncio
 import logging
 import pickle
 import sys
+import threading
 from dataclasses import dataclass, field
 from types import coroutine
 from typing import (
@@ -30,6 +31,20 @@ logger = logging.getLogger(__name__)
 CallID: TypeAlias = int
 CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
+
+
+class ThreadLocal(threading.local):
+    in_function_call: bool
+
+    def __init__(self):
+        self.in_function_call = False
+
+
+thread_local = ThreadLocal()
+
+
+def in_function_call() -> bool:
+    return thread_local.in_function_call
 
 
 @dataclass
@@ -328,12 +343,15 @@ class OneShotScheduler:
 
     async def run(self, input: Input) -> Output:
         try:
+            thread_local.in_function_call = True
             return await self._run(input)
         except Exception as e:
             logger.exception(
                 "unexpected exception occurred during coroutine scheduling"
             )
             return Output.error(Error.from_exception(e))
+        finally:
+            thread_local.in_function_call = False
 
     def _init_state(self, input: Input) -> State:
         logger.debug("starting main coroutine")

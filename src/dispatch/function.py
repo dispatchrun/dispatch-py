@@ -5,7 +5,6 @@ import inspect
 import json
 import logging
 import os
-import threading
 from functools import wraps
 from types import CoroutineType
 from typing import (
@@ -34,7 +33,7 @@ from dispatch.config import NamedValueFromEnvironment
 from dispatch.experimental.durable import durable
 from dispatch.id import DispatchID
 from dispatch.proto import Arguments, Call, CallResult, Error, Input, Output, TailCall
-from dispatch.scheduler import OneShotScheduler
+from dispatch.scheduler import OneShotScheduler, in_function_call
 
 logger = logging.getLogger(__name__)
 
@@ -53,29 +52,6 @@ def current_session() -> aiohttp.ClientSession:
     if DEFAULT_SESSION is None:
         DEFAULT_SESSION = GlobalSession()
     return DEFAULT_SESSION
-
-
-class ThreadContext(threading.local):
-    in_function_call: bool
-
-    def __init__(self):
-        self.in_function_call = False
-
-
-thread_context = ThreadContext()
-
-
-def function(func: Callable[P, T]) -> Callable[P, T]:
-    def scope(*args: P.args, **kwargs: P.kwargs) -> T:
-        if thread_context.in_function_call:
-            raise RuntimeError("recursively entered a dispatch function entry point")
-        thread_context.in_function_call = True
-        try:
-            return func(*args, **kwargs)
-        finally:
-            thread_context.in_function_call = False
-
-    return scope
 
 
 PrimitiveFunctionType: TypeAlias = Callable[[Input], Awaitable[Output]]
@@ -163,7 +139,7 @@ class Function(PrimitiveFunction, Generic[P, T]):
     async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
         """Call the function asynchronously (through Dispatch), and return a
         coroutine that can be awaited to retrieve the call result."""
-        if thread_context.in_function_call:
+        if in_function_call():
             return await self._func_indirect(*args, **kwargs)
 
         call = self.build_call(*args, **kwargs)
@@ -279,7 +255,6 @@ class Registry:
         func = durable(func)
 
         @wraps(func)
-        @function
         async def asyncio_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             loop = asyncio.get_running_loop()
             return await loop.run_in_executor(None, func, *args, **kwargs)
@@ -294,7 +269,6 @@ class Registry:
         func = durable(func)
 
         @wraps(func)
-        @function
         async def primitive_func(input: Input) -> Output:
             return await OneShotScheduler(func).run(input)
 
