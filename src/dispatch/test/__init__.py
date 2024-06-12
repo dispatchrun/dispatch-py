@@ -4,7 +4,7 @@ import threading
 import unittest
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
+from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar, overload
 
 import aiohttp
 from aiohttp import web
@@ -83,7 +83,7 @@ class Server(BaseServer):
 
 
 class Service(web.Application):
-    tasks: dict[str, asyncio.Task[CallResult]]
+    tasks: Dict[str, asyncio.Task[CallResult]]
     _session: Optional[aiohttp.ClientSession] = None
 
     def __init__(self, session: Optional[aiohttp.ClientSession] = None):
@@ -279,6 +279,7 @@ async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
 def run(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
     return asyncio.run(main(reg, fn))
 
+
 # TODO: these decorators still need work, until we figure out serialization
 # for cell objects, they are not very useful since the registry they receive
 # as argument cannot be used to register dispatch functions.
@@ -294,6 +295,7 @@ def run(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
 #     ...
 #
 # (WIP)
+
 
 def function(fn: Callable[[Registry], Coroutine[Any, Any, None]]) -> Callable[[], None]:
     @wraps(fn)
@@ -322,6 +324,7 @@ def aiotest(
     This decorator is internal only, it shouldn't be exposed in the public API
     of this module.
     """
+
     @wraps(fn)
     def test(self):
         self.server_loop.run_until_complete(fn(self))
