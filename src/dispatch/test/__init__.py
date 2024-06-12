@@ -83,7 +83,7 @@ class Server(BaseServer):
 
 
 class Service(web.Application):
-    tasks: Dict[str, asyncio.Task[CallResult]]
+    tasks: Dict[str, asyncio.Task]
     _session: Optional[aiohttp.ClientSession] = None
 
     def __init__(self, session: Optional[aiohttp.ClientSession] = None):
