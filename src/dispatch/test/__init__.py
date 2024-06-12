@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 
 import dispatch.experimental.durable.registry
 from dispatch.function import Client as BaseClient
-from dispatch.function import ClientError
+from dispatch.function import ClientError, Input, Output
 from dispatch.function import Registry as BaseRegistry
 from dispatch.http import Dispatch
 from dispatch.http import Server as BaseServer
@@ -372,16 +372,23 @@ class TestCase(unittest.TestCase):
                     "message": "content length is too large",
                 }
 
-    def test_simple_end_to_end(self):
+    @aiotest
+    async def test_call_function_no_input(self):
+        @self.dispatch.function
+        def my_function() -> str:
+            return "Hello World!"
+
+        ret = await my_function()
+        assert ret == "Hello World!"
+
+    @aiotest
+    async def test_call_function_with_input(self):
         @self.dispatch.function
         def my_function(name: str) -> str:
             return f"Hello world: {name}"
 
-        async def test():
-            msg = await my_function("52")
-            assert msg == "Hello world: 52"
-
-        self.loop.run_until_complete(test())
+        ret = await my_function("52")
+        assert ret == "Hello world: 52"
 
 
 class ClientRequestContentLengthMissing(aiohttp.ClientRequest):
