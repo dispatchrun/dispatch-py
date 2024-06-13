@@ -21,6 +21,7 @@ from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
 from dispatch.function import Arguments, Error, Function, Input, Output
 from dispatch.proto import _any_unpickle as any_unpickle
+from dispatch.proto import _pb_any_pickle as any_pickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
@@ -91,23 +92,17 @@ class TestFastAPI(unittest.TestCase):
             )
 
         client = create_endpoint_client(app)
-        pickled = pickle.dumps("Hello World!")
-        input_any = google.protobuf.any_pb2.Any()
-        input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=pickled))
 
         req = function_pb.RunRequest(
             function=my_function.name,
-            input=input_any,
+            input=any_pickle("Hello World!"),
         )
 
         resp = client.run(req)
 
         self.assertIsInstance(resp, function_pb.RunResponse)
 
-        resp.exit.result.output.Unpack(
-            output_bytes := google.protobuf.wrappers_pb2.BytesValue()
-        )
-        output = pickle.loads(output_bytes.value)
+        output = any_unpickle(resp.exit.result.output)
 
         self.assertEqual(output, "You told me: 'Hello World!' (12 characters)")
 
@@ -229,10 +224,8 @@ class TestCoroutine(unittest.TestCase):
         req = function_pb.RunRequest(function=func.name)
 
         if input is not None:
-            input_bytes = pickle.dumps(input)
-            input_any = google.protobuf.any_pb2.Any()
-            input_any.Pack(google.protobuf.wrappers_pb2.BytesValue(value=input_bytes))
-            req.input.CopyFrom(input_any)
+            any = any_pickle(input)
+            req.input.CopyFrom(any)
         if state is not None:
             req.poll_result.coroutine_state = state
         if calls is not None:

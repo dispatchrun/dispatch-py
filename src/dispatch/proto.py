@@ -452,7 +452,10 @@ def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
         any.Unpack(b)
         return pickle.loads(b.value)
 
-    raise InvalidArgumentError("unsupported pickled value container")
+    elif not any.type_url and not any.value:
+        return None
+
+    raise InvalidArgumentError(f"unsupported pickled value container: {any.type_url}")
 
 
 def _pb_any_pickle(value: Any) -> google.protobuf.any_pb2.Any:
