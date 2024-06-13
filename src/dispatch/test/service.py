@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 
 import grpc
+from google.protobuf import any_pb2 as any_pb
 from typing_extensions import TypeAlias
 
 import dispatch.sdk.v1.call_pb2 as call_pb
@@ -210,7 +211,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                     parent_id=request.parent_dispatch_id,
                     root_id=request.root_dispatch_id,
                     function=request.function,
-                    coroutine_state=response.poll.coroutine_state,
+                    typed_coroutine_state=response.poll.typed_coroutine_state,
                     waiting={},
                     results={},
                 )
@@ -282,7 +283,7 @@ class DispatchService(dispatch_grpc.DispatchServiceServicer):
                             root_dispatch_id=poller.root_id,
                             function=poller.function,
                             poll_result=poll_pb.PollResult(
-                                coroutine_state=poller.coroutine_state,
+                                typed_coroutine_state=poller.typed_coroutine_state,
                                 results=poller.results.values(),
                             ),
                         )
@@ -354,7 +355,7 @@ class Poller:
 
     function: str
 
-    coroutine_state: bytes
+    typed_coroutine_state: any_pb.Any
     # TODO: support max_wait/min_results/max_results
 
     waiting: Dict[DispatchID, call_pb.Call]
