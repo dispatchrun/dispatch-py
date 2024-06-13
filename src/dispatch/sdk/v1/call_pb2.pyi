@@ -14,17 +14,26 @@ from dispatch.sdk.v1 import error_pb2 as _error_pb2
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Call(_message.Message):
-    __slots__ = ("correlation_id", "endpoint", "function", "input", "expiration")
+    __slots__ = (
+        "correlation_id",
+        "endpoint",
+        "function",
+        "input",
+        "expiration",
+        "version",
+    )
     CORRELATION_ID_FIELD_NUMBER: _ClassVar[int]
     ENDPOINT_FIELD_NUMBER: _ClassVar[int]
     FUNCTION_FIELD_NUMBER: _ClassVar[int]
     INPUT_FIELD_NUMBER: _ClassVar[int]
     EXPIRATION_FIELD_NUMBER: _ClassVar[int]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
     correlation_id: int
     endpoint: str
     function: str
     input: _any_pb2.Any
     expiration: _duration_pb2.Duration
+    version: str
     def __init__(
         self,
         correlation_id: _Optional[int] = ...,
@@ -32,6 +41,7 @@ class Call(_message.Message):
         function: _Optional[str] = ...,
         input: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...,
         expiration: _Optional[_Union[_duration_pb2.Duration, _Mapping]] = ...,
+        version: _Optional[str] = ...,
     ) -> None: ...
 
 class CallResult(_message.Message):

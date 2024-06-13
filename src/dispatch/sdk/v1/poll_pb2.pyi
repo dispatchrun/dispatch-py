@@ -4,6 +4,7 @@ from typing import Mapping as _Mapping
 from typing import Optional as _Optional
 from typing import Union as _Union
 
+from google.protobuf import any_pb2 as _any_pb2
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import duration_pb2 as _duration_pb2
 from google.protobuf import message as _message
@@ -16,13 +17,22 @@ from dispatch.sdk.v1 import error_pb2 as _error_pb2
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Poll(_message.Message):
-    __slots__ = ("coroutine_state", "calls", "max_wait", "max_results", "min_results")
+    __slots__ = (
+        "coroutine_state",
+        "typed_coroutine_state",
+        "calls",
+        "max_wait",
+        "max_results",
+        "min_results",
+    )
     COROUTINE_STATE_FIELD_NUMBER: _ClassVar[int]
+    TYPED_COROUTINE_STATE_FIELD_NUMBER: _ClassVar[int]
     CALLS_FIELD_NUMBER: _ClassVar[int]
     MAX_WAIT_FIELD_NUMBER: _ClassVar[int]
     MAX_RESULTS_FIELD_NUMBER: _ClassVar[int]
     MIN_RESULTS_FIELD_NUMBER: _ClassVar[int]
     coroutine_state: bytes
+    typed_coroutine_state: _any_pb2.Any
     calls: _containers.RepeatedCompositeFieldContainer[_call_pb2.Call]
     max_wait: _duration_pb2.Duration
     max_results: int
@@ -30,6 +40,7 @@ class Poll(_message.Message):
     def __init__(
         self,
         coroutine_state: _Optional[bytes] = ...,
+        typed_coroutine_state: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...,
         calls: _Optional[_Iterable[_Union[_call_pb2.Call, _Mapping]]] = ...,
         max_wait: _Optional[_Union[_duration_pb2.Duration, _Mapping]] = ...,
         max_results: _Optional[int] = ...,
@@ -37,16 +48,19 @@ class Poll(_message.Message):
     ) -> None: ...
 
 class PollResult(_message.Message):
-    __slots__ = ("coroutine_state", "results", "error")
+    __slots__ = ("coroutine_state", "typed_coroutine_state", "results", "error")
     COROUTINE_STATE_FIELD_NUMBER: _ClassVar[int]
+    TYPED_COROUTINE_STATE_FIELD_NUMBER: _ClassVar[int]
     RESULTS_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     coroutine_state: bytes
+    typed_coroutine_state: _any_pb2.Any
     results: _containers.RepeatedCompositeFieldContainer[_call_pb2.CallResult]
     error: _error_pb2.Error
     def __init__(
         self,
         coroutine_state: _Optional[bytes] = ...,
+        typed_coroutine_state: _Optional[_Union[_any_pb2.Any, _Mapping]] = ...,
         results: _Optional[_Iterable[_Union[_call_pb2.CallResult, _Mapping]]] = ...,
         error: _Optional[_Union[_error_pb2.Error, _Mapping]] = ...,
     ) -> None: ...
