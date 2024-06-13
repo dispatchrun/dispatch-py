@@ -449,7 +449,7 @@ class TestOneShotScheduler(unittest.TestCase):
         poll = self.assert_poll(prev_output)
         input = Input.from_poll_results(
             main.__qualname__,
-            poll.coroutine_state,
+            any_unpickle(poll.typed_coroutine_state),
             call_results,
             Error.from_exception(poll_error) if poll_error else None,
         )

@@ -12,7 +12,9 @@ import google.protobuf.wrappers_pb2
 import tblib  # type: ignore[import-untyped]
 from google.protobuf import descriptor_pool, duration_pb2, message_factory
 
+from dispatch.error import IncompatibleStateError, InvalidArgumentError
 from dispatch.id import DispatchID
+from dispatch.sdk.python.v1 import pickled_pb2 as pickled_pb
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import error_pb2 as error_pb
 from dispatch.sdk.v1 import exit_pb2 as exit_pb
@@ -77,18 +79,11 @@ class Input:
 
         self._has_input = req.HasField("input")
         if self._has_input:
-            if req.input.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):
-                input_pb = google.protobuf.wrappers_pb2.BytesValue()
-                req.input.Unpack(input_pb)
-                input_bytes = input_pb.value
-                try:
-                    self._input = pickle.loads(input_bytes)
-                except Exception as e:
-                    self._input = input_bytes
-            else:
-                self._input = _pb_any_unpack(req.input)
+            self._input = _pb_any_unpack(req.input)
         else:
-            self._coroutine_state = req.poll_result.coroutine_state
+            if req.poll_result.coroutine_state:
+                raise IncompatibleStateError  # coroutine_state is deprecated
+            self._coroutine_state = _any_unpickle(req.poll_result.typed_coroutine_state)
             self._call_results = [
                 CallResult._from_proto(r) for r in req.poll_result.results
             ]
@@ -155,7 +150,7 @@ class Input:
     def from_poll_results(
         cls,
         function: str,
-        coroutine_state: Optional[bytes],
+        coroutine_state: Any,
         call_results: List[CallResult],
         error: Optional[Error] = None,
     ):
@@ -163,7 +158,7 @@ class Input:
             req=function_pb.RunRequest(
                 function=function,
                 poll_result=poll_pb.PollResult(
-                    coroutine_state=coroutine_state,
+                    typed_coroutine_state=_pb_any_pickle(coroutine_state),
                     results=[result._as_proto() for result in call_results],
                     error=error._as_proto() if error else None,
                 ),
@@ -232,7 +227,7 @@ class Output:
     @classmethod
     def poll(
         cls,
-        coroutine_state: Optional[bytes] = None,
+        coroutine_state: Any = None,
         calls: Optional[List[Call]] = None,
         min_results: int = 1,
         max_results: int = 10,
@@ -247,7 +242,7 @@ class Output:
             else None
         )
         poll = poll_pb.Poll(
-            coroutine_state=coroutine_state,
+            typed_coroutine_state=_pb_any_pickle(coroutine_state),
             min_results=min_results,
             max_results=max_results,
             max_wait=max_wait,
@@ -447,21 +442,47 @@ class Error:
 
 
 def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
-    any.Unpack(value_bytes := google.protobuf.wrappers_pb2.BytesValue())
-    return pickle.loads(value_bytes.value)
+    if any.Is(pickled_pb.Pickled.DESCRIPTOR):
+        p = pickled_pb.Pickled()
+        any.Unpack(p)
+        return pickle.loads(p.pickled_value)
+
+    elif any.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):  # legacy container
+        b = google.protobuf.wrappers_pb2.BytesValue()
+        any.Unpack(b)
+        return pickle.loads(b.value)
+
+    elif not any.type_url and not any.value:
+        return None
+
+    raise InvalidArgumentError(f"unsupported pickled value container: {any.type_url}")
 
 
-def _pb_any_pickle(x: Any) -> google.protobuf.any_pb2.Any:
-    value_bytes = pickle.dumps(x)
-    pb_bytes = google.protobuf.wrappers_pb2.BytesValue(value=value_bytes)
-    pb_any = google.protobuf.any_pb2.Any()
-    pb_any.Pack(pb_bytes)
-    return pb_any
+def _pb_any_pickle(value: Any) -> google.protobuf.any_pb2.Any:
+    p = pickled_pb.Pickled(pickled_value=pickle.dumps(value))
+    any = google.protobuf.any_pb2.Any()
+    any.Pack(p, type_url_prefix="buf.build/stealthrocket/dispatch-proto/")
+    return any
 
 
-def _pb_any_unpack(x: google.protobuf.any_pb2.Any) -> Any:
+def _pb_any_unpack(any: google.protobuf.any_pb2.Any) -> Any:
+    if any.Is(pickled_pb.Pickled.DESCRIPTOR):
+        p = pickled_pb.Pickled()
+        any.Unpack(p)
+        return pickle.loads(p.pickled_value)
+
+    elif any.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):
+        b = google.protobuf.wrappers_pb2.BytesValue()
+        any.Unpack(b)
+        try:
+            # Assume it's the legacy container for pickled values.
+            return pickle.loads(b.value)
+        except Exception as e:
+            # Otherwise, return the literal bytes.
+            return b.value
+
     pool = descriptor_pool.Default()
-    msg_descriptor = pool.FindMessageTypeByName(x.TypeName())
+    msg_descriptor = pool.FindMessageTypeByName(any.TypeName())
     proto = message_factory.GetMessageClass(msg_descriptor)()
-    x.Unpack(proto)
+    any.Unpack(proto)
     return proto

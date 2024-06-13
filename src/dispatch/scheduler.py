@@ -357,11 +357,9 @@ class OneShotScheduler:
         )
 
     def _rebuild_state(self, input: Input):
-        logger.debug(
-            "resuming scheduler with %d bytes of state", len(input.coroutine_state)
-        )
+        logger.info("resuming main coroutine")
         try:
-            state = pickle.loads(input.coroutine_state)
+            state = input.coroutine_state
             if not isinstance(state, State):
                 raise ValueError("invalid state")
             if state.version != self.version:
@@ -369,7 +367,7 @@ class OneShotScheduler:
                     f"version mismatch: '{state.version}' vs. current '{self.version}'"
                 )
             return state
-        except (pickle.PickleError, ValueError) as e:
+        except ValueError as e:
             logger.warning("state is incompatible", exc_info=True)
             raise IncompatibleStateError from e
 
@@ -454,32 +452,24 @@ class OneShotScheduler:
                 await asyncio.gather(*asyncio_tasks, return_exceptions=True)
                 return coroutine_result
 
-        # Serialize coroutines and scheduler state.
-        logger.debug("serializing state")
+        # Yield to Dispatch.
+        logger.debug("yielding to Dispatch with %d call(s)", len(pending_calls))
         try:
-            serialized_state = pickle.dumps(state)
+            return Output.poll(
+                coroutine_state=state,
+                calls=pending_calls,
+                min_results=max(1, min(state.outstanding_calls, self.poll_min_results)),
+                max_results=max(1, min(state.outstanding_calls, self.poll_max_results)),
+                max_wait_seconds=self.poll_max_wait_seconds,
+            )
         except pickle.PickleError as e:
             logger.exception("state could not be serialized")
             return Output.error(Error.from_exception(e, status=Status.PERMANENT_ERROR))
-
-        # Close coroutines before yielding.
-        for suspended in state.suspended.values():
-            suspended.coroutine.close()
-        state.suspended = {}
-
-        # Yield to Dispatch.
-        logger.debug(
-            "yielding to Dispatch with %d call(s) and %d bytes of state",
-            len(pending_calls),
-            len(serialized_state),
-        )
-        return Output.poll(
-            coroutine_state=serialized_state,
-            calls=pending_calls,
-            min_results=max(1, min(state.outstanding_calls, self.poll_min_results)),
-            max_results=max(1, min(state.outstanding_calls, self.poll_max_results)),
-            max_wait_seconds=self.poll_max_wait_seconds,
-        )
+        finally:
+            # Close coroutines.
+            for suspended in state.suspended.values():
+                suspended.coroutine.close()
+            state.suspended = {}
 
 
 async def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
