@@ -12,6 +12,7 @@ import google.protobuf.wrappers_pb2
 import tblib  # type: ignore[import-untyped]
 from google.protobuf import descriptor_pool, duration_pb2, message_factory
 
+from dispatch.error import IncompatibleStateError
 from dispatch.id import DispatchID
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import error_pb2 as error_pb
@@ -88,7 +89,9 @@ class Input:
             else:
                 self._input = _pb_any_unpack(req.input)
         else:
-            self._coroutine_state = req.poll_result.coroutine_state
+            if req.poll_result.coroutine_state:
+                raise IncompatibleStateError  # coroutine_state is deprecated
+            self._coroutine_state = _any_unpickle(req.poll_result.typed_coroutine_state)
             self._call_results = [
                 CallResult._from_proto(r) for r in req.poll_result.results
             ]
@@ -155,7 +158,7 @@ class Input:
     def from_poll_results(
         cls,
         function: str,
-        coroutine_state: Optional[bytes],
+        coroutine_state: Any,
         call_results: List[CallResult],
         error: Optional[Error] = None,
     ):
@@ -163,7 +166,7 @@ class Input:
             req=function_pb.RunRequest(
                 function=function,
                 poll_result=poll_pb.PollResult(
-                    coroutine_state=coroutine_state,
+                    typed_coroutine_state=_pb_any_pickle(coroutine_state),
                     results=[result._as_proto() for result in call_results],
                     error=error._as_proto() if error else None,
                 ),
@@ -232,7 +235,7 @@ class Output:
     @classmethod
     def poll(
         cls,
-        coroutine_state: Optional[bytes] = None,
+        coroutine_state: Any = None,
         calls: Optional[List[Call]] = None,
         min_results: int = 1,
         max_results: int = 10,
@@ -247,7 +250,7 @@ class Output:
             else None
         )
         poll = poll_pb.Poll(
-            coroutine_state=coroutine_state,
+            typed_coroutine_state=_pb_any_pickle(coroutine_state),
             min_results=min_results,
             max_results=max_results,
             max_wait=max_wait,
