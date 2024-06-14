@@ -6,7 +6,6 @@ import json
 import logging
 import os
 from functools import wraps
-from types import CoroutineType
 from typing import (
     Any,
     Awaitable,
@@ -204,10 +203,8 @@ class Registry:
         Raises:
             ValueError: If any of the required arguments are missing.
         """
-        endpoint_from = "endpoint argument"
         if not endpoint:
             endpoint = os.getenv("DISPATCH_ENDPOINT_URL")
-            endpoint_from = "DISPATCH_ENDPOINT_URL"
         if not endpoint:
             raise ValueError(
                 "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"

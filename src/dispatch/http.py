@@ -2,15 +2,12 @@
 
 import asyncio
 import logging
-import os
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler
 from typing import (
     Any,
     Callable,
     Coroutine,
-    Iterable,
-    List,
     Mapping,
     Optional,
     Tuple,

@@ -3,7 +3,6 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass
 from traceback import format_exception
-from types import TracebackType
 from typing import Any, Dict, List, Optional, Tuple
 
 import google.protobuf.any_pb2
@@ -79,7 +78,17 @@ class Input:
 
         self._has_input = req.HasField("input")
         if self._has_input:
-            self._input = _pb_any_unpack(req.input)
+            if req.input.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):
+                input_pb = google.protobuf.wrappers_pb2.BytesValue()
+                req.input.Unpack(input_pb)
+                input_bytes = input_pb.value
+                try:
+                    self._input = pickle.loads(input_bytes)
+                except Exception:
+                    self._input = input_bytes
+            else:
+                self._input = _pb_any_unpack(req.input)
+
         else:
             if req.poll_result.coroutine_state:
                 raise IncompatibleStateError  # coroutine_state is deprecated

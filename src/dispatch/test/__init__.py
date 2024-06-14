@@ -4,7 +4,7 @@ import threading
 import unittest
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar, overload
+from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar
 
 import aiohttp
 from aiohttp import web

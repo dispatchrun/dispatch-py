@@ -22,7 +22,7 @@ import asyncio
 import base64
 import json
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 from awslambdaric.lambda_context import LambdaContext
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from concurrent import futures
 from http.server import ThreadingHTTPServer
 from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
 from urllib.parse import urlsplit
