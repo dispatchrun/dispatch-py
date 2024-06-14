@@ -132,17 +132,30 @@ class Function(PrimitiveFunction, Generic[P, T]):
     async def _call_async(self, *args: P.args, **kwargs: P.kwargs) -> T:
         return await dispatch.coroutine.call(self.build_call(*args, **kwargs))
 
-    async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
+    async def _call_dispatch(self, *args: P.args, **kwargs: P.kwargs) -> T:
+        call = self.build_call(*args, **kwargs)
+        client = self.registry.client
+        [dispatch_id] = await client.dispatch([call])
+        return await client.wait(dispatch_id)
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Coroutine[Any, Any, T]:
         """Call the function asynchronously (through Dispatch), and return a
         coroutine that can be awaited to retrieve the call result."""
+        # Note: this method cannot be made `async`, otherwise Python creates
+        # ont additional wrapping layer of native coroutine that cannot be
+        # pickled and breaks serialization.
+        #
+        # The durable coroutine returned by calling _func_indirect must be
+        # returned as is.
+        #
+        # For cases where this method is called outside the context of a
+        # dispatch function, it still returns a native coroutine object,
+        # but that doesn't matter since there is no state serialization in
+        # that case.
         if in_function_call():
-            return await self._func_indirect(*args, **kwargs)
-
-        call = self.build_call(*args, **kwargs)
-
-        [dispatch_id] = await self.registry.client.dispatch([call])
-
-        return await self.registry.client.wait(dispatch_id)
+            return self._func_indirect(*args, **kwargs)
+        else:
+            return self._call_dispatch(*args, **kwargs)
 
     def dispatch(self, *args: P.args, **kwargs: P.kwargs) -> DispatchID:
         """Dispatch an asynchronous call to the function without

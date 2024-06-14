@@ -348,7 +348,7 @@ def echo(name: str) -> str:
 
 
 @_registry.function
-async def echo2(name: str) -> str:
+async def echo_nested(name: str) -> str:
     return await echo(name)
 
 
@@ -360,6 +360,11 @@ def length(name: str) -> int:
 @_registry.function
 def broken() -> str:
     raise ValueError("something went wrong!")
+
+
+@_registry.function
+async def broken_nested(name: str) -> str:
+    return await broken()
 
 
 set_default_registry(_registry)
@@ -481,34 +486,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(await echo("hello"), "hello")
         self.assertEqual(await length("hello"), 5)
 
-    # TODO:
-    #
-    # The declaration of nested functions in these tests causes CPython to
-    # generate cell objects since the local variables are referenced by multiple
-    # scopes.
-    #
-    # Maybe time to revisit https://github.com/dispatchrun/dispatch-py/pull/121
-    #
-    # Alternatively, we could rewrite the test suite to use a global registry
-    # where we register each function once in the globla scope, so no cells need
-    # to be created.
-
     @aiotest
     async def test_call_nested_function_with_result(self):
-        self.assertEqual(await echo2("hello"), "hello")
+        self.assertEqual(await echo_nested("hello"), "hello")
 
-    # @aiotest
-    # async def test_call_nested_function_with_error(self):
-    #     @self.dispatch.function
-    #     def broken_function(name: str) -> str:
-    #         raise ValueError("something went wrong!")
-
-    #     @self.dispatch.function
-    #     async def working_function(name: str) -> str:
-    #         return await broken_function(name)
-
-    #     with self.assertRaises(ValueError) as e:
-    #         await working_function("hello")
+    @aiotest
+    async def test_call_nested_function_with_error(self):
+        with self.assertRaises(ValueError) as e:
+            await broken_nested("hello")
 
 
 class ClientRequestContentLengthMissing(aiohttp.ClientRequest):
