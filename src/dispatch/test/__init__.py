@@ -231,6 +231,7 @@ class Service(web.Application):
                 root_dispatch_id=root_dispatch_id,
                 poll_result=PollResult(
                     coroutine_state=res.poll.coroutine_state,
+                    typed_coroutine_state=res.poll.typed_coroutine_state,
                     results=results,
                 ),
             )

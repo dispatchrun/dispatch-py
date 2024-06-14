@@ -464,7 +464,7 @@ async def resume(
     poll = assert_poll(prev_output)
     input = Input.from_poll_results(
         main.__qualname__,
-        poll.coroutine_state,
+        any_unpickle(poll.typed_coroutine_state),
         call_results,
         Error.from_exception(poll_error) if poll_error else None,
     )
@@ -492,30 +492,12 @@ def assert_exit_result_value(output: Output, expect: Any):
     assert expect == any_unpickle(result.output)
 
 
-<<<<<<< HEAD
-    def resume(
-        self,
-        main: Callable,
-        prev_output: Output,
-        call_results: List[CallResult],
-        poll_error: Optional[Exception] = None,
-    ):
-        poll = self.assert_poll(prev_output)
-        input = Input.from_poll_results(
-            main.__qualname__,
-            any_unpickle(poll.typed_coroutine_state),
-            call_results,
-            Error.from_exception(poll_error) if poll_error else None,
-        )
-        return self.runner.run(OneShotScheduler(main).run(input))
-=======
 def assert_exit_result_error(
     output: Output, expect: Type[Exception], message: Optional[str] = None
 ):
     result = assert_exit_result(output)
     assert not result.HasField("output")
     assert result.HasField("error")
->>>>>>> 626d02d (aiohttp: refactor internals to use asyncio throughout the SDK)
 
     error = Error._from_proto(result.error).to_exception()
     assert error.__class__ == expect
