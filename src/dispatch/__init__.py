@@ -12,7 +12,15 @@ from typing_extensions import ParamSpec, TypeAlias
 
 import dispatch.integrations
 from dispatch.coroutine import all, any, call, gather, race
-from dispatch.function import Batch, Client, ClientError, Function, Registry, Reset
+from dispatch.function import (
+    Batch,
+    Client,
+    ClientError,
+    Function,
+    Registry,
+    Reset,
+    default_registry,
+)
 from dispatch.http import Dispatch
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
@@ -42,15 +50,6 @@ __all__ = [
 
 P = ParamSpec("P")
 T = TypeVar("T")
-
-_registry: Optional[Registry] = None
-
-
-def default_registry():
-    global _registry
-    if not _registry:
-        _registry = Registry()
-    return _registry
 
 
 @overload

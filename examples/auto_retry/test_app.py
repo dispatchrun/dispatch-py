@@ -29,7 +29,7 @@ class TestAutoRetry(unittest.TestCase):
         dispatch_service = DispatchService(endpoint_client, collect_roundtrips=True)
         with DispatchServer(dispatch_service) as dispatch_server:
             # Use it when dispatching function calls.
-            dispatch.set_client(Client(api_url=dispatch_server.url))
+            dispatch.registry.client = Client(api_url=dispatch_server.url)
 
             response = app_client.get("/")
             self.assertEqual(response.status_code, 200)

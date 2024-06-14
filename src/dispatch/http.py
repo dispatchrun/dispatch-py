@@ -5,12 +5,25 @@ import logging
 import os
 from datetime import timedelta
 from http.server import BaseHTTPRequestHandler
-from typing import Iterable, List, Mapping, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from aiohttp import web
 from http_message_signatures import InvalidSignature
+from typing_extensions import ParamSpec, TypeAlias
 
-from dispatch.function import Registry
+from dispatch.function import Batch, Function, Registry, default_registry
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
@@ -23,6 +36,60 @@ from dispatch.signature import (
 from dispatch.status import Status
 
 logger = logging.getLogger(__name__)
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+class FunctionService:
+    """FunctionService is an abstract class intended to be inherited by objects
+    that integrate dispatch with other server application frameworks.
+
+    An application encapsulates a function Registry, and implements the API
+    common to all dispatch integrations.
+    """
+
+    def __init__(
+        self,
+        registry: Optional[Registry] = None,
+        verification_key: Optional[Union[Ed25519PublicKey, str, bytes]] = None,
+    ):
+        self._registry = registry
+        self._verification_key = parse_verification_key(
+            verification_key,
+            endpoint=self.registry.endpoint,
+        )
+
+    @property
+    def registry(self) -> Registry:
+        return self._registry or default_registry()
+
+    @property
+    def verification_key(self) -> Optional[Ed25519PublicKey]:
+        return self._verification_key
+
+    @overload
+    def function(self, func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
+
+    @overload
+    def function(self, func: Callable[P, T]) -> Function[P, T]: ...
+
+    def function(self, func):
+        """Decorator that registers functions."""
+        return self.registry.function(func)
+
+    def batch(self) -> Batch:
+        return self.registry.batch()
+
+    async def run(self, url, method, headers, data):
+        return await function_service_run(
+            url,
+            method,
+            headers,
+            data,
+            self.registry,
+            self.verification_key,
+        )
 
 
 class FunctionServiceError(Exception):
@@ -44,7 +111,7 @@ def validate_content_length(content_length: int) -> Tuple[bool, str]:
     return True, ""
 
 
-class FunctionService(BaseHTTPRequestHandler):
+class FunctionServiceHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(
         self,
@@ -148,7 +215,7 @@ class Dispatch(web.Application):
         )
 
     def __call__(self, request, client_address, server):
-        return FunctionService(
+        return FunctionServiceHTTPRequestHandler(
             request,
             client_address,
             server,

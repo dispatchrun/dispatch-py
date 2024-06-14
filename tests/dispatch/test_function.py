@@ -1,10 +1,18 @@
 import pickle
 
-from dispatch.test import Registry
+from dispatch.function import Client, Registry
+from dispatch.test import DISPATCH_API_KEY, DISPATCH_API_URL, DISPATCH_ENDPOINT_URL
 
 
 def test_serializable():
-    reg = Registry()
+    reg = Registry(
+        name=__name__,
+        endpoint=DISPATCH_ENDPOINT_URL,
+        client=Client(
+            api_key=DISPATCH_API_KEY,
+            api_url=DISPATCH_API_URL,
+        ),
+    )
 
     @reg.function
     def my_function():
@@ -12,3 +20,4 @@ def test_serializable():
 
     s = pickle.dumps(my_function)
     pickle.loads(s)
+    reg.close()

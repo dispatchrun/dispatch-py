@@ -37,6 +37,9 @@ from dispatch.scheduler import OneShotScheduler, in_function_call
 
 logger = logging.getLogger(__name__)
 
+P = ParamSpec("P")
+T = TypeVar("T")
+
 
 class GlobalSession(aiohttp.ClientSession):
     async def __aexit__(self, *args):
@@ -62,41 +65,40 @@ exceptions.
 
 
 class PrimitiveFunction:
-    __slots__ = ("_endpoint", "_client", "_name", "_primitive_func")
-    _endpoint: str
-    _client: Client
+    __slots__ = ("_registry", "_name", "_primitive_func")
+    _registry: str
     _name: str
     _primitive_function: PrimitiveFunctionType
 
     def __init__(
         self,
-        endpoint: str,
-        client: Client,
+        registry: Registry,
         name: str,
         primitive_func: PrimitiveFunctionType,
     ):
-        self._endpoint = endpoint
-        self._client = client
+        self._registry = registry.name
         self._name = name
         self._primitive_func = primitive_func
 
     @property
     def endpoint(self) -> str:
-        return self._endpoint
-
-    @endpoint.setter
-    def endpoint(self, value: str):
-        self._endpoint = value
+        return self.registry.endpoint
 
     @property
     def name(self) -> str:
         return self._name
 
+    @property
+    def registry(self) -> Registry:
+        return lookup_registry(self._registry)
+
     async def _primitive_call(self, input: Input) -> Output:
         return await self._primitive_func(input)
 
     async def _primitive_dispatch(self, input: Any = None) -> DispatchID:
-        [dispatch_id] = await self._client.dispatch([self._build_primitive_call(input)])
+        [dispatch_id] = await self.registry.client.dispatch(
+            [self._build_primitive_call(input)]
+        )
         return dispatch_id
 
     def _build_primitive_call(
@@ -110,10 +112,6 @@ class PrimitiveFunction:
         )
 
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
-
 class Function(PrimitiveFunction, Generic[P, T]):
     """Callable wrapper around a function meant to be used throughout the
     Dispatch Python SDK.
@@ -123,12 +121,11 @@ class Function(PrimitiveFunction, Generic[P, T]):
 
     def __init__(
         self,
-        endpoint: str,
-        client: Client,
+        registry: Registry,
         name: str,
         primitive_func: PrimitiveFunctionType,
     ):
-        PrimitiveFunction.__init__(self, endpoint, client, name, primitive_func)
+        PrimitiveFunction.__init__(self, registry, name, primitive_func)
         self._func_indirect: Callable[P, Coroutine[Any, Any, T]] = durable(
             self._call_async
         )
@@ -144,9 +141,9 @@ class Function(PrimitiveFunction, Generic[P, T]):
 
         call = self.build_call(*args, **kwargs)
 
-        [dispatch_id] = await self._client.dispatch([call])
+        [dispatch_id] = await self.registry.client.dispatch([call])
 
-        return await self._client.wait(dispatch_id)
+        return await self.registry.client.wait(dispatch_id)
 
     def dispatch(self, *args: P.args, **kwargs: P.kwargs) -> DispatchID:
         """Dispatch an asynchronous call to the function without
@@ -189,29 +186,20 @@ class Reset(TailCall):
 class Registry:
     """Registry of functions."""
 
-    __slots__ = ("functions", "endpoint", "client")
+    __slots__ = ("functions", "client", "_name", "_endpoint")
 
     def __init__(
-        self,
-        endpoint: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_url: Optional[str] = None,
+        self, name: str, client: Optional[Client] = None, endpoint: Optional[str] = None
     ):
         """Initialize a function registry.
 
         Args:
+            name: A unique name for the registry.
+
             endpoint: URL of the endpoint that the function is accessible from.
-                Uses the value of the DISPATCH_ENDPOINT_URL environment variable
-                by default.
 
-            api_key: Dispatch API key to use for authentication when
-                dispatching calls to functions. Uses the value of the
-                DISPATCH_API_KEY environment variable by default.
-
-            api_url: The URL of the Dispatch API to use when dispatching calls
-                to functions. Uses the value of the DISPATCH_API_URL environment
-                variable if set, otherwise defaults to the public Dispatch API
-                (DEFAULT_API_URL).
+            client: Client instance to use for dispatching calls to registered
+                functions. Defaults to creating a new client instance.
 
         Raises:
             ValueError: If any of the required arguments are missing.
@@ -224,15 +212,45 @@ class Registry:
             raise ValueError(
                 "missing application endpoint: set it with the DISPATCH_ENDPOINT_URL environment variable"
             )
-        parsed_url = urlparse(endpoint)
-        if not parsed_url.netloc or not parsed_url.scheme:
-            raise ValueError(
-                f"{endpoint_from} must be a full URL with protocol and domain (e.g., https://example.com)"
-            )
         logger.info("configuring Dispatch endpoint %s", endpoint)
         self.functions: Dict[str, PrimitiveFunction] = {}
+        self.client = client or Client()
         self.endpoint = endpoint
-        self.client = Client(api_key=api_key, api_url=api_url)
+
+        if not name:
+            raise ValueError("missing registry name")
+        if name in _registries:
+            raise ValueError(f"registry with name '{name}' already exists")
+        self._name = name
+        _registries[name] = self
+
+    def close(self):
+        """Closes the registry, removing it and all its functions from the
+        dispatch application."""
+        name = self._name
+        if name:
+            self._name = ""
+            del _registries[name]
+            # TODO: remove registered functions
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def endpoint(self) -> str:
+        return self._endpoint
+
+    @endpoint.setter
+    def endpoint(self, value: str):
+        parsed = urlparse(value)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(
+                f"missing protocol scheme in registry endpoint URL: {value}"
+            )
+        if not parsed.hostname:
+            raise ValueError(f"missing host in registry endpoint URL: {value}")
+        self._endpoint = value
 
     @overload
     def function(self, func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
@@ -276,8 +294,7 @@ class Registry:
         durable_primitive_func = durable(primitive_func)
 
         wrapped_func = Function[P, T](
-            self.endpoint,
-            self.client,
+            self,
             name,
             durable_primitive_func,
         )
@@ -290,12 +307,7 @@ class Registry:
         """Decorator that registers primitive functions."""
         name = primitive_func.__qualname__
         logger.info("registering primitive function: %s", name)
-        wrapped_func = PrimitiveFunction(
-            self.endpoint,
-            self.client,
-            name,
-            primitive_func,
-        )
+        wrapped_func = PrimitiveFunction(self, name, primitive_func)
         self._register(name, wrapped_func)
         return wrapped_func
 
@@ -310,16 +322,50 @@ class Registry:
         # return self.client.batch()
         raise NotImplemented
 
-    def set_client(self, client: Client):
-        """Set the Client instance used to dispatch calls to registered functions."""
-        # TODO: figure out a way to remove this method, it's only used in examples
-        self.client = client
-        for fn in self.functions.values():
-            fn._client = client
 
-    def override_endpoint(self, endpoint: str):
-        for fn in self.functions.values():
-            fn.endpoint = endpoint
+_registries: Dict[str, Registry] = {}
+
+DEFAULT_REGISTRY_NAME: str = "default"
+DEFAULT_REGISTRY: Optional[Registry] = None
+"""The default registry for dispatch functions, used by dispatch applications
+when no custom registry is provided.
+
+In most cases, applications do not need to create a custom registry, so this
+one would be used by default.
+
+The default registry use DISPATCH_* environment variables for configuration,
+or is uninitialized if they are not set.
+"""
+
+
+def default_registry() -> Registry:
+    """Returns the default registry for dispatch functions.
+
+    The function initializes the default registry if it has not been initialized
+    yet, using the DISPATCH_* environment variables for configuration.
+
+    Returns:
+        Registry: The default registry.
+
+    Raises:
+        ValueError: If the DISPATCH_API_KEY or DISPATCH_ENDPOINT_URL environment
+            variables are missing.
+    """
+    global DEFAULT_REGISTRY
+    if DEFAULT_REGISTRY is None:
+        DEFAULT_REGISTRY = Registry(DEFAULT_REGISTRY_NAME)
+    return DEFAULT_REGISTRY
+
+
+def lookup_registry(name: str) -> Registry:
+    return default_registry() if name == DEFAULT_REGISTRY_NAME else _registries[name]
+
+
+def set_default_registry(reg: Registry):
+    global DEFAULT_REGISTRY
+    global DEFAULT_REGISTRY_NAME
+    DEFAULT_REGISTRY = reg
+    DEFAULT_REGISTRY_NAME = reg.name
 
 
 class Client:

@@ -13,9 +13,15 @@ from typing_extensions import ParamSpec
 
 import dispatch.experimental.durable.registry
 from dispatch.function import Client as BaseClient
-from dispatch.function import ClientError, Input, Output
-from dispatch.function import Registry as BaseRegistry
-from dispatch.http import Dispatch
+from dispatch.function import (
+    ClientError,
+    Input,
+    Output,
+    Registry,
+    default_registry,
+    set_default_registry,
+)
+from dispatch.http import Dispatch, FunctionService
 from dispatch.http import Server as BaseServer
 from dispatch.sdk.v1.call_pb2 import Call, CallResult
 from dispatch.sdk.v1.dispatch_pb2 import DispatchRequest, DispatchResponse
@@ -46,7 +52,6 @@ __all__ = [
 ]
 
 P = ParamSpec("P")
-R = TypeVar("R", bound=BaseRegistry)
 T = TypeVar("T")
 
 DISPATCH_ENDPOINT_URL = "http://127.0.0.1:0"
@@ -60,17 +65,6 @@ class Client(BaseClient):
         # global session from dispatch.http so we don't crash when a different
         # event loop is employed in each test.
         return aiohttp.ClientSession()
-
-
-class Registry(BaseRegistry):
-    def __init__(self):
-        # placeholder values to initialize the base class prior to binding
-        # random ports.
-        super().__init__(
-            endpoint=DISPATCH_ENDPOINT_URL,
-            api_url=DISPATCH_API_URL,
-            api_key=DISPATCH_API_KEY,
-        )
 
 
 class Server(BaseServer):
@@ -258,7 +252,8 @@ class Service(web.Application):
         return self._session
 
 
-async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
+async def main(coro: Coroutine[Any, Any, None]) -> None:
+    reg = default_registry()
     api = Service()
     app = Dispatch(reg)
     try:
@@ -268,7 +263,7 @@ async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
                 # ideal but it works for now.
                 reg.client.api_url.value = backend.url
                 reg.endpoint = server.url
-                await fn(reg)
+                await coro
     finally:
         await api.close()
         # TODO: let's figure out how to get rid of this global registry
@@ -276,8 +271,8 @@ async def main(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
         dispatch.experimental.durable.registry.clear_functions()
 
 
-def run(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
-    return asyncio.run(main(reg, fn))
+def run(coro: Coroutine[Any, Any, None]) -> None:
+    return asyncio.run(main(coro))
 
 
 # TODO: these decorators still need work, until we figure out serialization
@@ -297,20 +292,18 @@ def run(reg: R, fn: Callable[[R], Coroutine[Any, Any, None]]) -> None:
 # (WIP)
 
 
-def function(fn: Callable[[Registry], Coroutine[Any, Any, None]]) -> Callable[[], None]:
+def function(fn: Callable[[], Coroutine[Any, Any, None]]) -> Callable[[], None]:
     @wraps(fn)
     def wrapper():
-        return run(Registry(), fn)
+        return run(fn())
 
     return wrapper
 
 
-def method(
-    fn: Callable[[T, Registry], Coroutine[Any, Any, None]]
-) -> Callable[[T], None]:
+def method(fn: Callable[[T], Coroutine[Any, Any, None]]) -> Callable[[T], None]:
     @wraps(fn)
     def wrapper(self: T):
-        return run(Registry(), lambda reg: fn(self, reg))
+        return run(fn(self))
 
     return wrapper
 
@@ -332,6 +325,41 @@ def aiotest(
     return test
 
 
+_registry = Registry(
+    name=__name__,
+    endpoint=DISPATCH_ENDPOINT_URL,
+    client=Client(api_key=DISPATCH_API_KEY, api_url=DISPATCH_API_URL),
+)
+
+
+@_registry.function
+def greet() -> str:
+    return "Hello World!"
+
+
+@_registry.function
+def greet_name(name: str) -> str:
+    return f"Hello world: {name}"
+
+
+@_registry.function
+def echo(name: str) -> str:
+    return name
+
+
+@_registry.function
+def length(name: str) -> int:
+    return len(name)
+
+
+@_registry.function
+def broken() -> str:
+    raise ValueError("something went wrong!")
+
+
+set_default_registry(_registry)
+
+
 class TestCase(unittest.TestCase):
     """TestCase implements the generic test suite used in dispatch-py to test
     various integrations of the SDK with frameworks like FastAPI, Flask, etc...
@@ -345,11 +373,7 @@ class TestCase(unittest.TestCase):
     more details).
     """
 
-    def dispatch_test_init(self, api_key: str, api_url: str) -> BaseRegistry:
-        """Called to initialize each test case. The method returns the dispatch
-        function registry which can be used to register function instances
-        during tests.
-        """
+    def dispatch_test_init(self, reg: Registry) -> str:
         raise NotImplementedError
 
     def dispatch_test_run(self):
@@ -360,18 +384,14 @@ class TestCase(unittest.TestCase):
 
     def setUp(self):
         self.service = Service()
+
         self.server = Server(self.service)
         self.server_loop = asyncio.new_event_loop()
         self.server_loop.run_until_complete(self.server.start())
 
-        self.dispatch = self.dispatch_test_init(
-            api_key=DISPATCH_API_KEY, api_url=self.server.url
-        )
-        self.dispatch.client = Client(
-            api_key=self.dispatch.client.api_key.value,
-            api_url=self.dispatch.client.api_url.value,
-        )
-
+        _registry.client.api_key.value = DISPATCH_API_KEY
+        _registry.client.api_url.value = self.server.url
+        _registry.endpoint = self.dispatch_test_init(_registry)
         self.client_thread = threading.Thread(target=self.dispatch_test_run)
         self.client_thread.start()
 
@@ -385,20 +405,16 @@ class TestCase(unittest.TestCase):
 
         # TODO: let's figure out how to get rid of this global registry
         # state at some point, which forces tests to be run sequentially.
-        dispatch.experimental.durable.registry.clear_functions()
+        #
+        # We can't erase the registry because user tests might have registered
+        # functions in the global scope that would be lost after the first test
+        # we run.
+        #
+        # dispatch.experimental.durable.registry.clear_functions()
 
     @property
     def function_service_run_url(self) -> str:
-        return f"{self.dispatch.endpoint}/dispatch.sdk.v1.FunctionService/Run"
-
-    def test_register_duplicate_functions(self):
-        @self.dispatch.function
-        def my_function(): ...
-
-        with self.assertRaises(ValueError):
-
-            @self.dispatch.function
-            def my_function(): ...
+        return f"{_registry.endpoint}/dispatch.sdk.v1.FunctionService/Run"
 
     @aiotest
     async def test_content_length_missing(self):
@@ -442,41 +458,21 @@ class TestCase(unittest.TestCase):
 
     @aiotest
     async def test_call_function_no_input(self):
-        @self.dispatch.function
-        def my_function() -> str:
-            return "Hello World!"
-
-        ret = await my_function()
+        ret = await greet()
         self.assertEqual(ret, "Hello World!")
 
     @aiotest
     async def test_call_function_with_input(self):
-        @self.dispatch.function
-        def my_function(name: str) -> str:
-            return f"Hello world: {name}"
-
-        ret = await my_function("52")
+        ret = await greet_name("52")
         self.assertEqual(ret, "Hello world: 52")
 
     @aiotest
     async def test_call_function_raise_error(self):
-        @self.dispatch.function
-        def my_function(name: str) -> str:
-            raise ValueError("something went wrong!")
-
         with self.assertRaises(ValueError) as e:
-            await my_function("52")
+            await broken()
 
     @aiotest
     async def test_call_two_functions(self):
-        @self.dispatch.function
-        def echo(name: str) -> str:
-            return name
-
-        @self.dispatch.function
-        def length(name: str) -> int:
-            return len(name)
-
         self.assertEqual(await echo("hello"), "hello")
         self.assertEqual(await length("hello"), 5)
 
