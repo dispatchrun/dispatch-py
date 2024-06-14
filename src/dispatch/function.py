@@ -241,9 +241,13 @@ class Registry:
     @endpoint.setter
     def endpoint(self, value: str):
         parsed = urlparse(value)
-        if parsed.scheme not in ("http", "https"):
+        if not parsed.scheme:
             raise ValueError(
                 f"missing protocol scheme in registry endpoint URL: {value}"
+            )
+        if parsed.scheme not in ("bridge", "http", "https"):
+            raise ValueError(
+                f"invalid protocol scheme in registry endpoint URL: {value}"
             )
         if not parsed.hostname:
             raise ValueError(f"missing host in registry endpoint URL: {value}")
