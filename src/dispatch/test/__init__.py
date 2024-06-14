@@ -348,6 +348,11 @@ def echo(name: str) -> str:
 
 
 @_registry.function
+async def echo2(name: str) -> str:
+    return await echo(name)
+
+
+@_registry.function
 def length(name: str) -> int:
     return len(name)
 
@@ -488,17 +493,9 @@ class TestCase(unittest.TestCase):
     # where we register each function once in the globla scope, so no cells need
     # to be created.
 
-    # @aiotest
-    # async def test_call_nested_function_with_result(self):
-    #     @self.dispatch.function
-    #     def echo(name: str) -> str:
-    #         return name
-
-    #     @self.dispatch.function
-    #     async def echo2(name: str) -> str:
-    #         return await echo(name)
-
-    #     self.assertEqual(await echo2("hello"), "hello")
+    @aiotest
+    async def test_call_nested_function_with_result(self):
+        self.assertEqual(await echo2("hello"), "hello")
 
     # @aiotest
     # async def test_call_nested_function_with_error(self):
