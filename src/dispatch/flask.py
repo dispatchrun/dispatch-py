@@ -19,8 +19,6 @@ Example:
 
 import asyncio
 import logging
-
-# from queue import Queue
 from typing import Optional, Union
 
 from flask import Flask, make_response, request
