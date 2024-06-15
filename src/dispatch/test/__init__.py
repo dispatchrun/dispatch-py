@@ -269,28 +269,11 @@ async def main(coro: Coroutine[Any, Any, None]) -> None:
         await api.close()
         # TODO: let's figure out how to get rid of this global registry
         # state at some point, which forces tests to be run sequentially.
-        dispatch.experimental.durable.registry.clear_functions()
+        # dispatch.experimental.durable.registry.clear_functions()
 
 
 def run(coro: Coroutine[Any, Any, None]) -> None:
     return asyncio.run(main(coro))
-
-
-# TODO: these decorators still need work, until we figure out serialization
-# for cell objects, they are not very useful since the registry they receive
-# as argument cannot be used to register dispatch functions.
-#
-# The simplest would be to use a global registry for external application tests,
-# maybe we can figure out a way to make this easy with a syntax like:
-#
-# import main
-# import dispatch.test
-#
-# @dispatch.test.function(main.dispatch)
-# async def test_something():
-#     ...
-#
-# (WIP)
 
 
 def function(fn: Callable[[], Coroutine[Any, Any, None]]) -> Callable[[], None]:
@@ -413,15 +396,6 @@ class TestCase(unittest.TestCase):
         self.server_loop.run_until_complete(self.service.close())
         self.server_loop.run_until_complete(self.server_loop.shutdown_asyncgens())
         self.server_loop.close()
-
-        # TODO: let's figure out how to get rid of this global registry
-        # state at some point, which forces tests to be run sequentially.
-        #
-        # We can't erase the registry because user tests might have registered
-        # functions in the global scope that would be lost after the first test
-        # we run.
-        #
-        # dispatch.experimental.durable.registry.clear_functions()
 
     @property
     def function_service_run_url(self) -> str:

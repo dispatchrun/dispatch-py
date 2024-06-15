@@ -6,7 +6,7 @@ Example:
     from dispatch.fastapi import Dispatch
 
     app = fastapi.FastAPI()
-    dispatch = Dispatch(app, api_key="test-key")
+    dispatch = Dispatch(app)
 
     @dispatch.function
     def my_function():
@@ -80,7 +80,7 @@ class Dispatch(FunctionService):
             # like the official gRPC server does.
             "/Run",
         )
-        async def execute(request: fastapi.Request):
+        async def run(request: fastapi.Request):
             valid, reason = validate_content_length(
                 int(request.headers.get("content-length", 0))
             )
