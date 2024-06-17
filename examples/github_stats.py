@@ -31,21 +31,21 @@ def get_gh_api(url):
 
 
 @dispatch.function
-async def get_repo_info(repo_owner: str, repo_name: str) -> dict:
+async def get_repo_info(repo_owner, repo_name):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     repo_info = get_gh_api(url)
     return repo_info
 
 
 @dispatch.function
-async def get_contributors(repo_info: dict) -> list[dict]:
+async def get_contributors(repo_info):
     url = repo_info["contributors_url"]
     contributors = get_gh_api(url)
     return contributors
 
 
 @dispatch.function
-async def main() -> list[dict]:
+async def main():
     repo_info = await get_repo_info("dispatchrun", "coroutine")
     print(
         f"""Repository: {repo_info['full_name']}

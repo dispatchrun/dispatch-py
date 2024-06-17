@@ -5,7 +5,7 @@ import dispatch
 
 # Use the `dispatch.function` decorator declare a stateful function.
 @dispatch.function
-def publish(url, payload) -> str:
+def publish(url, payload):
     r = requests.post(url, data=payload)
     r.raise_for_status()
     return r.text
