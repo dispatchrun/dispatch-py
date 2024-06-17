@@ -1,4 +1,5 @@
 import enum
+import ssl
 from typing import Any, Callable, Dict, Type, Union
 
 from dispatch.sdk.v1 import status_pb2 as status_pb
@@ -129,6 +130,8 @@ def status_for_error(error: BaseException) -> Status:
         # tend to be caused by invalid use of syscalls, which are
         # unlikely at higher abstraction levels.
         return Status.TEMPORARY_ERROR
+    elif isinstance(error, ssl.SSLError) or isinstance(error, ssl.CertificateError):
+        return Status.TLS_ERROR
     return Status.PERMANENT_ERROR
 
 

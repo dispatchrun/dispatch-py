@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from aiohttp import web
+from aiohttp import web, ClientConnectionError
 from http_message_signatures import InvalidSignature
 from typing_extensions import ParamSpec, TypeAlias
 
@@ -30,7 +30,10 @@ from dispatch.signature import (
     parse_verification_key,
     verify_request,
 )
-from dispatch.status import Status
+from dispatch.status import Status, register_error_type
+
+# https://docs.aiohttp.org/en/stable/client_reference.html
+register_error_type(ClientConnectionError, Status.TCP_ERROR)
 
 logger = logging.getLogger(__name__)
 
