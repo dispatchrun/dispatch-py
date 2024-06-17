@@ -382,6 +382,10 @@ def set_default_registry(reg: Registry):
     DEFAULT_REGISTRY_NAME = reg.name
 
 
+# TODO: this is a temporary solution to track inflight tasks and allow waiting
+# for results.
+_calls: Dict[str, asyncio.Future] = {}
+
 class Client:
     """Client for the Dispatch API."""
 
@@ -469,6 +473,11 @@ class Client:
         resp = dispatch_pb.DispatchResponse()
         resp.ParseFromString(data)
 
+        # TODO: remove when we implemented the wait endpoint in the server
+        for dispatch_id in resp.dispatch_ids:
+            if dispatch_id not in _calls:
+                _calls[dispatch_id] = asyncio.Future()
+
         dispatch_ids = [DispatchID(x) for x in resp.dispatch_ids]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
@@ -479,23 +488,26 @@ class Client:
         return dispatch_ids
 
     async def wait(self, dispatch_id: DispatchID) -> Any:
-        (url, headers, timeout) = self.request("/dispatch.sdk.v1.DispatchService/Wait")
-        data = dispatch_id.encode("utf-8")
+        # (url, headers, timeout) = self.request("/dispatch.sdk.v1.DispatchService/Wait")
+        # data = dispatch_id.encode("utf-8")
 
-        async with self.session() as session:
-            async with session.post(
-                url, headers=headers, data=data, timeout=timeout
-            ) as res:
-                data = await res.read()
-                self._check_response(res.status, data)
+        # async with self.session() as session:
+        #     async with session.post(
+        #         url, headers=headers, data=data, timeout=timeout
+        #     ) as res:
+        #         data = await res.read()
+        #         self._check_response(res.status, data)
 
-        resp = call_pb.CallResult()
-        resp.ParseFromString(data)
+        # resp = call_pb.CallResult()
+        # resp.ParseFromString(data)
 
-        result = CallResult._from_proto(resp)
-        if result.error is not None:
-            raise result.error.to_exception()
-        return result.output
+        # result = CallResult._from_proto(resp)
+        # if result.error is not None:
+        #     raise result.error.to_exception()
+        # return result.output
+
+        future = _calls[dispatch_id]
+        return await future
 
     def _check_response(self, status: int, data: bytes):
         if status == 200:

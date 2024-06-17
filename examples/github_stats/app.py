@@ -14,16 +14,9 @@ Logs will show a pipeline of functions being called and their results.
 
 """
 
+import dispatch
 import httpx
-from fastapi import FastAPI
-
 from dispatch.error import ThrottleError
-from dispatch.fastapi import Dispatch
-
-app = FastAPI()
-
-dispatch = Dispatch(app)
-
 
 def get_gh_api(url):
     print(f"GET {url}")
@@ -36,21 +29,21 @@ def get_gh_api(url):
 
 
 @dispatch.function
-async def get_repo_info(repo_owner: str, repo_name: str):
+async def get_repo_info(repo_owner: str, repo_name: str) -> dict:
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     repo_info = get_gh_api(url)
     return repo_info
 
 
 @dispatch.function
-async def get_contributors(repo_info: dict):
+async def get_contributors(repo_info: dict) -> list[dict]:
     url = repo_info["contributors_url"]
     contributors = get_gh_api(url)
     return contributors
 
 
 @dispatch.function
-async def main():
+async def main() -> list[dict]:
     repo_info = await get_repo_info("dispatchrun", "coroutine")
     print(
         f"""Repository: {repo_info['full_name']}
@@ -58,13 +51,9 @@ Stars: {repo_info['stargazers_count']}
 Watchers: {repo_info['watchers_count']}
 Forks: {repo_info['forks_count']}"""
     )
+    return await get_contributors(repo_info)
 
-    contributors = await get_contributors(repo_info)
+
+if __name__ == "__main__":
+    contributors = dispatch.run(main())
     print(f"Contributors: {len(contributors)}")
-    return
-
-
-@app.get("/")
-def root():
-    main.dispatch()
-    return "OK"

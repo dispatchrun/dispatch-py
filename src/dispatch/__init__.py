@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from http.server import ThreadingHTTPServer
 from typing import Any, Callable, Coroutine, Optional, TypeVar, overload
@@ -20,7 +21,7 @@ from dispatch.function import (
     Reset,
     default_registry,
 )
-from dispatch.http import Dispatch
+from dispatch.http import Dispatch, Server
 from dispatch.id import DispatchID
 from dispatch.proto import Call, Error, Input, Output
 from dispatch.status import Status
@@ -63,7 +64,21 @@ def function(func):
     return default_registry().function(func)
 
 
-def run(init: Optional[Callable[P, None]] = None, *args: P.args, **kwargs: P.kwargs):
+async def main(coro: Coroutine[Any, Any, T], addr: Optional[str] = None) -> T:
+    address = addr or str(os.environ.get("DISPATCH_ENDPOINT_ADDR")) or "localhost:8000"
+    parsed_url = urlsplit("//" + address)
+
+    host = parsed_url.hostname or ""
+    port = parsed_url.port or 0
+
+    reg = default_registry()
+    app = Dispatch(reg)
+
+    async with Server(host, port, app) as server:
+        return await coro
+
+
+def run(coro: Coroutine[Any, Any, T], addr: Optional[str] = None) -> T:
     """Run the default dispatch server. The default server uses a function
     registry where functions tagged by the `@dispatch.function` decorator are
     registered.
@@ -73,27 +88,23 @@ def run(init: Optional[Callable[P, None]] = None, *args: P.args, **kwargs: P.kwa
     to the Dispatch bridge API.
 
     Args:
-        init: An initialization function called after binding the server address
-            but before entering the event loop to handle requests.
+        coro: The coroutine to run as the entrypoint, the function returns
+            when the coroutine returns.
 
-        args: Positional arguments to pass to the entrypoint.
-
-        kwargs: Keyword arguments to pass to the entrypoint.
+        addr: The address to bind the server to. If not provided, the server
+            will bind to the address specified by the `DISPATCH_ENDPOINT_ADDR`
+            environment variable. If the environment variable is not set, the
+            server will bind to `localhost:8000`.
 
     Returns:
-        The return value of the entrypoint function.
+        The value returned by the coroutine.
     """
-    address = os.environ.get("DISPATCH_ENDPOINT_ADDR", "localhost:8000")
-    parsed_url = urlsplit("//" + address)
-    server_address = (parsed_url.hostname or "", parsed_url.port or 0)
-    server = ThreadingHTTPServer(server_address, Dispatch(default_registry()))
-    try:
-        if init is not None:
-            init(*args, **kwargs)
-        server.serve_forever()
-    finally:
-        server.shutdown()
-        server.server_close()
+    return asyncio.run(main(coro, addr))
+
+
+def run_forever():
+    """Run the default dispatch server forever."""
+    return run(asyncio.Event().wait())
 
 
 def batch() -> Batch:

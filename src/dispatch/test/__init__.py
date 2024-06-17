@@ -58,6 +58,7 @@ DISPATCH_ENDPOINT_URL = "http://127.0.0.1:0"
 DISPATCH_API_URL = "http://127.0.0.1:0"
 DISPATCH_API_KEY = "916CC3D280BB46DDBDA984B3DD10059A"
 
+_dispatch_ids = (str(i) for i in range(2**32 - 1))
 
 class Client(BaseClient):
     def session(self) -> aiohttp.ClientSession:
@@ -75,14 +76,12 @@ class Server(BaseServer):
     def url(self):
         return f"http://{self.host}:{self.port}"
 
-
 class Service(web.Application):
     tasks: Dict[str, asyncio.Task]
     _session: Optional[aiohttp.ClientSession] = None
 
     def __init__(self, session: Optional[aiohttp.ClientSession] = None):
         super().__init__()
-        self.dispatch_ids = (str(i) for i in range(2**32 - 1))
         self.tasks = {}
         self.add_routes(
             [
@@ -126,7 +125,7 @@ class Service(web.Application):
         )
 
     async def dispatch(self, req: DispatchRequest) -> DispatchResponse:
-        dispatch_ids = [next(self.dispatch_ids) for _ in req.calls]
+        dispatch_ids = [next(_dispatch_ids) for _ in req.calls]
 
         for call, dispatch_id in zip(req.calls, dispatch_ids):
             self.tasks[dispatch_id] = asyncio.create_task(
@@ -208,19 +207,21 @@ class Service(web.Application):
                 )
 
             # TODO: enforce poll limits
-            results = await asyncio.gather(
-                *[
-                    self.call(
-                        call=subcall,
-                        dispatch_id=subcall_dispatch_id,
-                        parent_dispatch_id=dispatch_id,
-                        root_dispatch_id=root_dispatch_id,
-                    )
-                    for subcall, subcall_dispatch_id in zip(
-                        res.poll.calls, next(self.dispatch_ids)
-                    )
-                ]
-            )
+            subcall_dispatch_ids = [next(_dispatch_ids) for _ in res.poll.calls]
+
+            subcalls = [
+                self.call(
+                    call=subcall,
+                    dispatch_id=subcall_dispatch_id,
+                    parent_dispatch_id=dispatch_id,
+                    root_dispatch_id=root_dispatch_id,
+                )
+                for subcall, subcall_dispatch_id in zip(
+                    res.poll.calls, subcall_dispatch_ids
+                )
+            ]
+
+            results = await asyncio.gather(*subcalls)
 
             req = RunRequest(
                 function=req.function,

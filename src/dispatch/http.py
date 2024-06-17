@@ -20,8 +20,8 @@ from aiohttp import web
 from http_message_signatures import InvalidSignature
 from typing_extensions import ParamSpec, TypeAlias
 
-from dispatch.function import Batch, Function, Registry, default_registry
-from dispatch.proto import Input
+from dispatch.function import Batch, Function, Registry, default_registry, _calls
+from dispatch.proto import CallResult, Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
     CaseInsensitiveDict,
@@ -78,7 +78,7 @@ class FunctionService:
     def batch(self) -> Batch:
         return self.registry.batch()
 
-    async def run(self, url, method, headers, data):
+    async def run(self, url: str, method: str, headers: Mapping[str, str], data: bytes) -> bytes:
         return await function_service_run(
             url,
             method,
@@ -380,6 +380,9 @@ async def function_service_run(
     response = output._message
     status = Status(response.status)
 
+    if req.dispatch_id not in _calls:
+        _calls[req.dispatch_id] = asyncio.Future()
+
     if response.HasField("poll"):
         logger.debug(
             "function '%s' polling with %d call(s)",
@@ -392,6 +395,12 @@ async def function_service_run(
             logger.debug("function '%s' exiting with no result", req.function)
         else:
             result = exit.result
+            call_result = CallResult._from_proto(result)
+            call_future = _calls[req.dispatch_id]
+            if call_result.error is not None:
+                call_future.set_exception(call_result.error.to_exception())
+            else:
+                call_future.set_result(call_result.output)
             if result.HasField("output"):
                 logger.debug("function '%s' exiting with output value", req.function)
             elif result.HasField("error"):
