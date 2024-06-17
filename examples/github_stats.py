@@ -14,9 +14,11 @@ Logs will show a pipeline of functions being called and their results.
 
 """
 
-import dispatch
 import httpx
+
+import dispatch
 from dispatch.error import ThrottleError
+
 
 def get_gh_api(url):
     print(f"GET {url}")

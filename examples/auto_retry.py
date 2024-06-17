@@ -1,9 +1,12 @@
-import dispatch
-import dispatch.integrations.requests
 import random
+
 import requests
 
+import dispatch
+import dispatch.integrations.requests
+
 rng = random.Random(2)
+
 
 def third_party_api_call(x: int) -> str:
     # Simulate a third-party API call that fails.

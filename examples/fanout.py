@@ -1,5 +1,7 @@
-import dispatch
 import httpx
+
+import dispatch
+
 
 @dispatch.function
 def get_repo(repo_owner: str, repo_name: str):
@@ -38,5 +40,6 @@ async def fanout():
         get_repo("dispatchrun", "wzprof"),
     )
     return await reduce_stargazers(repos)
+
 
 print(dispatch.run(fanout()))

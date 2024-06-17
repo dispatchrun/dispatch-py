@@ -60,6 +60,7 @@ DISPATCH_API_KEY = "916CC3D280BB46DDBDA984B3DD10059A"
 
 _dispatch_ids = (str(i) for i in range(2**32 - 1))
 
+
 class Client(BaseClient):
     def session(self) -> aiohttp.ClientSession:
         # Use an individual sessionn in the test client instead of the default
@@ -75,6 +76,7 @@ class Server(BaseServer):
     @property
     def url(self):
         return f"http://{self.host}:{self.port}"
+
 
 class Service(web.Application):
     tasks: Dict[str, asyncio.Task]

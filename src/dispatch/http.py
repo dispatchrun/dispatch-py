@@ -16,11 +16,11 @@ from typing import (
     overload,
 )
 
-from aiohttp import web, ClientConnectionError
+from aiohttp import ClientConnectionError, web
 from http_message_signatures import InvalidSignature
 from typing_extensions import ParamSpec, TypeAlias
 
-from dispatch.function import Batch, Function, Registry, default_registry, _calls
+from dispatch.function import Batch, Function, Registry, _calls, default_registry
 from dispatch.proto import CallResult, Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
@@ -81,7 +81,9 @@ class FunctionService:
     def batch(self) -> Batch:
         return self.registry.batch()
 
-    async def run(self, url: str, method: str, headers: Mapping[str, str], data: bytes) -> bytes:
+    async def run(
+        self, url: str, method: str, headers: Mapping[str, str], data: bytes
+    ) -> bytes:
         return await function_service_run(
             url,
             method,

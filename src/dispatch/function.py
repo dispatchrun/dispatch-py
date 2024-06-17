@@ -386,6 +386,7 @@ def set_default_registry(reg: Registry):
 # for results.
 _calls: Dict[str, asyncio.Future] = {}
 
+
 class Client:
     """Client for the Dispatch API."""
 

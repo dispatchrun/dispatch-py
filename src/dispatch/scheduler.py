@@ -490,7 +490,9 @@ class OneShotScheduler:
             state.suspended = {}
 
 
-async def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]) -> Optional[Output]:
+async def run_coroutine(
+    state: State, coroutine: Coroutine, pending_calls: List[Call]
+) -> Optional[Output]:
     return await make_coroutine(state, coroutine, pending_calls)
 
 

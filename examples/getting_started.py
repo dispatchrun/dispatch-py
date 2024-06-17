@@ -1,5 +1,6 @@
-import dispatch
 import requests
+
+import dispatch
 
 
 # Use the `dispatch.function` decorator declare a stateful function.

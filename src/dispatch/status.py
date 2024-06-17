@@ -50,6 +50,7 @@ class Status(int, enum.Enum):
             Status.HTTP_ERROR,
         }
 
+
 # Maybe we should find a better way to define that enum. It's that way to please
 # Mypy and provide documentation for the enum values.
 
