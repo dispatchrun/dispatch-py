@@ -1,5 +1,6 @@
 import asyncio
 import socket
+import sys
 from typing import Any, Optional
 
 import fastapi
@@ -56,7 +57,10 @@ class TestFastAPI(dispatch.test.TestCase):
         self.sockets = [sock]
         self.uvicorn = uvicorn.Server(config)
         self.runner = Runner()
-        self.event = asyncio.Event()
+        if sys.version_info > (3, 8):
+            self.event = asyncio.Event()
+        else:
+            self.event = asyncio.Event(loop=self.runner.get_loop())
         return f"http://{host}:{port}"
 
     def dispatch_test_run(self):

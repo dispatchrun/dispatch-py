@@ -1,5 +1,6 @@
 import asyncio
 import socket
+import sys
 from http.server import HTTPServer
 
 import dispatch.test
@@ -41,10 +42,14 @@ class TestAIOHTTP(dispatch.test.TestCase):
         host = "127.0.0.1"
         port = 0
 
-        self.aiowait = asyncio.Event()
         self.aioloop = Runner()
         self.aiohttp = Server(host, port, Dispatch(reg))
         self.aioloop.run(self.aiohttp.start())
+
+        if sys.version_info > (3, 8):
+            self.aiowait = asyncio.Event()
+        else:
+            self.aiowait = asyncio.Event(loop=self.aioloop.get_loop())
 
         return f"http://{self.aiohttp.host}:{self.aiohttp.port}"
 
