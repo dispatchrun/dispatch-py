@@ -490,15 +490,15 @@ class OneShotScheduler:
             state.suspended = {}
 
 
-async def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
+async def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]) -> Optional[Output]:
     return await make_coroutine(state, coroutine, pending_calls)
 
 
 @coroutine
 def make_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
+    coroutine_result: Optional[CoroutineResult] = None
+
     while True:
-        coroutine_yield = None
-        coroutine_result: Optional[CoroutineResult] = None
         try:
             coroutine_yield = coroutine.run()
         except TailCall as tc:
@@ -535,7 +535,7 @@ def make_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]
 
 def set_coroutine_result(
     state: State, coroutine: Coroutine, coroutine_result: CoroutineResult
-):
+) -> Optional[Output]:
     if coroutine_result.call is not None:
         logger.debug("%s reset to %s", coroutine, coroutine_result.call.function)
     elif coroutine_result.error is not None:
@@ -568,7 +568,7 @@ def set_coroutine_result(
             state.ready.insert(0, parent)
             del state.suspended[parent.id]
             logger.debug("parent %s is now ready", parent)
-    return
+    return None
 
 
 def set_coroutine_call(

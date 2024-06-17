@@ -35,6 +35,19 @@ class Status(int, enum.Enum):
     def __str__(self):
         return self.name
 
+    # TODO: remove, this is only used for the emulated wait of call results
+    @property
+    def temporary(self) -> bool:
+        return self in {
+            Status.TIMEOUT,
+            Status.THROTTLED,
+            Status.TEMPORARY_ERROR,
+            Status.INCOMPATIBLE_STATE,
+            Status.DNS_ERROR,
+            Status.TCP_ERROR,
+            Status.TLS_ERROR,
+            Status.HTTP_ERROR,
+        }
 
 # Maybe we should find a better way to define that enum. It's that way to please
 # Mypy and provide documentation for the enum values.

@@ -1,4 +1,5 @@
 import dispatch
+import dispatch.integrations.requests
 import random
 import requests
 

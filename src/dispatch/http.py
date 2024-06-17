@@ -398,7 +398,9 @@ async def function_service_run(
             call_result = CallResult._from_proto(result)
             call_future = _calls[req.dispatch_id]
             if call_result.error is not None:
-                call_future.set_exception(call_result.error.to_exception())
+                call_result.error.status = Status(response.status)
+                if not call_result.error.status.temporary:
+                    call_future.set_exception(call_result.error.to_exception())
             else:
                 call_future.set_result(call_result.output)
             if result.HasField("output"):
