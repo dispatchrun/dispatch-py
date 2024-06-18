@@ -3,7 +3,6 @@ import requests
 import dispatch
 
 
-# Use the `dispatch.function` decorator declare a stateful function.
 @dispatch.function
 def publish(url, payload):
     r = requests.post(url, data=payload)
@@ -11,7 +10,10 @@ def publish(url, payload):
     return r.text
 
 
-# Use the `dispatch.run` function to run the function with automatic error
-# handling and retries.
-res = dispatch.run(publish("https://httpstat.us/200", {"hello": "world"}))
-print(res)
+@dispatch.function
+async def getting_started():
+    return await publish("https://httpstat.us/200", {"hello": "world"})
+
+
+if __name__ == "__main__":
+    print(dispatch.run(getting_started()))

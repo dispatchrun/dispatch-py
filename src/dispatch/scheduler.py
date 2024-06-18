@@ -32,7 +32,10 @@ CallID: TypeAlias = int
 CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
 
-_in_function_call = contextvars.ContextVar("dispatch.scheduler.in_function_call", default=False)
+_in_function_call = contextvars.ContextVar(
+    "dispatch.scheduler.in_function_call", default=False
+)
+
 
 def in_function_call() -> bool:
     return bool(_in_function_call.get())
@@ -523,7 +526,11 @@ def make_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]
         if isinstance(coroutine_yield, RaceDirective):
             return set_coroutine_race(state, coroutine, coroutine_yield.awaitables)
 
-        yield coroutine_yield
+        try:
+            yield coroutine_yield
+        except Exception as e:
+            coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
+            return set_coroutine_result(state, coroutine, coroutine_result)
 
 
 def set_coroutine_result(

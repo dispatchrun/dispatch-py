@@ -42,4 +42,5 @@ async def fanout():
     return await reduce_stargazers(repos)
 
 
-print(dispatch.run(fanout()))
+if __name__ == "__main__":
+    print(dispatch.run(fanout()))

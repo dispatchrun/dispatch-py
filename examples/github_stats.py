@@ -1,19 +1,3 @@
-"""Github repository stats example.
-
-This example demonstrates how to use async functions orchestrated by Dispatch.
-
-Make sure to follow the setup instructions at
-https://docs.dispatch.run/dispatch/stateful-functions/getting-started/
-
-Run with:
-
-uvicorn app:app
-
-
-Logs will show a pipeline of functions being called and their results.
-
-"""
-
 import httpx
 
 import dispatch
@@ -31,21 +15,21 @@ def get_gh_api(url):
 
 
 @dispatch.function
-async def get_repo_info(repo_owner, repo_name):
+def get_repo_info(repo_owner, repo_name):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     repo_info = get_gh_api(url)
     return repo_info
 
 
 @dispatch.function
-async def get_contributors(repo_info):
+def get_contributors(repo_info):
     url = repo_info["contributors_url"]
     contributors = get_gh_api(url)
     return contributors
 
 
 @dispatch.function
-async def main():
+async def github_stats():
     repo_info = await get_repo_info("dispatchrun", "coroutine")
     print(
         f"""Repository: {repo_info['full_name']}
@@ -57,5 +41,5 @@ Forks: {repo_info['forks_count']}"""
 
 
 if __name__ == "__main__":
-    contributors = dispatch.run(main())
+    contributors = dispatch.run(github_stats())
     print(f"Contributors: {len(contributors)}")

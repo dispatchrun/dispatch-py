@@ -28,7 +28,17 @@ from dispatch.sdk.v1.dispatch_pb2 import DispatchRequest, DispatchResponse
 from dispatch.sdk.v1.error_pb2 import Error
 from dispatch.sdk.v1.function_pb2 import RunRequest, RunResponse
 from dispatch.sdk.v1.poll_pb2 import PollResult
-from dispatch.sdk.v1.status_pb2 import STATUS_OK
+from dispatch.sdk.v1.status_pb2 import (
+    STATUS_DNS_ERROR,
+    STATUS_HTTP_ERROR,
+    STATUS_INCOMPATIBLE_STATE,
+    STATUS_OK,
+    STATUS_TCP_ERROR,
+    STATUS_TEMPORARY_ERROR,
+    STATUS_THROTTLED,
+    STATUS_TIMEOUT,
+    STATUS_TLS_ERROR,
+)
 
 from .client import EndpointClient
 from .server import DispatchServer
@@ -183,7 +193,18 @@ class Service(web.Application):
             res = await self.run(call.endpoint, req)
 
             if res.status != STATUS_OK:
-                # TODO: emulate retries etc...
+                if res.status in (
+                    STATUS_TIMEOUT,
+                    STATUS_THROTTLED,
+                    STATUS_TEMPORARY_ERROR,
+                    STATUS_INCOMPATIBLE_STATE,
+                    STATUS_DNS_ERROR,
+                    STATUS_TCP_ERROR,
+                    STATUS_TLS_ERROR,
+                    STATUS_HTTP_ERROR,
+                ):
+                    continue  # emulate retries, without backoff for now
+
                 if (
                     res.HasField("exit")
                     and res.exit.HasField("result")
@@ -263,14 +284,19 @@ async def main(coro: Coroutine[Any, Any, None]) -> None:
     api = Service()
     app = Dispatch(reg)
     try:
+        print("Starting bakend")
         async with Server(api) as backend:
+            print("Starting server")
             async with Server(app) as server:
                 # Here we break through the abstraction layers a bit, it's not
                 # ideal but it works for now.
                 reg.client.api_url.value = backend.url
                 reg.endpoint = server.url
+                print("BACKEND:", backend.url)
+                print("SERVER:", server.url)
                 await coro
     finally:
+        print("DONE!")
         await api.close()
         # TODO: let's figure out how to get rid of this global registry
         # state at some point, which forces tests to be run sequentially.
