@@ -34,18 +34,29 @@ def test_can_be_constructed_on_https():
     Client(api_url="https://example.com", api_key="foo")
 
 
+# On Python 3.8/3.9, pytest.mark.asyncio doesn't work with mock.patch.dict,
+# so we have to use the old-fashioned way of setting the environment variable
+# and then cleaning it up manually.
+#
+# @mock.patch.dict(os.environ, {"DISPATCH_API_KEY": "0000000000000000"})
 @pytest.mark.asyncio
-@mock.patch.dict(os.environ, {"DISPATCH_API_KEY": "0000000000000000"})
 async def test_api_key_from_env():
-    async with server() as api:
-        client = Client(api_url=api.url)
+    prev_api_key = os.environ.get("DISPATCH_API_KEY")
+    try:
+        os.environ["DISPATCH_API_KEY"] = "0000000000000000"
+        async with server() as api:
+            client = Client(api_url=api.url)
 
-        with pytest.raises(
-            PermissionError,
-            match=r"Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
-        ) as mc:
-            await client.dispatch([Call(function="my-function", input=42)])
-
+            with pytest.raises(
+                    PermissionError,
+                    match=r"Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
+            ) as mc:
+                await client.dispatch([Call(function="my-function", input=42)])
+    finally:
+        if prev_api_key is None:
+            del os.environ["DISPATCH_API_KEY"]
+        else:
+            os.environ["DISPATCH_API_KEY"] = prev_api_key
 
 @pytest.mark.asyncio
 async def test_api_key_from_arg():

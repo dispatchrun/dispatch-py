@@ -46,7 +46,7 @@ class TestAIOHTTP(dispatch.test.TestCase):
         self.aiohttp = Server(host, port, Dispatch(reg))
         self.aioloop.run(self.aiohttp.start())
 
-        if sys.version_info >= (3, 9):
+        if sys.version_info >= (3, 10):
             self.aiowait = asyncio.Event()
         else:
             self.aiowait = asyncio.Event(loop=self.aioloop.get_loop())

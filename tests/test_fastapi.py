@@ -57,7 +57,7 @@ class TestFastAPI(dispatch.test.TestCase):
         self.sockets = [sock]
         self.uvicorn = uvicorn.Server(config)
         self.runner = Runner()
-        if sys.version_info >= (3, 9):
+        if sys.version_info >= (3, 10):
             self.event = asyncio.Event()
         else:
             self.event = asyncio.Event(loop=self.runner.get_loop())
