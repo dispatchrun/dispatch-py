@@ -330,11 +330,10 @@ class Registry:
             raise ValueError(f"function already registered with name '{name}'")
         self.functions[name] = wrapped_func
 
-    def batch(self):  # -> Batch:
+    def batch(self) -> Batch:
         """Returns a Batch instance that can be used to build
         a set of calls to dispatch."""
-        # return self.client.batch()
-        raise NotImplemented
+        return self.client.batch()
 
 
 _registries: Dict[str, Registry] = {}
@@ -565,7 +564,11 @@ class Batch:
         self.calls.append(call)
         return self
 
-    def dispatch(self) -> List[DispatchID]:
+    def clear(self):
+        """Reset the batch."""
+        self.calls = []
+
+    async def dispatch(self) -> List[DispatchID]:
         """Dispatch dispatches the calls asynchronously.
 
         The batch is reset when the calls are dispatched successfully.
@@ -576,10 +579,6 @@ class Batch:
         """
         if not self.calls:
             return []
-        dispatch_ids = asyncio.run(self.client.dispatch(self.calls))
+        dispatch_ids = await self.client.dispatch(self.calls)
         self.clear()
         return dispatch_ids
-
-    def clear(self):
-        """Reset the batch."""
-        self.calls = []
