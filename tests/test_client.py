@@ -48,8 +48,8 @@ async def test_api_key_from_env():
             client = Client(api_url=api.url)
 
             with pytest.raises(
-                    PermissionError,
-                    match=r"Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
+                PermissionError,
+                match=r"Dispatch received an invalid authentication token \(check DISPATCH_API_KEY is correct\)",
             ) as mc:
                 await client.dispatch([Call(function="my-function", input=42)])
     finally:
@@ -57,6 +57,7 @@ async def test_api_key_from_env():
             del os.environ["DISPATCH_API_KEY"]
         else:
             os.environ["DISPATCH_API_KEY"] = prev_api_key
+
 
 @pytest.mark.asyncio
 async def test_api_key_from_arg():
