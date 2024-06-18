@@ -65,6 +65,23 @@ def function(func):
 
 
 async def main(coro: Coroutine[Any, Any, T], addr: Optional[str] = None) -> T:
+    """Entrypoint of dispatch applications. This function creates a new
+    Dispatch server and runs the provided coroutine in the server's event loop.
+
+    Programs typically don't use this function directly, unless they manage
+    their own event loop. Most of the time, the `run` function is a more
+    convenient way to run a dispatch application.
+
+    Args:
+        coro: The coroutine to run as the entrypoint, the function returns
+            when the coroutine returns.
+
+        addr: The address to bind the server to. If not provided, the server
+            will bind to the address specified by the `DISPATCH_ENDPOINT_ADDR`
+
+    Returns:
+        The value returned by the coroutine.
+    """
     address = addr or str(os.environ.get("DISPATCH_ENDPOINT_ADDR")) or "localhost:8000"
     parsed_url = urlsplit("//" + address)
 

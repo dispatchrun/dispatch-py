@@ -273,6 +273,19 @@ class Service(web.Application):
 
 
 async def main(coro: Coroutine[Any, Any, None]) -> None:
+    """Entrypoint for dispatch function tests, which creates a local Dispatch
+    server and runs the provided coroutine in the event loop of the server.
+
+    This is a low-level primitive that most test programs wouldn't use directly,
+    and instead would use one of the `function` or `method` decorators.
+
+    Args:
+        coro: The coroutine to run as the entrypoint, the function returns
+            when the coroutine returns.
+
+    Returns:
+        The value returned by the coroutine.
+    """
     reg = default_registry()
     api = Service()
     app = Dispatch(reg)
@@ -297,10 +310,48 @@ async def main(coro: Coroutine[Any, Any, None]) -> None:
 
 
 def run(coro: Coroutine[Any, Any, None]) -> None:
+    """Runs the provided coroutine in the test server's event loop. This
+    function is a convenience wrapper around the `main` function that runs the
+    coroutine in the event loop of the test server.
+
+    Programs typically don't use this function directly, unless they manage
+    their own event loop. Most of the time, the `run` function is a more
+    convenient way to run a dispatch application.
+
+    Args:
+        coro: The coroutine to run as the entrypoint, the function returns
+            when the coroutine returns.
+
+    Returns:
+        The value returned by the coroutine.
+    """
     return asyncio.run(main(coro))
 
 
 def function(fn: Callable[[], Coroutine[Any, Any, None]]) -> Callable[[], None]:
+    """This decorator is used to write tests that execute in a local Dispatch
+    server.
+
+    The decorated function would typically be a coroutine that implements the
+    test and returns when the test is done, for example:
+
+    ```python
+    import dispatch
+    import dispatch.test
+
+    @dispatch.function
+    def greet(name: str) -> str:
+        return f"Hello {name}!"
+
+    @dispatch.test.function
+    async def test_greet():
+        assert await greet("World") == "Hello World!"
+    ```
+
+    The test runs dispatch functions with the full dispatch capability,
+    including retrying temporary errors, etc...
+    """
+
     @wraps(fn)
     def wrapper():
         return run(fn())
@@ -309,6 +360,10 @@ def function(fn: Callable[[], Coroutine[Any, Any, None]]) -> Callable[[], None]:
 
 
 def method(fn: Callable[[T], Coroutine[Any, Any, None]]) -> Callable[[T], None]:
+    """This decorator is similar to the `function` decorator but is intended to
+    apply to methods of a class (with a `self` value as first argument).
+    """
+
     @wraps(fn)
     def wrapper(self: T):
         return run(fn(self))

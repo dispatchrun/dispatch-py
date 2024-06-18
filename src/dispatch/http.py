@@ -79,6 +79,7 @@ class FunctionService:
         return self.registry.function(func)
 
     def batch(self) -> Batch:
+        """Create a new batch."""
         return self.registry.batch()
 
     async def run(
