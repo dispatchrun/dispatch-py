@@ -4,7 +4,7 @@ import threading
 import unittest
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Dict, List, Optional, TypeVar
 
 import aiohttp
 from aiohttp import web
@@ -193,6 +193,7 @@ class Service(web.Application):
                 else:
                     error = Error(type="status", message=str(res.status))
                 return CallResult(
+                    correlation_id=call.correlation_id,
                     dispatch_id=dispatch_id,
                     error=error,
                 )
@@ -203,6 +204,7 @@ class Service(web.Application):
                     continue
                 result = res.exit.result
                 return CallResult(
+                    correlation_id=call.correlation_id,
                     dispatch_id=dispatch_id,
                     output=result.output if result.HasField("output") else None,
                     error=result.error if result.HasField("error") else None,
@@ -317,6 +319,7 @@ _registry = Registry(
     endpoint=DISPATCH_ENDPOINT_URL,
     client=Client(api_key=DISPATCH_API_KEY, api_url=DISPATCH_API_URL),
 )
+set_default_registry(_registry)
 
 
 @_registry.function
@@ -354,7 +357,33 @@ async def broken_nested(name: str) -> str:
     return await broken()
 
 
-set_default_registry(_registry)
+@_registry.function
+async def distributed_merge_sort(values: List[int]) -> List[int]:
+    if len(values) <= 1:
+        return values
+    i = len(values) // 2
+
+    (l, r) = await dispatch.gather(
+        distributed_merge_sort(values[:i]),
+        distributed_merge_sort(values[i:]),
+    )
+
+    return merge(l, r)
+
+
+def merge(l: List[int], r: List[int]) -> List[int]:
+    result = []
+    i = j = 0
+    while i < len(l) and j < len(r):
+        if l[i] < r[j]:
+            result.append(l[i])
+            i += 1
+        else:
+            result.append(r[j])
+            j += 1
+    result.extend(l[i:])
+    result.extend(r[j:])
+    return result
 
 
 class TestCase(unittest.TestCase):
@@ -472,6 +501,26 @@ class TestCase(unittest.TestCase):
     async def test_call_nested_function_with_error(self):
         with self.assertRaises(ValueError) as e:
             await broken_nested("hello")
+
+    @aiotest
+    async def test_distributed_merge_sort_no_values(self):
+        values: List[int] = []
+        self.assertEqual(await distributed_merge_sort(values), sorted(values))
+
+    @aiotest
+    async def test_distributed_merge_sort_one_value(self):
+        values: List[int] = [1]
+        self.assertEqual(await distributed_merge_sort(values), sorted(values))
+
+    @aiotest
+    async def test_distributed_merge_sort_two_values(self):
+        values: List[int] = [1, 5]
+        self.assertEqual(await distributed_merge_sort(values), sorted(values))
+
+    @aiotest
+    async def test_distributed_merge_sort_many_values(self):
+        values: List[int] = [1, 5, 3, 2, 4, 6, 7, 8, 9, 0]
+        self.assertEqual(await distributed_merge_sort(values), sorted(values))
 
 
 class ClientRequestContentLengthMissing(aiohttp.ClientRequest):

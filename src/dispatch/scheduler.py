@@ -1,8 +1,8 @@
 import asyncio
+import contextvars
 import logging
 import pickle
 import sys
-import threading
 from dataclasses import dataclass, field
 from types import coroutine
 from typing import (
@@ -32,19 +32,10 @@ CallID: TypeAlias = int
 CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
 
-
-class ThreadLocal(threading.local):
-    in_function_call: bool
-
-    def __init__(self):
-        self.in_function_call = False
-
-
-thread_local = ThreadLocal()
-
+_in_function_call = contextvars.ContextVar("dispatch.scheduler.in_function_call", default=False)
 
 def in_function_call() -> bool:
-    return thread_local.in_function_call
+    return bool(_in_function_call.get())
 
 
 @dataclass
@@ -343,7 +334,7 @@ class OneShotScheduler:
 
     async def run(self, input: Input) -> Output:
         try:
-            thread_local.in_function_call = True
+            token = _in_function_call.set(True)
             return await self._run(input)
         except Exception as e:
             logger.exception(
@@ -351,7 +342,7 @@ class OneShotScheduler:
             )
             return Output.error(Error.from_exception(e))
         finally:
-            thread_local.in_function_call = False
+            _in_function_call.reset(token)
 
     def _init_state(self, input: Input) -> State:
         logger.debug("starting main coroutine")
