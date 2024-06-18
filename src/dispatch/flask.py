@@ -24,13 +24,17 @@ from typing import Optional, Union
 from flask import Flask, make_response, request
 
 from dispatch.function import Registry
-from dispatch.http import FunctionService, FunctionServiceError, validate_content_length
+from dispatch.http import (
+    BlockingFunctionService,
+    FunctionServiceError,
+    validate_content_length,
+)
 from dispatch.signature import Ed25519PublicKey, parse_verification_key
 
 logger = logging.getLogger(__name__)
 
 
-class Dispatch(FunctionService):
+class Dispatch(BlockingFunctionService):
     """A Dispatch instance, powered by Flask."""
 
     def __init__(

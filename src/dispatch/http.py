@@ -20,7 +20,14 @@ from aiohttp import ClientConnectionError, web
 from http_message_signatures import InvalidSignature
 from typing_extensions import ParamSpec, TypeAlias
 
-from dispatch.function import Batch, Function, Registry, _calls, default_registry
+from dispatch.function import (
+    AsyncFunction,
+    Batch,
+    BlockingFunction,
+    Registry,
+    _calls,
+    default_registry,
+)
 from dispatch.proto import CallResult, Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.signature import (
@@ -41,7 +48,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-class FunctionService:
+class BaseFunctionService:
     """FunctionService is an abstract class intended to be inherited by objects
     that integrate dispatch with other server application frameworks.
 
@@ -68,16 +75,6 @@ class FunctionService:
     def verification_key(self) -> Optional[Ed25519PublicKey]:
         return self._verification_key
 
-    @overload
-    def function(self, func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
-
-    @overload
-    def function(self, func: Callable[P, T]) -> Function[P, T]: ...
-
-    def function(self, func):
-        """Decorator that registers functions."""
-        return self.registry.function(func)
-
     def batch(self) -> Batch:
         """Create a new batch."""
         return self.registry.batch()
@@ -93,6 +90,36 @@ class FunctionService:
             self.registry,
             self.verification_key,
         )
+
+
+class AsyncFunctionService(BaseFunctionService):
+    @overload
+    def function(
+        self, func: Callable[P, Coroutine[Any, Any, T]]
+    ) -> AsyncFunction[P, T]: ...
+
+    @overload
+    def function(self, func: Callable[P, T]) -> AsyncFunction[P, T]: ...
+
+    def function(self, func):
+        return self.registry.function(func)
+
+
+class BlockingFunctionService(BaseFunctionService):
+    """BlockingFunctionService is a variant of FunctionService which decorates
+    dispatch functions with a synchronous API instead of using asyncio.
+    """
+
+    @overload
+    def function(self, func: Callable[P, T]) -> BlockingFunction[P, T]: ...
+
+    @overload
+    def function(
+        self, func: Callable[P, Coroutine[Any, Any, T]]
+    ) -> BlockingFunction[P, T]: ...
+
+    def function(self, func):
+        return BlockingFunction(self.registry.function(func))
 
 
 class FunctionServiceError(Exception):
