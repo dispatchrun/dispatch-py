@@ -73,4 +73,3 @@ class TestFastAPI(dispatch.test.TestCase):
     def dispatch_test_stop(self):
         loop = self.runner.get_loop()
         loop.call_soon_threadsafe(self.event.set)
-
