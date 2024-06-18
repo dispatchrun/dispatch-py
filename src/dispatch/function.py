@@ -333,7 +333,7 @@ class Registry:
     def batch(self) -> Batch:
         """Returns a Batch instance that can be used to build
         a set of calls to dispatch."""
-        return self.client.batch()
+        return Batch(self.client)
 
 
 _registries: Dict[str, Registry] = {}

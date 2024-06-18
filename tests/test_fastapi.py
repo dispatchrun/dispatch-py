@@ -37,8 +37,6 @@ from dispatch.signature import (
     public_key_from_pem,
 )
 from dispatch.status import Status
-from dispatch.test import EndpointClient
-from dispatch.test.fastapi import http_client
 
 
 class TestFastAPI(dispatch.test.TestCase):
@@ -75,28 +73,4 @@ class TestFastAPI(dispatch.test.TestCase):
     def dispatch_test_stop(self):
         loop = self.runner.get_loop()
         loop.call_soon_threadsafe(self.event.set)
-
-
-def create_dispatch_instance(app: fastapi.FastAPI, endpoint: str):
-    return Dispatch(
-        app,
-        registry=Registry(
-            name=__name__,
-            endpoint=endpoint,
-            client=Client(
-                api_key="0000000000000000",
-                api_url="http://127.0.0.1:10000",
-            ),
-        ),
-    )
-
-
-def create_endpoint_client(
-    app: fastapi.FastAPI, signing_key: Optional[Ed25519PrivateKey] = None
-):
-    return EndpointClient(http_client(app), signing_key)
-
-
-def response_output(resp: function_pb.RunResponse) -> Any:
-    return any_unpickle(resp.exit.result.output)
 
