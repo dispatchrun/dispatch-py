@@ -34,8 +34,8 @@ def test_can_be_constructed_on_https():
     Client(api_url="https://example.com", api_key="foo")
 
 
-@mock.patch.dict(os.environ, {"DISPATCH_API_KEY": "0000000000000000"})
 @pytest.mark.asyncio
+@mock.patch.dict(os.environ, {"DISPATCH_API_KEY": "0000000000000000"})
 async def test_api_key_from_env():
     async with server() as api:
         client = Client(api_url=api.url)
