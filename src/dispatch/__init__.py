@@ -12,11 +12,11 @@ from typing_extensions import ParamSpec, TypeAlias
 
 import dispatch.integrations
 from dispatch.coroutine import all, any, call, gather, race
+from dispatch.function import AsyncFunction as Function
 from dispatch.function import (
     Batch,
     Client,
     ClientError,
-    Function,
     Registry,
     Reset,
     default_registry,

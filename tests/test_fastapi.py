@@ -1,7 +1,6 @@
 import asyncio
 import socket
 import sys
-from typing import Any, Optional
 
 import fastapi
 import google.protobuf.any_pb2
@@ -19,15 +18,7 @@ import dispatch
 from dispatch.asyncio import Runner
 from dispatch.experimental.durable.registry import clear_functions
 from dispatch.fastapi import Dispatch
-from dispatch.function import (
-    Arguments,
-    Client,
-    Error,
-    Function,
-    Input,
-    Output,
-    Registry,
-)
+from dispatch.function import Arguments, Client, Error, Input, Output, Registry
 from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.sdk.v1 import call_pb2 as call_pb
 from dispatch.sdk.v1 import function_pb2 as function_pb

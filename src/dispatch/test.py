@@ -21,7 +21,7 @@ from dispatch.function import (
     default_registry,
     set_default_registry,
 )
-from dispatch.http import Dispatch, FunctionService
+from dispatch.http import Dispatch
 from dispatch.http import Server as BaseServer
 from dispatch.sdk.v1.call_pb2 import Call, CallResult
 from dispatch.sdk.v1.dispatch_pb2 import DispatchRequest, DispatchResponse
@@ -290,19 +290,14 @@ async def main(coro: Coroutine[Any, Any, None]) -> None:
     api = Service()
     app = Dispatch(reg)
     try:
-        print("Starting bakend")
         async with Server(api) as backend:
-            print("Starting server")
             async with Server(app) as server:
                 # Here we break through the abstraction layers a bit, it's not
                 # ideal but it works for now.
                 reg.client.api_url.value = backend.url
                 reg.endpoint = server.url
-                print("BACKEND:", backend.url)
-                print("SERVER:", server.url)
                 await coro
     finally:
-        print("DONE!")
         await api.close()
         # TODO: let's figure out how to get rid of this global registry
         # state at some point, which forces tests to be run sequentially.

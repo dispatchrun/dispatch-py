@@ -27,7 +27,7 @@ from typing import Optional
 from awslambdaric.lambda_context import LambdaContext
 
 from dispatch.function import Registry
-from dispatch.http import FunctionService
+from dispatch.http import BlockingFunctionService
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.status import Status
@@ -35,7 +35,7 @@ from dispatch.status import Status
 logger = logging.getLogger(__name__)
 
 
-class Dispatch(FunctionService):
+class Dispatch(BlockingFunctionService):
     def __init__(
         self,
         registry: Optional[Registry] = None,

@@ -18,6 +18,7 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
+    Union,
     overload,
 )
 from urllib.parse import urlparse
@@ -111,7 +112,7 @@ class PrimitiveFunction:
         )
 
 
-class Function(PrimitiveFunction, Generic[P, T]):
+class AsyncFunction(PrimitiveFunction, Generic[P, T]):
     """Callable wrapper around a function meant to be used throughout the
     Dispatch Python SDK.
     """
@@ -157,7 +158,7 @@ class Function(PrimitiveFunction, Generic[P, T]):
         else:
             return self._call_dispatch(*args, **kwargs)
 
-    def dispatch(self, *args: P.args, **kwargs: P.kwargs) -> DispatchID:
+    async def dispatch(self, *args: P.args, **kwargs: P.kwargs) -> DispatchID:
         """Dispatch an asynchronous call to the function without
         waiting for a result.
 
@@ -171,7 +172,7 @@ class Function(PrimitiveFunction, Generic[P, T]):
         Returns:
             DispatchID: ID of the dispatched call.
         """
-        return asyncio.run(self._primitive_dispatch(Arguments(args, kwargs)))
+        return await self._primitive_dispatch(Arguments(args, kwargs))
 
     def build_call(self, *args: P.args, **kwargs: P.kwargs) -> Call:
         """Create a Call for this function with the provided input. Useful to
@@ -187,11 +188,38 @@ class Function(PrimitiveFunction, Generic[P, T]):
         return self._build_primitive_call(Arguments(args, kwargs))
 
 
+class BlockingFunction(Generic[P, T]):
+    """BlockingFunction is like Function but exposes a blocking API instead of
+    functions that use asyncio.
+
+    Applications typically don't create instances of BlockingFunction directly,
+    and instead use decorators from packages that provide integrations with
+    Python frameworks.
+    """
+
+    def __init__(self, func: AsyncFunction[P, T]):
+        self._func = func
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
+        return asyncio.run(self._func(*args, **kwargs))
+
+    def dispatch(self, *args: P.args, **kwargs: P.kwargs) -> DispatchID:
+        return asyncio.run(self._func.dispatch(*args, **kwargs))
+
+    def build_call(self, *args: P.args, **kwargs: P.kwargs) -> Call:
+        return self._func.build_call(*args, **kwargs)
+
+
 class Reset(TailCall):
     """The current coroutine is aborted and scheduling reset to be replaced with
     the call embedded in this exception."""
 
-    def __init__(self, func: Function[P, T], *args: P.args, **kwargs: P.kwargs):
+    def __init__(
+        self,
+        func: Union[AsyncFunction[P, T], BlockingFunction[P, T]],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ):
         super().__init__(call=func.build_call(*args, **kwargs))
 
 
@@ -267,10 +295,12 @@ class Registry:
         self._endpoint = value
 
     @overload
-    def function(self, func: Callable[P, Coroutine[Any, Any, T]]) -> Function[P, T]: ...
+    def function(
+        self, func: Callable[P, Coroutine[Any, Any, T]]
+    ) -> AsyncFunction[P, T]: ...
 
     @overload
-    def function(self, func: Callable[P, T]) -> Function[P, T]: ...
+    def function(self, func: Callable[P, T]) -> AsyncFunction[P, T]: ...
 
     def function(self, func):
         """Decorator that registers functions."""
@@ -283,7 +313,9 @@ class Registry:
         logger.info("registering coroutine: %s", name)
         return self._register_coroutine(name, func)
 
-    def _register_function(self, name: str, func: Callable[P, T]) -> Function[P, T]:
+    def _register_function(
+        self, name: str, func: Callable[P, T]
+    ) -> AsyncFunction[P, T]:
         func = durable(func)
 
         @wraps(func)
@@ -296,7 +328,7 @@ class Registry:
 
     def _register_coroutine(
         self, name: str, func: Callable[P, Coroutine[Any, Any, T]]
-    ) -> Function[P, T]:
+    ) -> AsyncFunction[P, T]:
         logger.info("registering coroutine: %s", name)
         func = durable(func)
 
@@ -307,7 +339,7 @@ class Registry:
         primitive_func.__qualname__ = f"{name}_primitive"
         durable_primitive_func = durable(primitive_func)
 
-        wrapped_func = Function[P, T](
+        wrapped_func = AsyncFunction[P, T](
             self,
             name,
             durable_primitive_func,
@@ -555,7 +587,9 @@ class Batch:
         self.client = client
         self.calls = []
 
-    def add(self, func: Function[P, T], *args: P.args, **kwargs: P.kwargs) -> Batch:
+    def add(
+        self, func: AsyncFunction[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> Batch:
         """Add a call to the specified function to the batch."""
         return self.add_call(func.build_call(*args, **kwargs))
 

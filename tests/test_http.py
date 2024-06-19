@@ -6,7 +6,7 @@ from http.server import HTTPServer
 import dispatch.test
 from dispatch.asyncio import Runner
 from dispatch.function import Registry
-from dispatch.http import Dispatch, FunctionService, Server
+from dispatch.http import Dispatch, Server
 
 
 class TestHTTP(dispatch.test.TestCase):
