@@ -1,4 +1,4 @@
-"""Integration of Dispatch programmable endpoints for FastAPI.
+"""Integration of Dispatch programmable endpoints for AWS Lambda.
 
 Example:
 
@@ -18,6 +18,7 @@ Example:
         dispatch.handle(event, context, entrypoint="entrypoint")
     """
 
+import asyncio
 import base64
 import json
 import logging
@@ -25,8 +26,8 @@ from typing import Optional
 
 from awslambdaric.lambda_context import LambdaContext
 
-from dispatch.asyncio import Runner
 from dispatch.function import Registry
+from dispatch.http import BlockingFunctionService
 from dispatch.proto import Input
 from dispatch.sdk.v1 import function_pb2 as function_pb
 from dispatch.status import Status
@@ -34,27 +35,15 @@ from dispatch.status import Status
 logger = logging.getLogger(__name__)
 
 
-class Dispatch(Registry):
+class Dispatch(BlockingFunctionService):
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        api_url: Optional[str] = None,
+        registry: Optional[Registry] = None,
     ):
-        """Initializes a Dispatch Lambda handler.
-
-        Args:
-            api_key: Dispatch API key to use for authentication. Uses the value
-                of the DISPATCH_API_KEY environment variable by default.
-
-            api_url: The URL of the Dispatch API to use. Uses the value of the
-                DISPATCH_API_URL environment variable if set, otherwise
-                defaults to the public Dispatch API (DEFAULT_API_URL).
-
-        """
-
+        """Initializes a Dispatch Lambda handler."""
         # We use a fake endpoint to initialize the base class. The actual endpoint (the Lambda ARN)
         # is only known when the handler is invoked.
-        super().__init__(endpoint="http://lambda", api_key=api_key, api_url=api_url)
+        super().__init__(registry)
 
     def handle(
         self, event: str, context: LambdaContext, entrypoint: Optional[str] = None
@@ -63,7 +52,8 @@ class Dispatch(Registry):
         # We override the endpoint of all registered functions before any execution.
         if context.invoked_function_arn:
             self.endpoint = context.invoked_function_arn
-        self.override_endpoint(self.endpoint)
+        # TODO: this might mutate the default registry, we should figure out a better way.
+        self.registry.endpoint = self.endpoint
 
         if not event:
             raise ValueError("event is required")
@@ -87,14 +77,13 @@ class Dispatch(Registry):
         )
 
         try:
-            func = self.functions[req.function]
+            func = self.registry.functions[req.function]
         except KeyError:
             raise ValueError(f"function {req.function} not found")
 
         input = Input(req)
         try:
-            with Runner() as runner:
-                output = runner.run(func._primitive_call(input))
+            output = asyncio.run(func._primitive_call(input))
         except Exception:
             logger.error("function '%s' fatal error", req.function, exc_info=True)
             raise  # FIXME

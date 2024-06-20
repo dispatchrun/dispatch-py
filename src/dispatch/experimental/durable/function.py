@@ -23,7 +23,12 @@ from typing import (
 )
 
 from . import frame as ext
-from .registry import RegisteredFunction, lookup_function, register_function
+from .registry import (
+    RegisteredFunction,
+    lookup_function,
+    register_function,
+    unregister_function,
+)
 
 TRACE = os.getenv("DISPATCH_TRACE", False)
 
@@ -57,6 +62,9 @@ class DurableFunction:
 
     def __repr__(self) -> str:
         return f"DurableFunction({self.__qualname__})"
+
+    def unregister(self):
+        unregister_function(self.registered_fn.key)
 
 
 def durable(fn: Callable) -> Callable:

@@ -3,7 +3,6 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass
 from traceback import format_exception
-from types import TracebackType
 from typing import Any, Dict, List, Optional, Tuple
 
 import google.protobuf.any_pb2

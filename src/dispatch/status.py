@@ -1,4 +1,5 @@
 import enum
+import ssl
 from typing import Any, Callable, Dict, Type, Union
 
 from dispatch.sdk.v1 import status_pb2 as status_pb
@@ -34,6 +35,20 @@ class Status(int, enum.Enum):
 
     def __str__(self):
         return self.name
+
+    # TODO: remove, this is only used for the emulated wait of call results
+    @property
+    def temporary(self) -> bool:
+        return self in {
+            Status.TIMEOUT,
+            Status.THROTTLED,
+            Status.TEMPORARY_ERROR,
+            Status.INCOMPATIBLE_STATE,
+            Status.DNS_ERROR,
+            Status.TCP_ERROR,
+            Status.TLS_ERROR,
+            Status.HTTP_ERROR,
+        }
 
 
 # Maybe we should find a better way to define that enum. It's that way to please
@@ -116,6 +131,8 @@ def status_for_error(error: BaseException) -> Status:
         # tend to be caused by invalid use of syscalls, which are
         # unlikely at higher abstraction levels.
         return Status.TEMPORARY_ERROR
+    elif isinstance(error, ssl.SSLError) or isinstance(error, ssl.CertificateError):
+        return Status.TLS_ERROR
     return Status.PERMANENT_ERROR
 
 

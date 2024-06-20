@@ -106,6 +106,18 @@ def lookup_function(key: str) -> RegisteredFunction:
     return _REGISTRY[key]
 
 
+def unregister_function(key: str):
+    """Unregister a function by key.
+
+    Args:
+        key: Unique identifier for the function.
+
+    Raises:
+        KeyError: A function has not been registered with this key.
+    """
+    del _REGISTRY[key]
+
+
 def clear_functions():
     """Clear functions clears the registry."""
     _REGISTRY.clear()

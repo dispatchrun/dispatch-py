@@ -1,28 +1,7 @@
-"""Github repository stats example.
-
-This example demonstrates how to use async functions orchestrated by Dispatch.
-
-Make sure to follow the setup instructions at
-https://docs.dispatch.run/dispatch/stateful-functions/getting-started/
-
-Run with:
-
-uvicorn app:app
-
-
-Logs will show a pipeline of functions being called and their results.
-
-"""
-
 import httpx
-from fastapi import FastAPI
 
+import dispatch
 from dispatch.error import ThrottleError
-from dispatch.fastapi import Dispatch
-
-app = FastAPI()
-
-dispatch = Dispatch(app)
 
 
 def get_gh_api(url):
@@ -36,21 +15,21 @@ def get_gh_api(url):
 
 
 @dispatch.function
-async def get_repo_info(repo_owner: str, repo_name: str):
+def get_repo_info(repo_owner, repo_name):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     repo_info = get_gh_api(url)
     return repo_info
 
 
 @dispatch.function
-async def get_contributors(repo_info: dict):
+def get_contributors(repo_info):
     url = repo_info["contributors_url"]
     contributors = get_gh_api(url)
     return contributors
 
 
 @dispatch.function
-async def main():
+async def github_stats():
     repo_info = await get_repo_info("dispatchrun", "coroutine")
     print(
         f"""Repository: {repo_info['full_name']}
@@ -58,13 +37,9 @@ Stars: {repo_info['stargazers_count']}
 Watchers: {repo_info['watchers_count']}
 Forks: {repo_info['forks_count']}"""
     )
+    return await get_contributors(repo_info)
 
-    contributors = await get_contributors(repo_info)
+
+if __name__ == "__main__":
+    contributors = dispatch.run(github_stats())
     print(f"Contributors: {len(contributors)}")
-    return
-
-
-@app.get("/")
-def root():
-    main.dispatch()
-    return "OK"

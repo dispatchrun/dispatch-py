@@ -10,18 +10,17 @@ dynamic = ["version"]
 requires-python = ">= 3.8"
 dependencies = [
     "aiohttp >= 3.9.4",
-    "grpcio >= 1.60.0",
     "protobuf >= 4.24.0",
     "types-protobuf >= 4.24.0.20240129",
-    "grpc-stubs >= 1.53.0.5",
     "http-message-signatures >= 0.5.0",
     "tblib >= 3.0.0",
     "typing_extensions >= 4.10"
 ]
 
 [project.optional-dependencies]
-fastapi = ["fastapi", "httpx"]
+fastapi = ["fastapi"]
 flask = ["flask"]
+httpx = ["httpx"]
 lambda = ["awslambdaric"]
 
 dev = [
@@ -29,7 +28,8 @@ dev = [
     "black >= 24.1.0",
     "isort >= 5.13.2",
     "mypy >= 1.10.0",
-    "pytest==8.0.0",
+    "pytest >= 8.0.0",
+    "pytest-asyncio >= 0.23.7",
     "fastapi >= 0.109.0",
     "coverage >= 7.4.1",
     "requests >= 2.31.0",
@@ -59,17 +59,12 @@ profile = "black"
 src_paths = ["src"]
 
 [tool.coverage.run]
-omit = ["*_pb2_grpc.py", "*_pb2.py", "tests/*", "examples/*", "src/buf/*"]
+omit = ["*_pb2.py", "tests/*", "examples/*", "src/buf/*"]
 
 [tool.mypy]
 exclude = [
   '^src/buf',
   '^tests/examples',
-  # mypy 1.10.0 reports false positives for these two files:
-  # src/dispatch/sdk/v1/function_pb2_grpc.py:74: error: Module has no attribute "experimental"  [attr-defined]
-  # src/dispatch/sdk/v1/dispatch_pb2_grpc.py:80: error: Module has no attribute "experimental"  [attr-defined]
-  '^src/dispatch/sdk/v1/function_pb2_grpc.py',
-  '^src/dispatch/sdk/v1/dispatch_pb2_grpc.py',
 ]
 
 [tool.pytest.ini_options]

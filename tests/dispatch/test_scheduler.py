@@ -1,7 +1,8 @@
 import unittest
 from typing import Any, Callable, List, Optional, Set, Type
 
-from dispatch.asyncio import Runner
+import pytest
+
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
 from dispatch.proto import Arguments, Call, CallResult, Error, Input, Output, TailCall
@@ -53,478 +54,496 @@ async def raises_error():
     raise ValueError("oops")
 
 
-class TestOneShotScheduler(unittest.TestCase):
-    def setUp(self):
-        self.runner = Runner()
+@pytest.mark.asyncio
+async def test_main_return():
+    @durable
+    async def main():
+        return 1
 
-    def tearDown(self):
-        self.runner.close()
+    output = await start(main)
+    assert_exit_result_value(output, 1)
 
-    def test_main_return(self):
-        @durable
-        async def main():
-            return 1
 
-        output = self.start(main)
-        self.assert_exit_result_value(output, 1)
+@pytest.mark.asyncio
+async def test_main_raise():
+    @durable
+    async def main():
+        raise ValueError("oops")
 
-    def test_main_raise(self):
-        @durable
-        async def main():
-            raise ValueError("oops")
+    output = await start(main)
+    assert_exit_result_error(output, ValueError, "oops")
 
-        output = self.start(main)
-        self.assert_exit_result_error(output, ValueError, "oops")
 
-    def test_main_args(self):
-        @durable
-        async def main(a, b=1):
-            return a + b
+@pytest.mark.asyncio
+async def test_main_args():
+    @durable
+    async def main(a, b=1):
+        return a + b
 
-        output = self.start(main, 2, b=10)
-        self.assert_exit_result_value(output, 12)
+    output = await start(main, 2, b=10)
+    assert_exit_result_value(output, 12)
 
-    def test_call_one(self):
-        output = self.start(call_one, "foo")
 
-        self.assert_poll_call_functions(output, ["foo"])
+@pytest.mark.asyncio
+async def test_call_one():
+    output = await start(call_one, "foo")
 
-    def test_call_concurrently(self):
-        output = self.start(call_concurrently, "foo", "bar", "baz")
+    assert_poll_call_functions(output, ["foo"])
 
-        self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
-    def test_call_one_indirect(self):
-        @durable
-        async def main():
-            return await call_one("foo")
+@pytest.mark.asyncio
+async def test_call_concurrently():
+    output = await start(call_concurrently, "foo", "bar", "baz")
 
-        output = self.start(main)
+    assert_poll_call_functions(output, ["foo", "bar", "baz"])
 
-        self.assert_poll_call_functions(output, ["foo"])
 
-    def test_call_concurrently_indirect(self):
-        @durable
-        async def main(*functions):
-            return await call_concurrently(*functions)
+@pytest.mark.asyncio
+async def test_call_one_indirect():
+    @durable
+    async def main():
+        return await call_one("foo")
 
-        output = self.start(main, "foo", "bar", "baz")
+    output = await start(main)
 
-        self.assert_poll_call_functions(output, ["foo", "bar", "baz"])
+    assert_poll_call_functions(output, ["foo"])
 
-    def test_depth_run(self):
-        @durable
-        async def main():
-            return await gather(
-                call_concurrently("a", "b", "c"),
-                call_one("d"),
-                call_concurrently("e", "f", "g"),
-                call_one("h"),
-            )
 
-        output = self.start(main)
-        # In this test, the output is deterministic, but it does not follow the
-        # order in which the coroutines are declared due to interleaving of the
-        # asyncio event loop.
-        #
-        # Note that the order could change between Python versions, so we might
-        # choose to remove this test, or adapt it in the future.
-        self.assert_poll_call_functions(
-            output,
-            ["d", "h", "e", "f", "g", "a", "b", "c"],
-            min_results=1,
-            max_results=8,
+@pytest.mark.asyncio
+async def test_call_concurrently_indirect():
+    @durable
+    async def main(*functions):
+        return await call_concurrently(*functions)
+
+    output = await start(main, "foo", "bar", "baz")
+
+    assert_poll_call_functions(output, ["foo", "bar", "baz"])
+
+
+@pytest.mark.asyncio
+async def test_depth_run():
+    @durable
+    async def main():
+        return await gather(
+            call_concurrently("a", "b", "c"),
+            call_one("d"),
+            call_concurrently("e", "f", "g"),
+            call_one("h"),
         )
 
-    def test_resume_after_call(self):
-        @durable
-        async def main():
-            result1 = await call_one("foo")
-            result2 = await call_one("bar")
-            return result1 + result2
+    output = await start(main)
+    # In this test, the output is deterministic, but it does not follow the
+    # order in which the coroutines are declared due to interleaving of the
+    # asyncio event loop.
+    #
+    # Note that the order could change between Python versions, so we might
+    # choose to remove this test, or adapt it in the future.
+    assert_poll_call_functions(
+        output,
+        ["d", "h", "e", "f", "g", "a", "b", "c"],
+        min_results=1,
+        max_results=8,
+    )
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["foo"])
-        output = self.resume(
+
+@pytest.mark.asyncio
+async def test_resume_after_call():
+    @durable
+    async def main():
+        result1 = await call_one("foo")
+        result2 = await call_one("bar")
+        return result1 + result2
+
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["foo"])
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(1, correlation_id=calls[0].correlation_id)],
+    )
+    calls = assert_poll_call_functions(output, ["bar"])
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(2, correlation_id=calls[0].correlation_id)],
+    )
+    assert_exit_result_value(output, 3)
+
+
+@pytest.mark.asyncio
+async def test_resume_after_gather_all_at_once():
+    @durable
+    async def main():
+        return sum(await call_concurrently("a", "b", "c", "d"))
+
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["a", "b", "c", "d"])
+    results = [
+        CallResult.from_value(i, correlation_id=call.correlation_id)
+        for i, call in enumerate(calls)
+    ]
+    output = await resume(main, output, results)
+    assert_exit_result_value(output, 0 + 1 + 2 + 3)
+
+
+@pytest.mark.asyncio
+async def test_resume_after_gather_one_at_a_time():
+    @durable
+    async def main():
+        return sum(await call_concurrently("a", "b", "c", "d"))
+
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["a", "b", "c", "d"])
+    for i, call in enumerate(calls):
+        output = await resume(
             main,
             output,
-            [CallResult.from_value(1, correlation_id=calls[0].correlation_id)],
+            [CallResult.from_value(i, correlation_id=call.correlation_id)],
         )
-        calls = self.assert_poll_call_functions(output, ["bar"])
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_value(2, correlation_id=calls[0].correlation_id)],
+        if i < len(calls) - 1:
+            assert_empty_poll(output)
+
+    assert_exit_result_value(output, 0 + 1 + 2 + 3)
+
+
+@pytest.mark.asyncio
+async def test_resume_after_any_result():
+    @durable
+    async def main():
+        return await call_any("a", "b", "c", "d")
+
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["a", "b", "c", "d"])
+
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(23, correlation_id=calls[1].correlation_id)],
+    )
+    assert_exit_result_value(output, 23)
+
+
+@pytest.mark.asyncio
+async def test_resume_after_all_errors():
+    @durable
+    async def main():
+        return await call_any("a", "b", "c", "d")
+
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["a", "b", "c", "d"])
+    results = [
+        CallResult.from_error(
+            Error.from_exception(RuntimeError(f"oops{i}")),
+            correlation_id=call.correlation_id,
         )
-        self.assert_exit_result_value(output, 3)
+        for i, call in enumerate(calls)
+    ]
+    output = await resume(main, output, results)
+    assert_exit_result_error(
+        output, AnyException, "4 coroutine(s) failed with an exception"
+    )
 
-    def test_resume_after_gather_all_at_once(self):
-        @durable
-        async def main():
-            return sum(await call_concurrently("a", "b", "c", "d"))
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
-        results = [
-            CallResult.from_value(i, correlation_id=call.correlation_id)
-            for i, call in enumerate(calls)
-        ]
-        output = self.resume(main, output, results)
-        self.assert_exit_result_value(output, 0 + 1 + 2 + 3)
+@pytest.mark.asyncio
+async def test_resume_after_race_result():
+    @durable
+    async def main():
+        return await call_race("a", "b", "c", "d")
 
-    def test_resume_after_gather_one_at_a_time(self):
-        @durable
-        async def main():
-            return sum(await call_concurrently("a", "b", "c", "d"))
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["a", "b", "c", "d"])
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
-        for i, call in enumerate(calls):
-            output = self.resume(
-                main,
-                output,
-                [CallResult.from_value(i, correlation_id=call.correlation_id)],
-            )
-            if i < len(calls) - 1:
-                self.assert_empty_poll(output)
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(23, correlation_id=calls[1].correlation_id)],
+    )
+    assert_exit_result_value(output, 23)
 
-        self.assert_exit_result_value(output, 0 + 1 + 2 + 3)
 
-    def test_resume_after_any_result(self):
-        @durable
-        async def main():
-            return await call_any("a", "b", "c", "d")
+@pytest.mark.asyncio
+async def test_resume_after_race_error():
+    @durable
+    async def main():
+        return await call_race("a", "b", "c", "d")
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
+    output = await start(main)
+    calls = assert_poll_call_functions(output, ["a", "b", "c", "d"])
 
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_value(23, correlation_id=calls[1].correlation_id)],
+    error = Error.from_exception(RuntimeError("oops"))
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_error(error, correlation_id=calls[2].correlation_id)],
+    )
+    assert_exit_result_error(output, RuntimeError, "oops")
+
+
+@pytest.mark.asyncio
+async def test_dag():
+    @durable
+    async def main():
+        result1 = await gather(
+            call_sequentially("a", "e"),
+            call_one("b"),
+            call_concurrently("c", "d"),
         )
-        self.assert_exit_result_value(output, 23)
+        result2 = await call_one("f")
+        result3 = await call_concurrently("g", "h")
+        return [result1, result2, result3]
 
-    def test_resume_after_all_errors(self):
-        @durable
-        async def main():
-            return await call_any("a", "b", "c", "d")
+    correlation_ids: Set[int] = set()
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
-        results = [
-            CallResult.from_error(
-                Error.from_exception(RuntimeError(f"oops{i}")),
-                correlation_id=call.correlation_id,
-            )
-            for i, call in enumerate(calls)
-        ]
-        output = self.resume(main, output, results)
-        self.assert_exit_result_error(
-            output, AnyException, "4 coroutine(s) failed with an exception"
-        )
+    output = await start(main)
+    # a, b, c, d are called first. e is not because it depends on a.
+    calls = assert_poll_call_functions(
+        output, ["a", "b", "c", "d"], min_results=1, max_results=4
+    )
+    correlation_ids.update(call.correlation_id for call in calls)
+    results = [
+        CallResult.from_value(i, correlation_id=call.correlation_id)
+        for i, call in enumerate(calls)
+    ]
+    output = await resume(main, output, results)
+    # e is called next
+    calls = assert_poll_call_functions(output, ["e"], min_results=1, max_results=1)
+    correlation_ids.update(call.correlation_id for call in calls)
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(4, correlation_id=calls[0].correlation_id)],
+    )
+    # f is called next
+    calls = assert_poll_call_functions(output, ["f"], min_results=1, max_results=1)
+    correlation_ids.update(call.correlation_id for call in calls)
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(5, correlation_id=calls[0].correlation_id)],
+    )
+    # g, h are called next
+    calls = assert_poll_call_functions(output, ["g", "h"], min_results=1, max_results=2)
+    correlation_ids.update(call.correlation_id for call in calls)
+    output = await resume(
+        main,
+        output,
+        [
+            CallResult.from_value(6, correlation_id=calls[0].correlation_id),
+            CallResult.from_value(7, correlation_id=calls[1].correlation_id),
+        ],
+    )
+    assert_exit_result_value(
+        output,
+        [
+            [[0, 4], 1, [2, 3]],  # result1 = (a, e), b, (c, d)
+            5,  # result2 = f
+            [6, 7],  # result3 = (g, h)
+        ],
+    )
 
-    def test_resume_after_race_result(self):
-        @durable
-        async def main():
-            return await call_race("a", "b", "c", "d")
+    assert len(correlation_ids) == 8
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
 
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_value(23, correlation_id=calls[1].correlation_id)],
-        )
-        self.assert_exit_result_value(output, 23)
+@pytest.mark.asyncio
+async def test_poll_error():
+    # The purpose of the test is to ensure that when a poll error occurs,
+    # we only abort the calls that were made on the previous yield. Any
+    # other in-flight calls from previous yields are not affected.
 
-    def test_resume_after_race_error(self):
-        @durable
-        async def main():
-            return await call_race("a", "b", "c", "d")
+    @durable
+    async def c_then_d():
+        c_result = await call_one("c")
+        try:
+            # The poll error will affect this call only.
+            d_result = await call_one("d")
+        except RuntimeError as e:
+            assert str(e) == "too many calls"
+            d_result = 100
+        return c_result + d_result
 
-        output = self.start(main)
-        calls = self.assert_poll_call_functions(output, ["a", "b", "c", "d"])
-
-        error = Error.from_exception(RuntimeError("oops"))
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_error(error, correlation_id=calls[2].correlation_id)],
-        )
-        self.assert_exit_result_error(output, RuntimeError, "oops")
-
-    def test_dag(self):
-        @durable
-        async def main():
-            result1 = await gather(
-                call_sequentially("a", "e"),
-                call_one("b"),
-                call_concurrently("c", "d"),
-            )
-            result2 = await call_one("f")
-            result3 = await call_concurrently("g", "h")
-            return [result1, result2, result3]
-
-        correlation_ids: Set[int] = set()
-
-        output = self.start(main)
-        # a, b, c, d are called first. e is not because it depends on a.
-        calls = self.assert_poll_call_functions(
-            output, ["a", "b", "c", "d"], min_results=1, max_results=4
-        )
-        correlation_ids.update(call.correlation_id for call in calls)
-        results = [
-            CallResult.from_value(i, correlation_id=call.correlation_id)
-            for i, call in enumerate(calls)
-        ]
-        output = self.resume(main, output, results)
-        # e is called next
-        calls = self.assert_poll_call_functions(
-            output, ["e"], min_results=1, max_results=1
-        )
-        correlation_ids.update(call.correlation_id for call in calls)
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_value(4, correlation_id=calls[0].correlation_id)],
-        )
-        # f is called next
-        calls = self.assert_poll_call_functions(
-            output, ["f"], min_results=1, max_results=1
-        )
-        correlation_ids.update(call.correlation_id for call in calls)
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_value(5, correlation_id=calls[0].correlation_id)],
-        )
-        # g, h are called next
-        calls = self.assert_poll_call_functions(
-            output, ["g", "h"], min_results=1, max_results=2
-        )
-        correlation_ids.update(call.correlation_id for call in calls)
-        output = self.resume(
-            main,
-            output,
-            [
-                CallResult.from_value(6, correlation_id=calls[0].correlation_id),
-                CallResult.from_value(7, correlation_id=calls[1].correlation_id),
-            ],
-        )
-        self.assert_exit_result_value(
-            output,
-            [
-                [[0, 4], 1, [2, 3]],  # result1 = (a, e), b, (c, d)
-                5,  # result2 = f
-                [6, 7],  # result3 = (g, h)
-            ],
+    @durable
+    async def main(c_then_d):
+        return await gather(
+            call_one("a"),
+            call_one("b"),
+            c_then_d(),
         )
 
-        self.assertEqual(len(correlation_ids), 8)
+    output = await start(main, c_then_d)
+    calls = assert_poll_call_functions(
+        output, ["a", "b", "c"], min_results=1, max_results=3
+    )
 
-    def test_poll_error(self):
-        # The purpose of the test is to ensure that when a poll error occurs,
-        # we only abort the calls that were made on the previous yield. Any
-        # other in-flight calls from previous yields are not affected.
+    call_a, call_b, call_c = calls
+    a_result, b_result, c_result = 10, 20, 30
+    output = await resume(
+        main,
+        output,
+        [CallResult.from_value(c_result, correlation_id=call_c.correlation_id)],
+    )
+    assert_poll_call_functions(output, ["d"], min_results=1, max_results=3)
 
-        @durable
-        async def c_then_d():
-            c_result = await call_one("c")
-            try:
-                # The poll error will affect this call only.
-                d_result = await call_one("d")
-            except RuntimeError as e:
-                assert str(e) == "too many calls"
-                d_result = 100
-            return c_result + d_result
+    output = await resume(main, output, [], poll_error=RuntimeError("too many calls"))
+    assert_poll_call_functions(output, [])
+    output = await resume(
+        main,
+        output,
+        [
+            CallResult.from_value(a_result, correlation_id=call_a.correlation_id),
+            CallResult.from_value(b_result, correlation_id=call_b.correlation_id),
+        ],
+    )
 
-        @durable
-        async def main(c_then_d):
-            return await gather(
-                call_one("a"),
-                call_one("b"),
-                c_then_d(),
-            )
+    assert_exit_result_value(output, [a_result, b_result, c_result + 100])
 
-        output = self.start(main, c_then_d)
-        calls = self.assert_poll_call_functions(
-            output, ["a", "b", "c"], min_results=1, max_results=3
+
+@pytest.mark.asyncio
+async def test_raise_indirect():
+    @durable
+    async def main():
+        return await gather(call_one("a"), raises_error())
+
+    output = await start(main)
+    assert_exit_result_error(output, ValueError, "oops")
+
+
+@pytest.mark.asyncio
+async def test_raise_reset():
+    @durable
+    async def main(x: int, y: int):
+        raise TailCall(
+            call=Call(function="main", input=Arguments((), {"x": x + 1, "y": y + 2}))
         )
 
-        call_a, call_b, call_c = calls
-        a_result, b_result, c_result = 10, 20, 30
-        output = self.resume(
-            main,
-            output,
-            [CallResult.from_value(c_result, correlation_id=call_c.correlation_id)],
-        )
-        self.assert_poll_call_functions(output, ["d"], min_results=1, max_results=3)
+    output = await start(main, x=1, y=2)
+    assert_exit_tail_call(
+        output,
+        tail_call=Call(function="main", input=Arguments((), {"x": 2, "y": 4})),
+    )
 
-        output = self.resume(
-            main, output, [], poll_error=RuntimeError("too many calls")
-        )
-        self.assert_poll_call_functions(output, [])
-        output = self.resume(
-            main,
-            output,
-            [
-                CallResult.from_value(a_result, correlation_id=call_a.correlation_id),
-                CallResult.from_value(b_result, correlation_id=call_b.correlation_id),
-            ],
-        )
 
-        self.assert_exit_result_value(output, [a_result, b_result, c_result + 100])
+@pytest.mark.asyncio
+async def test_min_max_results_clamping():
+    @durable
+    async def main():
+        return await call_concurrently("a", "b", "c")
 
-    def test_raise_indirect(self):
-        @durable
-        async def main():
-            return await gather(call_one("a"), raises_error())
+    output = await start(main, poll_min_results=1, poll_max_results=10)
+    assert_poll_call_functions(output, ["a", "b", "c"], min_results=1, max_results=3)
 
-        output = self.start(main)
-        self.assert_exit_result_error(output, ValueError, "oops")
+    output = await start(main, poll_min_results=1, poll_max_results=2)
+    assert_poll_call_functions(output, ["a", "b", "c"], min_results=1, max_results=2)
 
-    def test_raise_reset(self):
-        @durable
-        async def main(x: int, y: int):
-            raise TailCall(
-                call=Call(
-                    function="main", input=Arguments((), {"x": x + 1, "y": y + 2})
-                )
-            )
+    output = await start(main, poll_min_results=10, poll_max_results=10)
+    assert_poll_call_functions(output, ["a", "b", "c"], min_results=3, max_results=3)
 
-        output = self.start(main, x=1, y=2)
-        self.assert_exit_tail_call(
-            output,
-            tail_call=Call(function="main", input=Arguments((), {"x": 2, "y": 4})),
-        )
 
-    def test_min_max_results_clamping(self):
-        @durable
-        async def main():
-            return await call_concurrently("a", "b", "c")
+async def start(
+    main: Callable,
+    *args: Any,
+    poll_min_results=1,
+    poll_max_results=10,
+    poll_max_wait_seconds=None,
+    **kwargs: Any,
+) -> Output:
+    input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
+    return await OneShotScheduler(
+        main,
+        poll_min_results=poll_min_results,
+        poll_max_results=poll_max_results,
+        poll_max_wait_seconds=poll_max_wait_seconds,
+    ).run(input)
 
-        output = self.start(main, poll_min_results=1, poll_max_results=10)
-        self.assert_poll_call_functions(
-            output, ["a", "b", "c"], min_results=1, max_results=3
-        )
 
-        output = self.start(main, poll_min_results=1, poll_max_results=2)
-        self.assert_poll_call_functions(
-            output, ["a", "b", "c"], min_results=1, max_results=2
-        )
+async def resume(
+    main: Callable,
+    prev_output: Output,
+    call_results: List[CallResult],
+    poll_error: Optional[Exception] = None,
+):
+    poll = assert_poll(prev_output)
+    input = Input.from_poll_results(
+        main.__qualname__,
+        any_unpickle(poll.typed_coroutine_state),
+        call_results,
+        Error.from_exception(poll_error) if poll_error else None,
+    )
+    return await OneShotScheduler(main).run(input)
 
-        output = self.start(main, poll_min_results=10, poll_max_results=10)
-        self.assert_poll_call_functions(
-            output, ["a", "b", "c"], min_results=3, max_results=3
-        )
 
-    def start(
-        self,
-        main: Callable,
-        *args: Any,
-        poll_min_results=1,
-        poll_max_results=10,
-        poll_max_wait_seconds=None,
-        **kwargs: Any,
-    ) -> Output:
-        input = Input.from_input_arguments(main.__qualname__, *args, **kwargs)
-        return self.runner.run(
-            OneShotScheduler(
-                main,
-                poll_min_results=poll_min_results,
-                poll_max_results=poll_max_results,
-                poll_max_wait_seconds=poll_max_wait_seconds,
-            ).run(input)
-        )
+def assert_exit(output: Output) -> exit_pb.Exit:
+    response = output._message
+    assert response.HasField("exit")
+    assert not response.HasField("poll")
+    return response.exit
 
-    def resume(
-        self,
-        main: Callable,
-        prev_output: Output,
-        call_results: List[CallResult],
-        poll_error: Optional[Exception] = None,
-    ):
-        poll = self.assert_poll(prev_output)
-        input = Input.from_poll_results(
-            main.__qualname__,
-            any_unpickle(poll.typed_coroutine_state),
-            call_results,
-            Error.from_exception(poll_error) if poll_error else None,
-        )
-        return self.runner.run(OneShotScheduler(main).run(input))
 
-    def assert_exit(self, output: Output) -> exit_pb.Exit:
-        response = output._message
-        self.assertTrue(response.HasField("exit"))
-        self.assertFalse(response.HasField("poll"))
-        return response.exit
+def assert_exit_result(output: Output) -> call_pb.CallResult:
+    exit = assert_exit(output)
+    assert exit.HasField("result")
+    assert not exit.HasField("tail_call")
+    return exit.result
 
-    def assert_exit_result(self, output: Output) -> call_pb.CallResult:
-        exit = self.assert_exit(output)
-        self.assertTrue(exit.HasField("result"))
-        self.assertFalse(exit.HasField("tail_call"))
-        return exit.result
 
-    def assert_exit_result_value(self, output: Output, expect: Any):
-        result = self.assert_exit_result(output)
-        self.assertTrue(result.HasField("output"))
-        self.assertFalse(result.HasField("error"))
-        self.assertEqual(expect, any_unpickle(result.output))
+def assert_exit_result_value(output: Output, expect: Any):
+    result = assert_exit_result(output)
+    assert result.HasField("output")
+    assert not result.HasField("error")
+    assert expect == any_unpickle(result.output)
 
-    def assert_exit_result_error(
-        self, output: Output, expect: Type[Exception], message: Optional[str] = None
-    ):
-        result = self.assert_exit_result(output)
-        self.assertFalse(result.HasField("output"))
-        self.assertTrue(result.HasField("error"))
 
-        error = Error._from_proto(result.error).to_exception()
+def assert_exit_result_error(
+    output: Output, expect: Type[Exception], message: Optional[str] = None
+):
+    result = assert_exit_result(output)
+    assert not result.HasField("output")
+    assert result.HasField("error")
 
-        self.assertEqual(error.__class__, expect)
-        if message is not None:
-            self.assertEqual(str(error), message)
-        return error
+    error = Error._from_proto(result.error).to_exception()
+    assert error.__class__ == expect
 
-    def assert_exit_tail_call(self, output: Output, tail_call: Call):
-        exit = self.assert_exit(output)
-        self.assertFalse(exit.HasField("result"))
-        self.assertTrue(exit.HasField("tail_call"))
-        self.assertEqual(tail_call._as_proto(), exit.tail_call)
+    if message is not None:
+        assert str(error) == message
+    return error
 
-    def assert_poll(self, output: Output) -> poll_pb.Poll:
-        response = output._message
-        if response.HasField("exit"):
-            raise RuntimeError(
-                f"coroutine unexpectedly returned {response.exit.result}"
-            )
-        self.assertTrue(response.HasField("poll"))
-        return response.poll
 
-    def assert_empty_poll(self, output: Output):
-        poll = self.assert_poll(output)
-        self.assertEqual(len(poll.calls), 0)
+def assert_exit_tail_call(output: Output, tail_call: Call):
+    exit = assert_exit(output)
+    assert not exit.HasField("result")
+    assert exit.HasField("tail_call")
+    assert tail_call._as_proto() == exit.tail_call
 
-    def assert_poll_call_functions(
-        self, output: Output, expect: List[str], min_results=None, max_results=None
-    ):
-        poll = self.assert_poll(output)
-        # Note: we're not testing endpoint/input here.
-        # Check function names match:
-        self.assertListEqual([c.function for c in poll.calls], expect)
-        # Check correlation IDs are unique.
-        correlation_ids = [c.correlation_id for c in poll.calls]
-        self.assertEqual(
-            len(correlation_ids),
-            len(set(correlation_ids)),
-            "correlation IDs were not unique",
-        )
-        if min_results is not None:
-            self.assertEqual(min_results, poll.min_results)
-        if max_results is not None:
-            self.assertEqual(max_results, poll.max_results)
-        return poll.calls
+
+def assert_poll(output: Output) -> poll_pb.Poll:
+    response = output._message
+    if response.HasField("exit"):
+        raise RuntimeError(f"coroutine unexpectedly returned {response.exit.result}")
+    assert response.HasField("poll")
+    return response.poll
+
+
+def assert_empty_poll(output: Output):
+    poll = assert_poll(output)
+    assert len(poll.calls) == 0
+
+
+def assert_poll_call_functions(
+    output: Output, expect: List[str], min_results=None, max_results=None
+):
+    poll = assert_poll(output)
+    # Note: we're not testing endpoint/input here.
+    # Check function names match:
+    assert [c.function for c in poll.calls] == expect
+    # Check correlation IDs are unique.
+    correlation_ids = [c.correlation_id for c in poll.calls]
+    assert len(correlation_ids) == len(
+        set(correlation_ids)
+    ), "correlation IDs were not unique"
+    if min_results is not None:
+        assert min_results == poll.min_results
+    if max_results is not None:
+        assert max_results == poll.max_results
+    return poll.calls
 
 
 class TestAllFuture(unittest.TestCase):

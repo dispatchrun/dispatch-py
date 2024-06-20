@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import logging
 import pickle
 import sys
@@ -30,6 +31,14 @@ logger = logging.getLogger(__name__)
 CallID: TypeAlias = int
 CoroutineID: TypeAlias = int
 CorrelationID: TypeAlias = int
+
+_in_function_call = contextvars.ContextVar(
+    "dispatch.scheduler.in_function_call", default=False
+)
+
+
+def in_function_call() -> bool:
+    return bool(_in_function_call.get())
 
 
 @dataclass
@@ -328,12 +337,15 @@ class OneShotScheduler:
 
     async def run(self, input: Input) -> Output:
         try:
+            token = _in_function_call.set(True)
             return await self._run(input)
         except Exception as e:
             logger.exception(
                 "unexpected exception occurred during coroutine scheduling"
             )
             return Output.error(Error.from_exception(e))
+        finally:
+            _in_function_call.reset(token)
 
     def _init_state(self, input: Input) -> State:
         logger.debug("starting main coroutine")
@@ -472,15 +484,17 @@ class OneShotScheduler:
             state.suspended = {}
 
 
-async def run_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
+async def run_coroutine(
+    state: State, coroutine: Coroutine, pending_calls: List[Call]
+) -> Optional[Output]:
     return await make_coroutine(state, coroutine, pending_calls)
 
 
 @coroutine
 def make_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]):
+    coroutine_result: Optional[CoroutineResult] = None
+
     while True:
-        coroutine_yield = None
-        coroutine_result: Optional[CoroutineResult] = None
         try:
             coroutine_yield = coroutine.run()
         except TailCall as tc:
@@ -512,12 +526,16 @@ def make_coroutine(state: State, coroutine: Coroutine, pending_calls: List[Call]
         if isinstance(coroutine_yield, RaceDirective):
             return set_coroutine_race(state, coroutine, coroutine_yield.awaitables)
 
-        yield coroutine_yield
+        try:
+            yield coroutine_yield
+        except Exception as e:
+            coroutine_result = CoroutineResult(coroutine_id=coroutine.id, error=e)
+            return set_coroutine_result(state, coroutine, coroutine_result)
 
 
 def set_coroutine_result(
     state: State, coroutine: Coroutine, coroutine_result: CoroutineResult
-):
+) -> Optional[Output]:
     if coroutine_result.call is not None:
         logger.debug("%s reset to %s", coroutine, coroutine_result.call.function)
     elif coroutine_result.error is not None:
@@ -550,7 +568,7 @@ def set_coroutine_result(
             state.ready.insert(0, parent)
             del state.suspended[parent.id]
             logger.debug("parent %s is now ready", parent)
-    return
+    return None
 
 
 def set_coroutine_call(

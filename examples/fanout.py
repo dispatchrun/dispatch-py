@@ -1,29 +1,10 @@
-"""Fan-out example using the SDK gather feature
-
-This example demonstrates how to use the SDK to fan-out multiple requests.
-
-Run with:
-
-uvicorn fanout:app
-
-
-You will observe that the get_repo_info calls are executed in parallel.
-
-"""
-
 import httpx
-from fastapi import FastAPI
 
-from dispatch import gather
-from dispatch.fastapi import Dispatch
-
-app = FastAPI()
-
-dispatch = Dispatch(app)
+import dispatch
 
 
 @dispatch.function
-async def get_repo(repo_owner: str, repo_name: str):
+def get_repo(repo_owner: str, repo_name: str):
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
     api_response = httpx.get(url)
     api_response.raise_for_status()
@@ -32,7 +13,7 @@ async def get_repo(repo_owner: str, repo_name: str):
 
 
 @dispatch.function
-async def get_stargazers(repo_info):
+def get_stargazers(repo_info):
     url = repo_info["stargazers_url"]
     response = httpx.get(url)
     response.raise_for_status()
@@ -42,7 +23,7 @@ async def get_stargazers(repo_info):
 
 @dispatch.function
 async def reduce_stargazers(repos):
-    result = await gather(*[get_stargazers(repo) for repo in repos])
+    result = await dispatch.gather(*[get_stargazers(repo) for repo in repos])
     reduced_stars = set()
     for repo in result:
         for stars in repo:
@@ -52,18 +33,14 @@ async def reduce_stargazers(repos):
 
 @dispatch.function
 async def fanout():
-    # Using gather, we fan-out the four following requests.
-    repos = await gather(
+    # Using gather, we fan-out the following requests:
+    repos = await dispatch.gather(
         get_repo("dispatchrun", "coroutine"),
         get_repo("dispatchrun", "dispatch-py"),
         get_repo("dispatchrun", "wzprof"),
     )
-
-    stars = await reduce_stargazers(repos)
-    print("Total stars:", len(stars))
+    return await reduce_stargazers(repos)
 
 
-@app.get("/")
-def root():
-    fanout.dispatch()
-    return "OK"
+if __name__ == "__main__":
+    print(dispatch.run(fanout()))
