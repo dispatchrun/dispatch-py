@@ -409,16 +409,77 @@
   
   
   
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../asyncio/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> asyncio
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1_1_1_2" id="__nav_1_1_1_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_1_1_2">
+            <span class="md-nav__icon md-icon"></span>
+            <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> asyncio
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../aiohttp/" class="md-nav__link">
+      <a href="../asyncio/fastapi/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> aiohttp
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> fastapi
   </span>
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -431,11 +492,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../asyncio/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> asyncio
+    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> config
   </span>
   
 
@@ -780,17 +841,26 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dispatch.function.Function" class="md-nav__link">
+  <a href="#dispatch.function.DEFAULT_REGISTRY" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Function
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;DEFAULT_REGISTRY
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" Function">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.AsyncFunction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AsyncFunction
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" AsyncFunction">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Function.__call__" class="md-nav__link">
+  <a href="#dispatch.function.AsyncFunction.__call__" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__call__
     </span>
@@ -799,7 +869,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Function.dispatch" class="md-nav__link">
+  <a href="#dispatch.function.AsyncFunction.dispatch" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;dispatch
     </span>
@@ -808,7 +878,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Function.build_call" class="md-nav__link">
+  <a href="#dispatch.function.AsyncFunction.build_call" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;build_call
     </span>
@@ -818,6 +888,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.BlockingFunction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BlockingFunction
+    </span>
+  </a>
   
 </li>
       
@@ -841,6 +920,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#dispatch.function.Registry.close" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;close
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dispatch.function.Registry.function" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;function
@@ -853,15 +941,6 @@
   <a href="#dispatch.function.Registry.primitive_function" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;primitive_function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dispatch.function.Registry.set_client" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_client
     </span>
   </a>
   
@@ -890,15 +969,6 @@
   
     <nav class="md-nav" aria-label=" Client">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dispatch.function.Client.batch" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;batch
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#dispatch.function.Client.dispatch" class="md-nav__link">
@@ -943,6 +1013,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dispatch.function.Batch.clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;clear
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dispatch.function.Batch.dispatch" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;dispatch
@@ -951,17 +1030,17 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#dispatch.function.Batch.reset" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;reset
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.default_registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;default_registry
+    </span>
+  </a>
   
 </li>
       
@@ -1387,215 +1466,16 @@
   
   
   
-    
-    
-      
+    <li class="md-nav__item">
+      <a href="../test/" class="md-nav__link">
         
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_1_1_17" >
-        
-          
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../test/" class="md-nav__link ">
-              
   
   <span class="md-ellipsis">
     <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> test
   </span>
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_1_1_1_17" id="__nav_1_1_1_17_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_1_1_17_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1_1_1_17">
-            <span class="md-nav__icon md-icon"></span>
-            <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> test
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/client/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> client
-  </span>
-  
-
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/fastapi/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> fastapi
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/flask/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> flask
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/http/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> http
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/httpx/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> httpx
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/server/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> server
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../test/service/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    <code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> service
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -1660,17 +1540,26 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dispatch.function.Function" class="md-nav__link">
+  <a href="#dispatch.function.DEFAULT_REGISTRY" class="md-nav__link">
     <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;Function
+      <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;DEFAULT_REGISTRY
     </span>
   </a>
   
-    <nav class="md-nav" aria-label=" Function">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.AsyncFunction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;AsyncFunction
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" AsyncFunction">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Function.__call__" class="md-nav__link">
+  <a href="#dispatch.function.AsyncFunction.__call__" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__call__
     </span>
@@ -1679,7 +1568,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Function.dispatch" class="md-nav__link">
+  <a href="#dispatch.function.AsyncFunction.dispatch" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;dispatch
     </span>
@@ -1688,7 +1577,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dispatch.function.Function.build_call" class="md-nav__link">
+  <a href="#dispatch.function.AsyncFunction.build_call" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;build_call
     </span>
@@ -1698,6 +1587,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.BlockingFunction" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;BlockingFunction
+    </span>
+  </a>
   
 </li>
       
@@ -1721,6 +1619,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#dispatch.function.Registry.close" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;close
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dispatch.function.Registry.function" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;function
@@ -1733,15 +1640,6 @@
   <a href="#dispatch.function.Registry.primitive_function" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;primitive_function
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dispatch.function.Registry.set_client" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_client
     </span>
   </a>
   
@@ -1770,15 +1668,6 @@
   
     <nav class="md-nav" aria-label=" Client">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dispatch.function.Client.batch" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;batch
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#dispatch.function.Client.dispatch" class="md-nav__link">
@@ -1823,6 +1712,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dispatch.function.Batch.clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;clear
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dispatch.function.Batch.dispatch" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;dispatch
@@ -1831,17 +1729,17 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#dispatch.function.Batch.reset" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;reset
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dispatch.function.default_registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;default_registry
+    </span>
+  </a>
   
 </li>
       
@@ -1909,19 +1807,46 @@ exceptions.</p>
 
 </div>
 
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="dispatch.function.DEFAULT_REGISTRY" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>          <span class="doc doc-object-name doc-attribute-name">DEFAULT_REGISTRY</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#dispatch.function.DEFAULT_REGISTRY" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">DEFAULT_REGISTRY</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Registry" href="#dispatch.function.Registry">Registry</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The default registry for dispatch functions, used by dispatch applications
+when no custom registry is provided.</p>
+<p>In most cases, applications do not need to create a custom registry, so this
+one would be used by default.</p>
+<p>The default registry use DISPATCH_* environment variables for configuration,
+or is uninitialized if they are not set.</p>
+  </div>
+
+</div>
+
 
 <div class="doc doc-object doc-class">
 
 
 
-<h2 id="dispatch.function.Function" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Function</span>
+<h2 id="dispatch.function.AsyncFunction" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">AsyncFunction</span>
 
 
-<a href="#dispatch.function.Function" class="headerlink" title="Permanent link">¤</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Function</span><span class="p">(</span>
-    <span class="n">endpoint</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-    <span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">,</span>
+<a href="#dispatch.function.AsyncFunction" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">AsyncFunction</span><span class="p">(</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Registry" href="#dispatch.function.Registry">Registry</a></span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
     <span class="n">primitive_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.PrimitiveFunctionType" href="#dispatch.function.PrimitiveFunctionType">PrimitiveFunctionType</a></span><span class="p">,</span>
 <span class="p">)</span>
@@ -1953,11 +1878,11 @@ Dispatch Python SDK.</p>
 
 
 
-<h3 id="dispatch.function.Function.__call__" class="doc doc-heading">
+<h3 id="dispatch.function.AsyncFunction.__call__" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">__call__</span>
 
 
-<a href="#dispatch.function.Function.__call__" class="headerlink" title="Permanent link">¤</a></h3>
+<a href="#dispatch.function.AsyncFunction.__call__" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="fm">__call__</span><span class="p">(</span>
     <span class="o">*</span><span class="nf">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Coroutine">Coroutine</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span>
@@ -1977,11 +1902,15 @@ coroutine that can be awaited to retrieve the call result.</p>
 
 
 
-<h3 id="dispatch.function.Function.dispatch" class="doc doc-heading">
+<h3 id="dispatch.function.AsyncFunction.dispatch" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">dispatch</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
 
-<a href="#dispatch.function.Function.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
+<a href="#dispatch.function.AsyncFunction.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span>
 </code></pre></div>
 
@@ -2060,30 +1989,6 @@ with a Client / api_key for this call facility to be available.</p>
     </tbody>
   </table>
 
-
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>RuntimeError</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>if a Dispatch client has not been configured.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
   </div>
 
 </div>
@@ -2093,16 +1998,12 @@ with a Client / api_key for this call facility to be available.</p>
 
 
 
-<h3 id="dispatch.function.Function.build_call" class="doc doc-heading">
+<h3 id="dispatch.function.AsyncFunction.build_call" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">build_call</span>
 
 
-<a href="#dispatch.function.Function.build_call" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">build_call</span><span class="p">(</span>
-    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span>
-    <span class="n">correlation_id</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span>
+<a href="#dispatch.function.AsyncFunction.build_call" class="headerlink" title="Permanent link">¤</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">build_call</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2135,21 +2036,6 @@ generate calls when using the Client.</p>
           </td>
           <td>
                 <code>()</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>correlation_id</code></td>
-          <td>
-                <code><span title="typing.Optional">Optional</span>[int]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>optional arbitrary integer the caller can use to
-match this call to a call result.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
           </td>
         </tr>
         <tr>
@@ -2210,13 +2096,62 @@ match this call to a call result.</p>
 
 
 
+<h2 id="dispatch.function.BlockingFunction" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">BlockingFunction</span>
+
+
+<a href="#dispatch.function.BlockingFunction" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">BlockingFunction</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.AsyncFunction" href="#dispatch.function.AsyncFunction">AsyncFunction</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">])</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Generic">Generic</span>[<span title="dispatch.function.P">P</span>, <span title="dispatch.function.T">T</span>]</code></p>
+
+  
+      <p>BlockingFunction is like Function but exposes a blocking API instead of
+functions that use asyncio.</p>
+<p>Applications typically don't create instances of BlockingFunction directly,
+and instead use decorators from packages that provide integrations with
+Python frameworks.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="dispatch.function.Reset" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">Reset</span>
 
 
 <a href="#dispatch.function.Reset" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">Reset</span><span class="p">(</span>
-    <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.AsyncFunction" href="#dispatch.function.AsyncFunction">AsyncFunction</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.BlockingFunction" href="#dispatch.function.BlockingFunction">BlockingFunction</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">]</span>
+    <span class="p">],</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2260,9 +2195,9 @@ the call embedded in this exception.</p>
 
 <a href="#dispatch.function.Registry" class="headerlink" title="Permanent link">¤</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">Registry</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
+    <span class="n">client</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">endpoint</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">api_url</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2286,15 +2221,27 @@ the call embedded in this exception.</p>
     </thead>
     <tbody>
         <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A unique name for the registry.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
           <td><code>endpoint</code></td>
           <td>
                 <code><span title="typing.Optional">Optional</span>[str]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>URL of the endpoint that the function is accessible from.
-Uses the value of the DISPATCH_ENDPOINT_URL environment variable
-by default.</p>
+              <p>URL of the endpoint that the function is accessible from.</p>
             </div>
           </td>
           <td>
@@ -2302,32 +2249,14 @@ by default.</p>
           </td>
         </tr>
         <tr>
-          <td><code>api_key</code></td>
+          <td><code>client</code></td>
           <td>
-                <code><span title="typing.Optional">Optional</span>[str]</code>
+                <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dispatch API key to use for authentication when
-dispatching calls to functions. Uses the value of the
-DISPATCH_API_KEY environment variable by default.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>api_url</code></td>
-          <td>
-                <code><span title="typing.Optional">Optional</span>[str]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The URL of the Dispatch API to use when dispatching calls
-to functions. Uses the value of the DISPATCH_API_URL environment
-variable if set, otherwise defaults to the public Dispatch API
-(DEFAULT_API_URL).</p>
+              <p>Client instance to use for dispatching calls to registered
+functions. Defaults to creating a new client instance.</p>
             </div>
           </td>
           <td>
@@ -2379,6 +2308,28 @@ variable if set, otherwise defaults to the public Dispatch API
 
 
 
+<h3 id="dispatch.function.Registry.close" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">close</span>
+
+
+<a href="#dispatch.function.Registry.close" class="headerlink" title="Permanent link">¤</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">close</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Closes the registry, removing it and all its functions from the
+dispatch application.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
 <h3 id="dispatch.function.Registry.function" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">function</span>
 
@@ -2413,27 +2364,6 @@ variable if set, otherwise defaults to the public Dispatch API
   <div class="doc doc-contents ">
   
       <p>Decorator that registers primitive functions.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="dispatch.function.Registry.set_client" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">set_client</span>
-
-
-<a href="#dispatch.function.Registry.set_client" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_client</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Client" href="#dispatch.function.Client">Client</a></span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Set the Client instance used to dispatch calls to registered functions.</p>
 
   </div>
 
@@ -2580,31 +2510,13 @@ defaults to the public Dispatch API (DEFAULT_API_URL).</p>
 
 
 
-<h3 id="dispatch.function.Client.batch" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">batch</span>
-
-
-<a href="#dispatch.function.Client.batch" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">batch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Returns a Batch instance that can be used to build
-a set of calls to dispatch.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
 <h3 id="dispatch.function.Client.dispatch" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">dispatch</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
 
 <a href="#dispatch.function.Client.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch</span><span class="p">(</span><span class="n">calls</span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.proto.Call" href="../proto/#dispatch.proto.Call">Call</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
@@ -2722,7 +2634,9 @@ a set of calls to dispatch.</p>
 
 <a href="#dispatch.function.Batch.add" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">add</span><span class="p">(</span>
-    <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Function" href="#dispatch.function.Function">Function</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.AsyncFunction" href="#dispatch.function.AsyncFunction">AsyncFunction</a></span><span class="p">[</span><span class="n"><span title="dispatch.function.P">P</span></span><span class="p">,</span> <span class="n"><span title="dispatch.function.T">T</span></span><span class="p">],</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.args">args</span></span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="dispatch.function.P.kwargs">kwargs</span></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Batch" href="#dispatch.function.Batch">Batch</a></span>
 </code></pre></div>
 
@@ -2760,9 +2674,34 @@ a set of calls to dispatch.</p>
 
 
 
+<h3 id="dispatch.function.Batch.clear" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">clear</span>
+
+
+<a href="#dispatch.function.Batch.clear" class="headerlink" title="Permanent link">¤</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">clear</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Reset the batch.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
 <h3 id="dispatch.function.Batch.dispatch" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">dispatch</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
 
 <a href="#dispatch.function.Batch.dispatch" class="headerlink" title="Permanent link">¤</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">dispatch</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="dispatch.id.DispatchID" href="../id/#dispatch.id.DispatchID">DispatchID</a></span><span class="p">]</span>
@@ -2812,35 +2751,86 @@ a set of calls to dispatch.</p>
 </div>
 
 
+
+  </div>
+
+  </div>
+
+
+</div>
+
+
+
 <div class="doc doc-object doc-function">
 
 
 
-<h3 id="dispatch.function.Batch.reset" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">reset</span>
+<h2 id="dispatch.function.default_registry" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>          <span class="doc doc-object-name doc-function-name">default_registry</span>
 
 
-<a href="#dispatch.function.Batch.reset" class="headerlink" title="Permanent link">¤</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reset</span><span class="p">()</span>
+<a href="#dispatch.function.default_registry" class="headerlink" title="Permanent link">¤</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">default_registry</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="dispatch.function.Registry" href="#dispatch.function.Registry">Registry</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Reset the batch.</p>
+      <p>Returns the default registry for dispatch functions.</p>
+<p>The function initializes the default registry if it has not been initialized
+yet, using the DISPATCH_* environment variables for configuration.</p>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Registry</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="dispatch.function.Registry" href="#dispatch.function.Registry">Registry</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The default registry.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>ValueError</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If the DISPATCH_API_KEY or DISPATCH_ENDPOINT_URL environment
+variables are missing.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
 </div>
-
-
-
-  </div>
-
-  </div>
-
-
-</div>
-
 
 
 
