@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pickle
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import google.protobuf.any_pb2
@@ -108,7 +108,7 @@ def unmarshal_any(any: google.protobuf.any_pb2.Any) -> Any:
             return proto.value
 
     elif isinstance(proto, google.protobuf.timestamp_pb2.Timestamp):
-        return proto.ToDatetime(tzinfo=UTC)
+        return proto.ToDatetime(tzinfo=timezone.utc)
 
     elif isinstance(proto, google.protobuf.duration_pb2.Duration):
         return proto.ToTimedelta()

@@ -1,5 +1,5 @@
 import pickle
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from dispatch.any import INT64_MAX, INT64_MIN, marshal_any, unmarshal_any
 from dispatch.sdk.v1 import error_pb2 as error_pb
@@ -70,7 +70,7 @@ def test_unmarshal_bytes():
 
 
 def test_unmarshal_timestamp():
-    ts = datetime.fromtimestamp(1719372909.641448, UTC)
+    ts = datetime.fromtimestamp(1719372909.641448, timezone.utc)
     boxed = marshal_any(ts)
     assert "type.googleapis.com/google.protobuf.Timestamp" == boxed.type_url
     assert ts == unmarshal_any(boxed)
