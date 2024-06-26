@@ -12,12 +12,15 @@ from dispatch.sdk.python.v1 import pickled_pb2 as pickled_pb
 
 
 def marshal_any(value: Any) -> google.protobuf.any_pb2.Any:
+    if not isinstance(value, google.protobuf.message.Message):
+        value = pickled_pb.Pickled(pickled_value=pickle.dumps(value))
+
     any = google.protobuf.any_pb2.Any()
-    if isinstance(value, google.protobuf.message.Message):
-        any.Pack(value)
+    if value.DESCRIPTOR.full_name.startswith("dispatch.sdk."):
+        any.Pack(value, type_url_prefix="buf.build/stealthrocket/dispatch-proto/")
     else:
-        p = pickled_pb.Pickled(pickled_value=pickle.dumps(value))
-        any.Pack(p, type_url_prefix="buf.build/stealthrocket/dispatch-proto/")
+        any.Pack(value)
+
     return any
 
 
