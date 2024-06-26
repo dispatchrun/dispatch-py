@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import pickle
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import google.protobuf.any_pb2
+import google.protobuf.duration_pb2
 import google.protobuf.empty_pb2
 import google.protobuf.message
+import google.protobuf.timestamp_pb2
 import google.protobuf.wrappers_pb2
 from google.protobuf import descriptor_pool, message_factory
 
@@ -30,6 +33,16 @@ def marshal_any(value: Any) -> google.protobuf.any_pb2.Any:
         value = google.protobuf.wrappers_pb2.StringValue(value=value)
     elif isinstance(value, bytes):
         value = google.protobuf.wrappers_pb2.BytesValue(value=value)
+    elif isinstance(value, datetime):
+        # Note: datetime only supports microsecond granularity
+        seconds = int(value.timestamp())
+        nanos = value.microsecond * 1000
+        value = google.protobuf.timestamp_pb2.Timestamp(seconds=seconds, nanos=nanos)
+    elif isinstance(value, timedelta):
+        # Note: timedelta only supports microsecond granularity
+        seconds = int(value.total_seconds())
+        nanos = value.microseconds * 1000
+        value = google.protobuf.duration_pb2.Duration(seconds=seconds, nanos=nanos)
 
     if not isinstance(value, google.protobuf.message.Message):
         value = pickled_pb.Pickled(pickled_value=pickle.dumps(value))
@@ -76,5 +89,9 @@ def unmarshal_any(any: google.protobuf.any_pb2.Any) -> Any:
         except Exception as e:
             # Otherwise, return the literal bytes.
             return proto.value
+    elif isinstance(proto, google.protobuf.timestamp_pb2.Timestamp):
+        return proto.ToDatetime(tzinfo=UTC)
+    elif isinstance(proto, google.protobuf.duration_pb2.Duration):
+        return proto.ToTimedelta()
 
     return proto

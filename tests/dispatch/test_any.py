@@ -1,5 +1,5 @@
 import pickle
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from dispatch.any import INT64_MAX, INT64_MIN, marshal_any, unmarshal_any
 from dispatch.sdk.v1 import error_pb2 as error_pb
@@ -70,16 +70,16 @@ def test_unmarshal_bytes():
 
 
 def test_unmarshal_timestamp():
-    ts = datetime.fromtimestamp(
-        1719372909.641448
-    )  # datetime.datetime(2024, 6, 26, 13, 35, 9, 641448)
+    ts = datetime.fromtimestamp(1719372909.641448, UTC)
     boxed = marshal_any(ts)
+    assert "type.googleapis.com/google.protobuf.Timestamp" == boxed.type_url
     assert ts == unmarshal_any(boxed)
 
 
 def test_unmarshal_duration():
     d = timedelta(seconds=1, microseconds=1234)
     boxed = marshal_any(d)
+    assert "type.googleapis.com/google.protobuf.Duration" == boxed.type_url
     assert d == unmarshal_any(boxed)
 
 
