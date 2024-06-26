@@ -11,6 +11,7 @@ import google.protobuf.wrappers_pb2
 import tblib  # type: ignore[import-untyped]
 from google.protobuf import descriptor_pool, duration_pb2, message_factory
 
+from dispatch.any import marshal_any, unmarshal_any
 from dispatch.error import IncompatibleStateError, InvalidArgumentError
 from dispatch.id import DispatchID
 from dispatch.sdk.python.v1 import pickled_pb2 as pickled_pb
@@ -78,11 +79,11 @@ class Input:
 
         self._has_input = req.HasField("input")
         if self._has_input:
-            self._input = _any_unpickle(req.input)
+            self._input = unmarshal_any(req.input)
         else:
             if req.poll_result.coroutine_state:
                 raise IncompatibleStateError  # coroutine_state is deprecated
-            self._coroutine_state = _any_unpickle(req.poll_result.typed_coroutine_state)
+            self._coroutine_state = unmarshal_any(req.poll_result.typed_coroutine_state)
             self._call_results = [
                 CallResult._from_proto(r) for r in req.poll_result.results
             ]
@@ -141,7 +142,7 @@ class Input:
         return Input(
             req=function_pb.RunRequest(
                 function=function,
-                input=_any_pickle(input),
+                input=marshal_any(input),
             )
         )
 
@@ -157,7 +158,7 @@ class Input:
             req=function_pb.RunRequest(
                 function=function,
                 poll_result=poll_pb.PollResult(
-                    typed_coroutine_state=_any_pickle(coroutine_state),
+                    typed_coroutine_state=marshal_any(coroutine_state),
                     results=[result._as_proto() for result in call_results],
                     error=error._as_proto() if error else None,
                 ),
@@ -241,7 +242,7 @@ class Output:
             else None
         )
         poll = poll_pb.Poll(
-            typed_coroutine_state=_any_pickle(coroutine_state),
+            typed_coroutine_state=marshal_any(coroutine_state),
             min_results=min_results,
             max_results=max_results,
             max_wait=max_wait,
@@ -279,7 +280,7 @@ class Call:
     correlation_id: Optional[int] = None
 
     def _as_proto(self) -> call_pb.Call:
-        input_bytes = _any_pickle(self.input)
+        input_bytes = marshal_any(self.input)
         return call_pb.Call(
             correlation_id=self.correlation_id,
             endpoint=self.endpoint,
@@ -301,7 +302,7 @@ class CallResult:
         output_any = None
         error_proto = None
         if self.output is not None:
-            output_any = _any_pickle(self.output)
+            output_any = marshal_any(self.output)
         if self.error is not None:
             error_proto = self.error._as_proto()
 
@@ -317,7 +318,7 @@ class CallResult:
         output = None
         error = None
         if proto.HasField("output"):
-            output = _any_unpickle(proto.output)
+            output = unmarshal_any(proto.output)
         if proto.HasField("error"):
             error = Error._from_proto(proto.error)
 
@@ -438,36 +439,3 @@ class Error:
         return error_pb.Error(
             type=self.type, message=self.message, value=value, traceback=self.traceback
         )
-
-
-def _any_pickle(value: Any) -> google.protobuf.any_pb2.Any:
-    any = google.protobuf.any_pb2.Any()
-    if isinstance(value, google.protobuf.message.Message):
-        any.Pack(value)
-    else:
-        p = pickled_pb.Pickled(pickled_value=pickle.dumps(value))
-        any.Pack(p, type_url_prefix="buf.build/stealthrocket/dispatch-proto/")
-    return any
-
-
-def _any_unpickle(any: google.protobuf.any_pb2.Any) -> Any:
-    if any.Is(pickled_pb.Pickled.DESCRIPTOR):
-        p = pickled_pb.Pickled()
-        any.Unpack(p)
-        return pickle.loads(p.pickled_value)
-
-    elif any.Is(google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR):
-        b = google.protobuf.wrappers_pb2.BytesValue()
-        any.Unpack(b)
-        try:
-            # Assume it's the legacy container for pickled values.
-            return pickle.loads(b.value)
-        except Exception as e:
-            # Otherwise, return the literal bytes.
-            return b.value
-
-    pool = descriptor_pool.Default()
-    msg_descriptor = pool.FindMessageTypeByName(any.TypeName())
-    proto = message_factory.GetMessageClass(msg_descriptor)()
-    any.Unpack(proto)
-    return proto

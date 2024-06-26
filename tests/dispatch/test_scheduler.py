@@ -3,10 +3,10 @@ from typing import Any, Callable, List, Optional, Set, Type
 
 import pytest
 
+from dispatch.any import unmarshal_any
 from dispatch.coroutine import AnyException, any, call, gather, race
 from dispatch.experimental.durable import durable
 from dispatch.proto import Arguments, Call, CallResult, Error, Input, Output, TailCall
-from dispatch.proto import _any_unpickle as any_unpickle
 from dispatch.scheduler import (
     AllFuture,
     AnyFuture,
@@ -464,7 +464,7 @@ async def resume(
     poll = assert_poll(prev_output)
     input = Input.from_poll_results(
         main.__qualname__,
-        any_unpickle(poll.typed_coroutine_state),
+        unmarshal_any(poll.typed_coroutine_state),
         call_results,
         Error.from_exception(poll_error) if poll_error else None,
     )
@@ -489,7 +489,7 @@ def assert_exit_result_value(output: Output, expect: Any):
     result = assert_exit_result(output)
     assert result.HasField("output")
     assert not result.HasField("error")
-    assert expect == any_unpickle(result.output)
+    assert expect == unmarshal_any(result.output)
 
 
 def assert_exit_result_error(
