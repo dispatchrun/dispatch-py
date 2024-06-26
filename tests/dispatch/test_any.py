@@ -1,40 +1,71 @@
 import pickle
 from datetime import datetime, timedelta
 
-from dispatch.any import marshal_any, unmarshal_any
+from dispatch.any import INT64_MAX, INT64_MIN, marshal_any, unmarshal_any
 from dispatch.sdk.v1 import error_pb2 as error_pb
 
 
 def test_unmarshal_none():
     boxed = marshal_any(None)
+    assert "type.googleapis.com/google.protobuf.Empty" == boxed.type_url
     assert None == unmarshal_any(boxed)
 
 
 def test_unmarshal_bool():
     boxed = marshal_any(True)
+    assert "type.googleapis.com/google.protobuf.BoolValue" == boxed.type_url
     assert True == unmarshal_any(boxed)
 
 
 def test_unmarshal_integer():
     boxed = marshal_any(1234)
+    assert "type.googleapis.com/google.protobuf.Int64Value" == boxed.type_url
     assert 1234 == unmarshal_any(boxed)
 
     boxed = marshal_any(-1234)
+    assert "type.googleapis.com/google.protobuf.Int64Value" == boxed.type_url
     assert -1234 == unmarshal_any(boxed)
+
+
+def test_unmarshal_int64_limits():
+    boxed = marshal_any(INT64_MIN)
+    assert "type.googleapis.com/google.protobuf.Int64Value" == boxed.type_url
+    assert INT64_MIN == unmarshal_any(boxed)
+
+    boxed = marshal_any(INT64_MAX)
+    assert "type.googleapis.com/google.protobuf.Int64Value" == boxed.type_url
+    assert INT64_MAX == unmarshal_any(boxed)
+
+    boxed = marshal_any(INT64_MIN - 1)
+    assert (
+        "buf.build/stealthrocket/dispatch-proto/dispatch.sdk.python.v1.Pickled"
+        == boxed.type_url
+    )
+    assert INT64_MIN - 1 == unmarshal_any(boxed)
+
+    boxed = marshal_any(INT64_MAX + 1)
+    assert (
+        "buf.build/stealthrocket/dispatch-proto/dispatch.sdk.python.v1.Pickled"
+        == boxed.type_url
+    )
+    assert INT64_MAX + 1 == unmarshal_any(boxed)
 
 
 def test_unmarshal_float():
     boxed = marshal_any(3.14)
+    assert "type.googleapis.com/google.protobuf.DoubleValue" == boxed.type_url
     assert 3.14 == unmarshal_any(boxed)
 
 
 def test_unmarshal_string():
     boxed = marshal_any("foo")
+    assert "type.googleapis.com/google.protobuf.StringValue" == boxed.type_url
     assert "foo" == unmarshal_any(boxed)
 
 
 def test_unmarshal_bytes():
     boxed = marshal_any(b"bar")
+    assert "type.googleapis.com/google.protobuf.BytesValue" == boxed.type_url
     assert b"bar" == unmarshal_any(boxed)
 
 
