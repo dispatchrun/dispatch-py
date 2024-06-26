@@ -94,3 +94,18 @@ def test_unmarshal_protobuf_message():
     )
 
     assert message == unmarshal_any(boxed)
+
+
+def test_unmarshal_json_like():
+    value = {
+        "null": None,
+        "bool": True,
+        "int": 11,
+        "float": 3.14,
+        "string": "foo",
+        "list": [None, "abc", 1.23],
+        "object": {"a": ["b", "c"]},
+    }
+    boxed = marshal_any(value)
+    assert "type.googleapis.com/google.protobuf.Value" == boxed.type_url
+    assert value == unmarshal_any(boxed)
